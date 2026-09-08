@@ -1,0 +1,1437 @@
+/* Configuración Global y Bloqueo de Scroll */
+html, body {
+    margin: 0;
+    padding: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    background-image: url('https://res.cloudinary.com/dtkirmtfq/image/upload/v1788398792/CosmosCute/tgtwsn6zvycew66rdrvk.jpg');
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+}
+
+/* Contenedor Principal Ajustado al 100vh */
+.browser-frame {
+    background: transparent;
+    overflow: hidden;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    color: #4a2e6f;
+    width: 100vw;
+    height: 100vh;
+    max-width: 1400px;
+    margin: 0 auto;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    box-sizing: border-box;
+    padding: 1vh 1vw;
+    position: relative;
+}
+
+/* Contenedor del Juego Compacto */
+.bingo-container {
+    display: grid;
+    grid-template-columns: 260px 1fr 310px;
+    gap: 12px;
+    height: calc(100vh - 60px);
+    align-items: center;
+    box-sizing: border-box;
+}
+
+/* Columna Izquierda: Lista de Productos Compacta */
+.products-list {
+    background-color: rgba(214, 180, 240, 0.85);
+    border: 2px solid #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    /* Cambia height por un alto fijo o un control de dimensiones estables */
+    height: 600px; /* O la medida exacta que tenga tu contenedor de la izquierda */
+    box-sizing: border-box;
+}
+
+.products-list h2 {
+    font-size: 12px;
+    background-color: #b58ce0;
+    color: white;
+    padding: 6px;
+    text-align: center;
+    border-radius: 6px;
+    margin: 0 0 8px 0;
+    letter-spacing: 0.5px;
+}
+
+.header-row {
+    display: flex;
+    justify-content: space-between;
+    background-color: #c8a2ef;
+    padding: 4px 8px;
+    font-size: 11px;
+    font-weight: bold;
+    border-radius: 4px;
+    margin-bottom: 4px;
+}
+
+.products-scroll {
+    overflow-y: auto;
+    flex-grow: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    padding-right: 2px;
+    margin-top: 5px;
+}
+
+.product-item {
+    display: flex;
+    align-items: center;
+    background-color: #fff;
+    padding: 4px 8px;
+    border-radius: 6px;
+    font-size: 11px;
+    justify-content: space-between;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+}
+
+.product-id { font-weight: bold; color: #8e64c7; width: 25px; }
+.product-name { flex-grow: 1; color: #4a2e6f; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Columna Central: Balotera con Esfera Mucho Más Grande */
+.balotera-section {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+    background: transparent;
+    padding: 2px;
+    height: 94%;
+    justify-content: flex-start;
+    gap: 6px;
+}
+
+.balotera-section h1 {
+    font-size: 46px;
+    color: #8e64c7;
+    text-shadow: 2px 2px 0px #ffde59;
+    margin: 0;
+}
+
+.balotera-section p {
+    font-size: 9px;
+    color: #ffffff;
+    font-weight: bold;
+    margin: 0;
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+}
+
+.balotera-title-box {
+    font-size: 10px;
+    color: #ffffff;
+    background-color: #b58ce0;
+    padding: 1px 10px;
+    border-radius: 10px;
+    border: 2px solid #fff;
+    margin: 0;
+}
+
+.balotera-machine {
+    position: relative;
+    width: 280px;
+    height: 230px;
+    display: flex;
+    justify-content: center;
+    margin: 0 auto;
+}
+
+/* Esfera compacta para que el botón encaje perfecto */
+.machine-globe {
+    width: 210px;
+    height: 210px;
+    background: radial-gradient(circle, rgba(255,255,255,0.88) 0%, rgba(180,140,230,0.35) 100%);
+    border: 4px solid #ffffff;
+    border-radius: 50%;
+    position: absolute;
+    top: 2px;
+    left: 35px;
+    box-shadow: inset 0 0 18px rgba(255,255,255,0.9), 0 5px 15px rgba(0,0,0,0.12);
+    overflow: hidden;
+}
+.ball {
+    width: 24px;
+    height: 24px;
+    background: #ffffff;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 10px;
+    font-weight: bold;
+    color: #4a2e6f;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.current-ball {
+    position: absolute;
+    top: 105px;
+    left: 105px;
+    width: 38px;
+    height: 38px;
+    font-size: 14px;
+    background: #ffde59;
+    border: 2px solid #fff;
+    z-index: 10;
+}
+
+/* Reajuste de la animación dentro de la gran esfera */
+.internal-ball {
+    position: absolute;
+    top: 110px;
+    left: 110px;
+    width: 24px;
+    height: 24px;
+    font-size: 10px;
+    animation-iteration-count: infinite;
+    animation-timing-function: ease-in-out;
+}
+
+.ball-pos-0  { animation-name: windBlow1; animation-duration: 0.8s; }
+.ball-pos-1  { animation-name: windBlow2; animation-duration: 1.1s; }
+.ball-pos-2  { animation-name: windBlow3; animation-duration: 0.7s; }
+.ball-pos-3  { animation-name: windBlow4; animation-duration: 0.9s; }
+.ball-pos-4  { animation-name: windBlow1; animation-duration: 1.2s; }
+.ball-pos-5  { animation-name: windBlow2; animation-duration: 0.6s; }
+.ball-pos-6  { animation-name: windBlow3; animation-duration: 1.0s; }
+.ball-pos-7  { animation-name: windBlow4; animation-duration: 0.8s; }
+.ball-pos-8  { animation-name: windBlow1; animation-duration: 0.95s; }
+.ball-pos-9  { animation-name: windBlow2; animation-duration: 0.75s; }
+.ball-pos-10 { animation-name: windBlow3; animation-duration: 1.15s; }
+.ball-pos-11 { animation-name: windBlow4; animation-duration: 0.85s; }
+
+@keyframes windBlow1 {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(-70px, -40px) rotate(90deg); }
+    50%  { transform: translate(60px, -70px) rotate(180deg); }
+    75%  { transform: translate(-50px, 60px) rotate(270deg); }
+    100% { transform: translate(0, 0) rotate(360deg); }
+}
+
+@keyframes windBlow2 {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    25%  { transform: translate(70px, 55px) rotate(-90deg); }
+    50%  { transform: translate(-65px, -40px) rotate(-180deg); }
+    75%  { transform: translate(40px, -65px) rotate(-270deg); }
+    100% { transform: translate(0, 0) rotate(-360deg); }
+}
+
+@keyframes windBlow3 {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    33%  { transform: translate(-80px, 30px) rotate(120deg); }
+    66%  { transform: translate(45px, 75px) rotate(240deg); }
+    100% { transform: translate(0, 0) rotate(360deg); }
+}
+
+@keyframes windBlow4 {
+    0%   { transform: translate(0, 0) rotate(0deg); }
+    33%  { transform: translate(45px, -80px) rotate(-120deg); }
+    66%  { transform: translate(-75px, -30px) rotate(-240deg); }
+    100% { transform: translate(0, 0) rotate(360deg); }
+}
+
+.machine-tube-container {
+    position: absolute;
+    bottom: 10px;
+    left: 20px;
+    width: 230px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+}
+
+.tube-balls-row {
+    display: flex;
+    gap: 4px;
+    position: absolute;
+    left: 10px;
+    bottom: 2px;
+    z-index: 5;
+}
+
+.path-ball {
+    width: 20px;
+    height: 20px;
+    font-size: 8px;
+    background: #fff;
+}
+
+.bunny-character {
+    position: absolute;
+    bottom: 2px;
+    right: 15px;
+    font-size: 24px;
+    z-index: 6;
+}
+
+.machine-tray-basket {
+    position: absolute;
+    bottom: 0px;
+    right: 42px;
+    font-size: 20px;
+    z-index: 5;
+}
+
+/* Botón con estado amarillo pastel al sortear */
+.balotera-section button {
+    background-color: #ff70a6;
+    color: white;
+    border: 2px solid #fff;
+    padding: 7px 22px;
+    font-size: 13px;
+    font-weight: bold;
+    border-radius: 16px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #d94f82;
+    transition: all 0.1s ease;
+}
+
+.balotera-section button:disabled {
+    background-color: #ffe599 !important;
+    color: #4a2e6f !important;
+    box-shadow: 0 1px 0 #dfc27a !important;
+    transform: translateY(2px);
+    cursor: not-allowed;
+}
+
+.balotera-section button:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #d94f82;
+}
+
+@keyframes fallIntoBasket {
+    0% {
+        transform: translate(0, 0) scale(1.3);
+        opacity: 1;
+    }
+    100% {
+        transform: translate(45px, 120px) scale(0.6);
+        opacity: 0.9;
+    }
+}
+
+.current-ball.falling-to-basket {
+    animation: fallIntoBasket 0.6s cubic-bezier(0.25, 1, 0.5, 1) forwards;
+}
+
+/* Columna Derecha: Tarjetón y Estado Compactos */
+.tarjeton-section {
+    background-color: rgba(214, 180, 240, 0.85);
+    border: 2px solid #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    height: 94%;
+    box-sizing: border-box;
+    justify-content: space-between;
+}
+
+.tarjeton-section h2 {
+    font-size: 11px;
+    background-color: #b58ce0;
+    color: white;
+    padding: 5px;
+    text-align: center;
+    border-radius: 6px;
+    margin: 0;
+}
+
+.tarjeton-grid {
+    display: grid;
+    grid-template-columns: repeat(6, 1fr);
+    gap: 3px;
+    background: white;
+    padding: 4px;
+    border-radius: 8px;
+}
+
+.col-header {
+    background-color: #ff70a6;
+    color: white;
+    text-align: center;
+    font-weight: bold;
+    font-size: 10px;
+    padding: 2px;
+    border-radius: 3px;
+}
+
+.grid-cell {
+    aspect-ratio: 1;
+    background-color: #f3e8ff;
+    border-radius: 3px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 11px;
+    font-weight: bold;
+    color: #4a2e6f;
+    position: relative;
+}
+
+/* Animación pro de 2 segundos para celdas marcadas */
+@keyframes cellProMark {
+    0% {
+        transform: scale(1);
+        background-color: #f3e8ff;
+    }
+    30% {
+        transform: scale(1.2) rotate(5deg);
+        background-color: #ffde59;
+        box-shadow: 0 0 15px rgba(255, 222, 89, 0.9);
+    }
+    60% {
+        transform: scale(0.95) rotate(-5deg);
+        background-color: #70c1b3;
+        box-shadow: 0 0 10px rgba(112, 193, 179, 0.8);
+    }
+    100% {
+        transform: scale(1) rotate(0deg);
+        background-color: #a3c1ad;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    }
+}
+
+.grid-cell.marked {
+    animation: cellProMark 2s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+    background-color: #a3c1ad;
+    color: #ffffff;
+    z-index: 10;
+}
+
+.cell-icon {
+    font-size: 12px;
+}
+
+.game-status-area {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.bingo-call-area {
+    background-color: #ffde59;
+    border: 2px solid #fff;
+    border-radius: 10px;
+    padding: 6px;
+    flex-grow: 1;
+    text-align: center;
+}
+
+.bingo-text {
+    font-size: 18px;
+    font-weight: 900;
+    color: #ff5f56;
+    text-shadow: 1px 1px 0px #fff;
+}
+
+.additional-balls-box {
+    background-color: #fff;
+    border-radius: 10px;
+    padding: 6px;
+    text-align: center;
+    font-size: 8px;
+    font-weight: bold;
+    color: #6b4c9a;
+}
+
+.count-box {
+    font-size: 14px;
+    background-color: #f3e8ff;
+    border-radius: 4px;
+    margin: 1px 0;
+    padding: 1px;
+}
+
+.status-tag {
+    background-color: #b58ce0;
+    color: white;
+    font-size: 10px;
+    font-weight: bold;
+    padding: 4px;
+    text-align: center;
+    border-radius: 6px;
+    border: 2px solid #fff;
+}
+
+/* Historial de Balotas Compacto */
+.history-section {
+    background-color: rgba(200, 162, 239, 0.9);
+    border-radius: 8px;
+    padding: 6px;
+    border: 2px solid #fff;
+}
+
+.history-section h2 {
+    font-size: 9px;
+    margin-bottom: 4px;
+    background: none;
+    color: #4a2e6f;
+    text-align: center;
+}
+
+.balls-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 3px;
+    max-height: 45px;
+    overflow-y: auto;
+}
+
+.history-ball {
+    width: 18px;
+    height: 18px;
+    font-size: 8px;
+}
+
+.instruction-bubble {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 5px;
+    font-size: 9px;
+    font-weight: bold;
+    color: #6b4c9a;
+    text-align: center;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
+}
+
+/* Estilos para la Alerta de Bingo Ganador */
+.bingo-alert-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(74, 46, 111, 0.65);
+    backdrop-filter: blur(4px);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+    animation: fadeInAlert 0.3s ease-out forwards;
+}
+
+.bingo-alert-modal {
+    background: linear-gradient(135deg, #fff5f8 0%, #f3e8ff 100%);
+    border: 4px solid #ffffff;
+    border-radius: 20px;
+    padding: 25px 35px;
+    text-align: center;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 12px;
+    max-width: 350px;
+    animation: popInModal 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
+}
+
+.bingo-alert-modal h2 {
+    font-size: 22px;
+    color: #ff5f56;
+    margin: 0;
+    text-shadow: 1px 1px 0px #fff;
+}
+
+.bingo-alert-modal p {
+    font-size: 12px;
+    color: #4a2e6f;
+    font-weight: bold;
+    margin: 0;
+}
+
+.bingo-alert-modal button {
+    background-color: #ff70a6;
+    color: white;
+    border: 2px solid #fff;
+    padding: 8px 20px;
+    font-size: 12px;
+    font-weight: bold;
+    border-radius: 14px;
+    cursor: pointer;
+    box-shadow: 0 3px 0 #d94f82;
+    margin-top: 5px;
+}
+
+.bingo-alert-modal button:active {
+    transform: translateY(2px);
+    box-shadow: 0 1px 0 #d94f82;
+}
+
+@keyframes fadeInAlert {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes popInModal {
+    0% { transform: scale(0.5); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+}
+
+/* Pie de Página Dinámico y Pro */
+.game-footer {
+    background: linear-gradient(90deg, rgba(181, 140, 224, 0.9), rgba(255, 112, 166, 0.9), rgba(181, 140, 224, 0.9));
+    background-size: 200% 100%;
+    animation: gradientMove 6s ease infinite;
+    padding: 6px 12px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 2px solid rgba(255, 255, 255, 0.6);
+    height: 32px;
+    box-sizing: border-box;
+    border-radius: 8px 8px 0 0;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
+}
+
+.footer-brand {
+    font-size: 10px;
+    color: #ffffff;
+    font-weight: 800;
+    letter-spacing: 0.8px;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.2);
+    display: flex;
+    align-items: center;
+    gap: 5px;
+}
+
+.footer-status-indicator {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 9px;
+    color: #ffffff;
+    font-weight: bold;
+    background: rgba(74, 46, 111, 0.3);
+    padding: 2px 8px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.pulse-dot {
+    width: 6px;
+    height: 6px;
+    background-color: #ffde59;
+    border-radius: 50%;
+    box-shadow: 0 0 6px #ffde59;
+    animation: pulseStatus 1.5s infinite;
+}
+
+@keyframes gradientMove {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+@keyframes pulseStatus {
+    0% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 0 0 rgba(255, 222, 89, 0.7); }
+    70% { transform: scale(1.1); opacity: 1; box-shadow: 0 0 0 5px rgba(255, 222, 89, 0); }
+    100% { transform: scale(0.95); opacity: 0.8; box-shadow: 0 0 0 0 rgba(255, 222, 89, 0); }
+}
+
+
+/* ========================================================
+   ADAPTACIÓN RESPONSIVE PARA MÓVILES Y TELÉFONOS
+   ======================================================== */
+@media (max-width: 900px) {
+    html, body {
+        overflow-y: auto; /* Permite scroll vertical fluido en móviles */
+        height: auto;
+    }
+
+    .browser-frame {
+        height: auto;
+        min-height: 100vh;
+        overflow-y: auto;
+        padding: 8px;
+    }
+
+    .bingo-container {
+        display: flex;
+        flex-direction: column;
+        height: auto;
+        gap: 15px;
+    }
+
+    /* Orden y tamaño optimizado de bloques en móvil */
+    .balotera-section {
+        order: 1;
+        height: auto;
+        width: 100%;
+    }
+
+    .tarjeton-section {
+        order: 2;
+        height: auto;
+        width: 100%;
+    }
+
+    .products-list {
+        order: 3;
+        height: 250px; /* Altura controlada para la lista en móvil */
+        width: 100%;
+    }
+
+    /* Reducción proporcional de la balotera para pantallas pequeñas */
+    .balotera-machine {
+        transform: scale(0.85);
+        margin: -10px auto;
+    }
+
+    .game-footer {
+        order: 4;
+        margin-top: 10px;
+        border-radius: 8px;
+    }
+}
+
+/* Animación de 3 destellos verdes cuando el número está en el tarjetón */
+@keyframes successFlashes {
+    0% {
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.9), 0 5px 15px rgba(0,0,0,0.12);
+        border-color: #ffffff;
+    }
+    15% {
+        box-shadow: inset 0 0 35px #70c1b3, 0 0 25px #70c1b3;
+        border-color: #70c1b3;
+    }
+    30% {
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.9), 0 5px 15px rgba(0,0,0,0.12);
+        border-color: #ffffff;
+    }
+    45% {
+        box-shadow: inset 0 0 35px #70c1b3, 0 0 25px #70c1b3;
+        border-color: #70c1b3;
+    }
+    60% {
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.9), 0 5px 15px rgba(0,0,0,0.12);
+        border-color: #ffffff;
+    }
+    75% {
+        box-shadow: inset 0 0 35px #70c1b3, 0 0 25px #70c1b3;
+        border-color: #70c1b3;
+    }
+    100% {
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.9), 0 5px 15px rgba(0,0,0,0.12);
+        border-color: #ffffff;
+    }
+}
+
+/* Animación de 1 destello rojo cuando el número no está en el tarjetón */
+@keyframes errorFlash {
+    0% {
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.9), 0 5px 15px rgba(0,0,0,0.12);
+        border-color: #ffffff;
+    }
+    50% {
+        box-shadow: inset 0 0 35px #ff5f56, 0 0 25px #ff5f56;
+        border-color: #ff5f56;
+    }
+    100% {
+        box-shadow: inset 0 0 18px rgba(255,255,255,0.9), 0 5px 15px rgba(0,0,0,0.12);
+        border-color: #ffffff;
+    }
+}
+
+/* Clases dinámicas que activarán las animaciones desde JS */
+.machine-globe.flash-green {
+    animation: successFlashes 0.9s ease-in-out forwards;
+}
+
+.machine-globe.flash-red {
+    animation: errorFlash 0.5s ease-in-out forwards;
+}
+
+/* ==========================================
+   ESTILOS DE MOVIMIENTO Y EFECTOS CASINO
+   ========================================== */
+
+
+.casino-machine-container {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    position: relative;
+}
+
+/* Oculta la parte superior rectangular si ya no la necesitas */
+.casino-top-hood {
+    display: none;
+}
+
+/* Ajusta la consola inferior para que quede centrada debajo de la esfera */
+.casino-base-console {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    max-width: 300px;
+    margin-top: 15px;
+}
+.casino-top-hood {
+    width: 120px;
+    height: 15px;
+    background: linear-gradient(90deg, #2c2c38, #4a4a5e, #2c2c38);
+    border-radius: 8px 8px 0 0;
+    margin-bottom: -2px;
+    border: 1px solid rgba(255,255,255,0.1);
+}
+
+.casino-chamber {
+    width: 320px; /* Ajusta el tamaño según tu diseño */
+    height: 320px; /* Debe medir lo mismo que el ancho para ser un círculo perfecto */
+    border-radius: 50%;
+    margin: 0 auto;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    /* Efecto de esfera de cristal 3D */
+    background: radial-gradient(
+        circle at 35% 35%, 
+        rgba(255, 255, 255, 0.25) 0%, 
+        rgba(15, 15, 35, 0.9) 60%, 
+        rgba(5, 5, 15, 0.95) 100%
+    );
+    box-shadow: 
+        inset 0 0 30px rgba(255, 255, 255, 0.2), 
+        0 10px 25px rgba(0, 0, 0, 0.6);
+    border: 4px solid rgba(255, 255, 255, 0.15);
+}
+
+.casino-glass-shine {
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 40%;
+    background: linear-gradient(to bottom, rgba(255,255,255,0.12), transparent);
+    transform: rotate(-15deg);
+    pointer-events: none;
+}
+
+/* Tubo central de succión de aire */
+.suction-tube {
+    position: absolute;
+    top: 0;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 30px;
+    height: 60px;
+    background: linear-gradient(to bottom, rgba(0,240,255,0.3), transparent);
+    border-left: 1px dashed rgba(0,240,255,0.5);
+    border-right: 1px dashed rgba(0,240,255,0.5);
+    z-index: 2;
+    opacity: 0.3;
+    transition: opacity 0.3s;
+}
+
+.machine-active .suction-tube {
+    opacity: 0.9;
+    animation: flujoAire 0.4s infinite linear;
+}
+
+@keyframes flujoAire {
+    0% { background-position: 0 0; }
+    100% { background-position: 0 20px; }
+}
+
+/* Display central con balota resultante */
+.casino-core-display {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 5;
+}
+
+.mixing-turbine-icon {
+    font-size: 32px;
+    animation: girarTurbina 0.6s infinite linear;
+}
+
+@keyframes girarTurbina {
+    0% { transform: rotate(0deg) scale(0.9); }
+    50% { transform: rotate(180deg) scale(1.1); }
+    100% { transform: rotate(360deg) scale(0.9); }
+}
+
+.casino-highlight-ball {
+    width: 65px;
+    height: 65px;
+    background: radial-gradient(circle at 35% 35%, #ffffff, #ffd700, #ff8c00);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    font-weight: 900;
+    color: #111;
+    box-shadow: 0 0 25px rgba(255, 215, 0, 0.9), inset -4px -4px 8px rgba(0,0,0,0.3);
+    animation: disparoBalota 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes disparoBalota {
+    0% { transform: translateY(40px) scale(0.3); opacity: 0; }
+    70% { transform: translateY(-5px) scale(1.05); }
+    100% { transform: translateY(0) scale(1); opacity: 1; }
+}
+
+.casino-status-text {
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(255, 255, 255, 0.6);
+    font-weight: bold;
+}
+
+/* Pool interno de balotas */
+.casino-balls-pool {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.casino-ball-item {
+    width: 42px;  /* Antes era más pequeño (ej. 24px o 30px) */
+    height: 42px; /* Debe medir lo mismo que el ancho para que sean redondas */
+    font-size: 15px; /* Tamaño del número dentro de la balota */
+    font-weight: bold;
+    border-radius: 50%;
+    /* Mantén o ajusta tus estilos previos de color, sombras y gradiente */
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute; /* O el posicionamiento que uses en tu grúa/piscina */
+    transition: all 0.3s ease;
+}
+.pool-mixing .casino-ball-item {
+    animation: bounceBall 0.5s infinite alternate ease-in-out;
+}
+@keyframes bounceBall {
+    0% { transform: translateY(0px) rotate(0deg); }
+    100% { transform: translateY(-15px) rotate(10deg); }
+}
+/* Posiciones de las balotas dentro del cilindro */
+.c-ball-0  { bottom: 12px; left: 25px; }
+.c-ball-1  { bottom: 12px; left: 55px; }
+.c-ball-2  { bottom: 12px; left: 85px; }
+.c-ball-3  { bottom: 12px; left: 135px; }
+.c-ball-4  { bottom: 12px; left: 165px; }
+.c-ball-5  { bottom: 12px; left: 195px; }
+.c-ball-6  { bottom: 30px; left: 40px; }
+.c-ball-7  { bottom: 30px; left: 75px; }
+.c-ball-8  { bottom: 30px; left: 150px; }
+.c-ball-9  { bottom: 30px; left: 180px; }
+.c-ball-10 { bottom: 48px; left: 30px; }
+.c-ball-11 { bottom: 48px; left: 65px; }
+.c-ball-12 { bottom: 48px; left: 155px; }
+.c-ball-13 { bottom: 48px; left: 185px; }
+.c-ball-14 { bottom: 20px; left: 110px; }
+.c-ball-15 { bottom: 40px; left: 100px; }
+.c-ball-16 { bottom: 45px; left: 120px; }
+.c-ball-17 { bottom: 10px; left: 110px; }
+.c-ball-18 { bottom: 65px; left: 40px; }
+.c-ball-19 { bottom: 65px; left: 75px; }
+.c-ball-20 { bottom: 65px; left: 110px; }
+.c-ball-21 { bottom: 65px; left: 150px; }
+.c-ball-22 { bottom: 65px; left: 180px; }
+.c-ball-23 { bottom: 82px; left: 55px; }
+.c-ball-24 { bottom: 82px; left: 90px; }
+.c-ball-25 { bottom: 82px; left: 130px; }
+.c-ball-26 { bottom: 82px; left: 165px; }
+.c-ball-27 { bottom: 100px; left: 70px; }
+.c-ball-28 { bottom: 100px; left: 110px; }
+.c-ball-29 { bottom: 100px; left: 150px; }
+.c-ball-30 { bottom: 18px; left: 10px; }
+.c-ball-31 { bottom: 35px; left: 15px; }
+.c-ball-32 { bottom: 55px; left: 20px; }
+.c-ball-33 { bottom: 75px; left: 35px; }
+.c-ball-34 { bottom: 95px; left: 50px; }
+.c-ball-35 { bottom: 115px; left: 65px; }
+.c-ball-36 { bottom: 130px; left: 85px; }
+.c-ball-37 { bottom: 140px; left: 110px; }
+.c-ball-38 { bottom: 130px; left: 135px; }
+.c-ball-39 { bottom: 115px; left: 155px; }
+.c-ball-40 { bottom: 95px; left: 170px; }
+.c-ball-41 { bottom: 75px; left: 185px; }
+.c-ball-42 { bottom: 55px; left: 190px; }
+.c-ball-43 { bottom: 35px; left: 195px; }
+.c-ball-44 { bottom: 18px; left: 210px; }
+.c-ball-45 { bottom: 25px; left: 95px; }
+.c-ball-46 { bottom: 25px; left: 125px; }
+.c-ball-47 { bottom: 42px; left: 85px; }
+.c-ball-48 { bottom: 42px; left: 135px; }
+.c-ball-49 { bottom: 58px; left: 95px; }
+.c-ball-50 { bottom: 58px; left: 125px; }
+.c-ball-51 { bottom: 75px; left: 75px; }
+.c-ball-52 { bottom: 75px; left: 145px; }
+.c-ball-53 { bottom: 90px; left: 90px; }
+.c-ball-54 { bottom: 90px; left: 130px; }
+.c-ball-55 { bottom: 105px; left: 100px; }
+.c-ball-56 { bottom: 105px; left: 120px; }
+.c-ball-57 { bottom: 15px; left: 45px; }
+.c-ball-58 { bottom: 15px; left: 175px; }
+.c-ball-59 { bottom: 32px; left: 55px; }
+.c-ball-60 { bottom: 32px; left: 165px; }
+.c-ball-61 { bottom: 50px; left: 45px; }
+.c-ball-62 { bottom: 50px; left: 175px; }
+.c-ball-63 { bottom: 68px; left: 30px; }
+.c-ball-64 { bottom: 68px; left: 190px; }
+.c-ball-65 { bottom: 85px; left: 40px; }
+.c-ball-66 { bottom: 85px; left: 180px; }
+.c-ball-67 { bottom: 102px; left: 50px; }
+.c-ball-68 { bottom: 102px; left: 170px; }
+.c-ball-69 { bottom: 120px; left: 60px; }
+.c-ball-70 { bottom: 120px; left: 160px; }
+.c-ball-71 { bottom: 135px; left: 80px; }
+.c-ball-72 { bottom: 135px; left: 140px; }
+.c-ball-73 { bottom: 8px; left: 70px; }
+.c-ball-74 { bottom: 8px; left: 150px; }
+.c-ball-75 { bottom: 22px; left: 85px; }
+.c-ball-76 { bottom: 22px; left: 135px; }
+.c-ball-77 { bottom: 38px; left: 100px; }
+.c-ball-78 { bottom: 38px; left: 120px; }
+.c-ball-79 { bottom: 55px; left: 110px; }
+.c-ball-80 { bottom: 70px; left: 100px; }
+.c-ball-81 { bottom: 70px; left: 120px; }
+.c-ball-82 { bottom: 88px; left: 110px; }
+.c-ball-83 { bottom: 10px; left: 95px; }
+.c-ball-84 { bottom: 10px; left: 125px; }
+.c-ball-85 { bottom: 28px; left: 105px; }
+.c-ball-86 { bottom: 28px; left: 115px; }
+.c-ball-87 { bottom: 45px; left: 95px; }
+.c-ball-88 { bottom: 45px; left: 125px; }
+.c-ball-89 { bottom: 62px; left: 105px; }
+.c-ball-90 { bottom: 62px; left: 115px; }
+.c-ball-91 { bottom: 80px; left: 95px; }
+.c-ball-92 { bottom: 80px; left: 125px; }
+.c-ball-93 { bottom: 98px; left: 105px; }
+.c-ball-94 { bottom: 98px; left: 115px; }
+.c-ball-95 { bottom: 115px; left: 95px; }
+.c-ball-96 { bottom: 115px; left: 125px; }
+.c-ball-97 { bottom: 130px; left: 98px; }
+.c-ball-98 { bottom: 130px; left: 122px; }
+
+/* Animación de turbulencia activa de las balotas */
+.machine-active .casino-chamber {
+    border-color: #00f0ff;
+    box-shadow: 
+        inset 0 0 35px rgba(0, 240, 255, 0.5),
+        0 0 25px rgba(0, 240, 255, 0.6);
+}
+
+.machine-active .casino-ball-item {
+    animation: turbulenciaCasino 0.2s infinite alternate ease-in-out;
+}
+
+@keyframes turbulenciaCasino {
+    0% { transform: translate(0, 0) scale(1) rotate(0deg); }
+    100% { 
+        transform: translate(
+            calc(sin(var(--i)) * 40px + (random() * 60px - 30px)), 
+            calc(-1 * (random() * 100px + 15px))
+        ) rotate(360deg); 
+    }
+}
+
+/* Consola inferior y luces secuenciales */
+.casino-base-console {
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 15px 0 15px;
+}
+
+.console-lights {
+    display: flex;
+    gap: 6px;
+}
+
+.light-dot {
+    width: 8px;
+    height: 8px;
+    background: #444;
+    border-radius: 50%;
+    box-shadow: inset 0 1px 2px rgba(0,0,0,0.5);
+    transition: background 0.2s;
+}
+
+.machine-active .light-dot {
+    animation: parpadeoLuces 0.3s infinite alternate;
+}
+
+.machine-active .light-dot:nth-child(2) { animation-delay: 0.1s; }
+.machine-active .light-dot:nth-child(3) { animation-delay: 0.2s; }
+
+@keyframes parpadeoLuces {
+    0% { background: #004455; box-shadow: 0 0 2px #004455; }
+    100% { background: #00f0ff; box-shadow: 0 0 10px #00f0ff; }
+}
+
+/* Botón de sorteo */
+.casino-draw-btn {
+    background: linear-gradient(135deg, #ffd700, #ff8c00);
+    color: #1a1a24;
+    font-weight: 900;
+    border: none;
+    padding: 10px 20px;
+    border-radius: 8px;
+    cursor: pointer;
+    box-shadow: 0 4px 15px rgba(255, 140, 0, 0.4);
+    transition: transform 0.1s ease, filter 0.2s ease;
+    letter-spacing: 1px;
+    margin-top: 10px;
+}
+
+.casino-draw-btn:hover:not(:disabled) {
+    filter: brightness(1.1);
+    transform: translateY(-1px);
+}
+
+.casino-draw-btn:active:not(:disabled) {
+    transform: translateY(1px);
+}
+/* ==========================================
+   DESTELLOS LLAMATIVOS DE RESULTADO (VERDE / ROJO)
+   ========================================== */
+
+/* 3 DESTELLOS VERDES (Número perteneciente al tarjetón) */
+.flash-green-flashing {
+    animation: destelloVerdeLlamativo 1.2s ease-in-out forwards;
+}
+
+@keyframes destelloVerdeLlamativo {
+    0%, 100% {
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: inset 0 0 25px rgba(0, 229, 255, 0.2), 0 0 10px rgba(0,0,0,0.8);
+    }
+    /* Destello 1 */
+    16% { border-color: #00ff66; box-shadow: inset 0 0 50px #00ff66, 0 0 35px #00ff66; }
+    32% { border-color: rgba(255, 255, 255, 0.25); box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+    /* Destello 2 */
+    48% { border-color: #00ff66; box-shadow: inset 0 0 50px #00ff66, 0 0 35px #00ff66; }
+    64% { border-color: rgba(255, 255, 255, 0.25); box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+    /* Destello 3 */
+    80% { border-color: #00ff66; box-shadow: inset 0 0 50px #00ff66, 0 0 35px #00ff66; }
+}
+
+
+/* 2 DESTELLOS ROJOS (Número adicional / no está en el tarjetón) */
+.flash-red-flashing {
+    animation: destelloRojoLlamativo 1.0s ease-in-out forwards;
+}
+
+@keyframes destelloRojoLlamativo {
+    0%, 100% {
+        border-color: rgba(255, 255, 255, 0.25);
+        box-shadow: inset 0 0 25px rgba(0, 229, 255, 0.2), 0 0 10px rgba(0,0,0,0.8);
+    }
+    /* Destello 1 */
+    25% { border-color: #ff2247; box-shadow: inset 0 0 50px #ff2247, 0 0 35px #ff2247; }
+    50% { border-color: rgba(255, 255, 255, 0.25); box-shadow: inset 0 0 15px rgba(0,0,0,0.8); }
+    /* Destello 2 */
+    75% { border-color: #ff2247; box-shadow: inset 0 0 50px #ff2247, 0 0 35px #ff2247; }
+}
+/* ==========================================
+   ESTADOS DE LAS BALOTAS: CAÍDA SUAVE Y FLOTACIÓN
+   ========================================== */
+
+.casino-balls-pool {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    top: 0;
+    left: 0;
+}
+
+.casino-ball-item {
+    position: absolute;
+    width: 22px;
+    height: 22px;
+    background: radial-gradient(circle at 30% 30%, #ffffff, #a0c4ff);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 9px;
+    font-weight: bold;
+    color: #222;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.5);
+    
+    /* CAMBIO CLAVE: Transición suave y elástica cuando vuelven a la base */
+    transition: transform 0.8s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+/* Posiciones estáticas iniciales (en la base) */
+.c-ball-0  { bottom: 10px; left: 20px; }
+.c-ball-1  { bottom: 10px; left: 45px; }
+.c-ball-2  { bottom: 10px; left: 70px; }
+.c-ball-3  { bottom: 10px; left: 95px; }
+.c-ball-4  { bottom: 10px; left: 125px; }
+.c-ball-5  { bottom: 10px; left: 150px; }
+.c-ball-6  { bottom: 10px; left: 175px; }
+.c-ball-7  { bottom: 10px; left: 205px; }
+.c-ball-8  { bottom: 22px; left: 32px; }
+.c-ball-9  { bottom: 22px; left: 58px; }
+.c-ball-10 { bottom: 22px; left: 85px; }
+.c-ball-11 { bottom: 22px; left: 135px; }
+.c-ball-12 { bottom: 22px; left: 162px; }
+.c-ball-13 { bottom: 22px; left: 190px; }
+.c-ball-14 { bottom: 34px; left: 45px; }
+.c-ball-15 { bottom: 34px; left: 75px; }
+.c-ball-16 { bottom: 34px; left: 145px; }
+.c-ball-17 { bottom: 34px; left: 175px; }
+
+
+/* ==========================================
+   ANIMACIÓN DE FLOTACIÓN ACTIVA
+   ========================================== */
+
+.pool-mixing .c-ball-0  { animation: flotarBola1 0.35s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-1  { animation: flotarBola2 0.30s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-2  { animation: flotarBola3 0.40s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-3  { animation: flotarBola4 0.28s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-4  { animation: flotarBola5 0.38s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-5  { animation: flotarBola6 0.32s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-6  { animation: flotarBola1 0.42s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-7  { animation: flotarBola3 0.29s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-8  { animation: flotarBola2 0.36s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-9  { animation: flotarBola5 0.33s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-10 { animation: flotarBola4 0.45s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-11 { animation: flotarBola6 0.27s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-12 { animation: flotarBola1 0.31s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-13 { animation: flotarBola2 0.39s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-14 { animation: flotarBola3 0.34s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-15 { animation: flotarBola5 0.26s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-16 { animation: flotarBola4 0.41s infinite alternate ease-in-out; }
+.pool-mixing .c-ball-17 { animation: flotarBola6 0.30s infinite alternate ease-in-out; }
+
+@keyframes flotarBola1 {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(25px, -75px) rotate(180deg); }
+}
+
+@keyframes flotarBola2 {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(-30px, -90px) rotate(-140deg); }
+}
+
+@keyframes flotarBola3 {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(45px, -50px) rotate(90deg); }
+}
+
+@keyframes flotarBola4 {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(-40px, -65px) rotate(-220deg); }
+}
+
+@keyframes flotarBola5 {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(15px, -110px) rotate(200deg); }
+}
+
+@keyframes flotarBola6 {
+    0% { transform: translate(0, 0) rotate(0deg); }
+    100% { transform: translate(-20px, -85px) rotate(-90deg); }
+}
+
+/* Contenedor que oculta la barra y recorta el scroll automático */
+.products-scroll-container {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+    width: 100%;
+}
+
+/* Pista con animación continua de desplazamiento */
+.products-autoscroll-track {
+    display: flex;
+    flex-direction: column;
+    /*animation: autoScrollList 20s linear infinite;*/
+}
+
+/* Pausar el movimiento si el usuario pasa el mouse por encima */
+.products-scroll-container:hover .products-autoscroll-track {
+    animation-play-state: paused;
+}
+
+@keyframes autoScrollList {
+    0% {
+        transform: translateY(0);
+    }
+    100% {
+        transform: translateY(-50%);
+    }
+}
+
+/* ==========================================
+   ESTILOS PARA PRODUCTOS GANADORES (VERDE)
+   ========================================== */
+
+.product-item {
+    transition: all 0.3s ease;
+}
+
+/* Efecto de sombra verde intensa y destellos cuando sale la balota exacta */
+.product-winner-glow {
+    background-color: rgba(46, 204, 113, 0.45) !important;
+    border: 2px solid #2ecc71 !important;
+    box-shadow: 0 0 15px #2ecc71, inset 0 0 10px rgba(46, 204, 113, 0.6);
+    animation: greenPulseDestello 0.6s infinite alternate ease-in-out;
+    transform: scale(1.03);
+    z-index: 10;
+}
+
+/* Estilo sutil para productos que salieron en rondas anteriores */
+.product-marked-past {
+    background-color: rgba(46, 204, 113, 0.15);
+    border-color: rgba(46, 204, 113, 0.4);
+}
+
+@keyframes greenPulseDestello {
+    0% {
+        box-shadow: 0 0 8px #2ecc71;
+    }
+    100% {
+        box-shadow: 0 0 22px #2ecc71, 0 0 30px rgba(46, 204, 113, 0.8);
+    }
+}
+/* ==========================================
+   NUEVO ESTILO DE LISTA CON SCROLL SUAVE JS
+   ========================================== */
+
+/* Contenedor principal del panel izquierdo */
+.products-list {
+    background-color: rgba(214, 180, 240, 0.85);
+    border: 2px solid #ffffff;
+    border-radius: 12px;
+    padding: 10px;
+    display: flex;
+    flex-direction: column;
+    height: 94%; /* O la altura fija que definiste antes */
+    max-height: 650px; /* Recomendable poner un máximo */
+    box-sizing: border-box;
+    overflow: hidden; /* Oculta cualquier desbordamiento */
+}
+
+/* Contenedor del scroll (con barra de desplazamiento visible pero estética) */
+.products-scroll-container {
+    flex: 1;
+    overflow-y: auto; /* Habilita el scroll vertical */
+    position: relative;
+    width: 100%;
+    padding-right: 5px; /* Espacio para la barra de scroll */
+    
+    /* Estilizado de la barra de scroll para que se vea prémium */
+    scrollbar-width: thin;
+    scrollbar-color: rgba(255, 255, 255, 0.5) transparent;
+}
+
+/* Pista estática (ya no duplicamos elementos) */
+.products-static-track {
+    display: flex;
+    flex-direction: column;
+    gap: 4px; /* Pequeña separación entre productos */
+    padding: 5px;
+}
+
+/* Cada fila de producto (ajustamos el alto para el cálculo del scroll) */
+.product-item {
+    display: flex;
+    align-items: center;
+    background-color: rgba(255, 255, 255, 0.5);
+    border-radius: 8px;
+    padding: 8px;
+    height: 35px; /* Alto fijo del item */
+    border: 1px solid transparent;
+    transition: all 0.3s ease;
+    box-sizing: content-box;
+}
+
+/* Asegúrate de que tus IDs y nombres no rompan la fila */
+.product-id {
+    font-weight: bold;
+    color: #333;
+    width: 40px;
+    font-size: 0.9rem;
+}
+
+.product-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    margin: 0 10px;
+    font-size: 0.9rem;
+}
+
+/* ==========================================
+   ESTILOS DE ILUMINACIÓN (Iguales que antes)
+   ========================================== */
+
+.product-winner-glow {
+    background-color: rgba(46, 204, 113, 0.6) !important;
+    border: 2px solid #2ecc71 !important;
+    box-shadow: 0 0 12px #2ecc71;
+    animation: none; /* Quitamos la animación de pulso para que se enfoque en el movimiento de scroll */
+    transform: scale(1.02);
+    z-index: 10;
+}
+
+.product-marked-past {
+    background-color: rgba(46, 204, 113, 0.2);
+    border-color: rgba(46, 204, 113, 0.5);
+}
+
+/* Añade o ajusta estos estilos en tu archivo ./style/BingoGalactico.css */
+
+.products-scroll-container {
+    overflow-y: auto;
+    scroll-behavior: smooth;
+    max-height: 400px; /* Ajusta según el diseño de tu panel */
+    position: relative;
+}
+
+.product-item {
+    transition: background-color 0.3s ease, transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+/* Efecto de resaltado para cuando la balota coincide con el producto */
+.product-winner-glow {
+    background-color: rgba(255, 215, 0, 0.25) !important;
+    border: 2px solid #ffd700 !important;
+    transform: scale(1.02);
+    box-shadow: 0 0 15px rgba(255, 215, 0, 0.6);
+    z-index: 10;
+}
+
+/* Productos marcados de rondas anteriores */
+.product-marked-past {
+    opacity: 0.6;
+}
+
