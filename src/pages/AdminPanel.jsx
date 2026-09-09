@@ -5,6 +5,10 @@ import ProductosBingo from "./bingoinfo/ProductosBingo";
 import InventarioGeneral from "../pages/InventarioGeneral";
 
 export default function AdminPanel() {
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [authInput, setAuthInput] = useState("");
+  const [authError, setAuthError] = useState(false);
+
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("bingo-productos");
   const [subTab, setSubTab] = useState("productos");
@@ -40,7 +44,24 @@ export default function AdminPanel() {
     setTimeout(() => setErrorAlert({ isOpen: false, message: "" }), 3500);
   };
 
+  const handleLogin = (e) => {
+    e.preventDefault();
+    if (authInput === "270523") {
+      setIsAuthenticated(true);
+      setAuthError(false);
+    } else {
+      setAuthError(true);
+      setAuthInput("");
+    }
+  };
+
+  const handleLock = () => {
+    setIsAuthenticated(false);
+    setAuthInput("");
+  };
+
   useEffect(() => {
+    if (!isAuthenticated) return;
     const timer = setTimeout(() => setIsLoading(false), 1200);
     const unsubProd = onSnapshot(collection(db, "productos"), (snapshot) => {
       setProductos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
@@ -57,7 +78,7 @@ export default function AdminPanel() {
       unsubInv();
       unsubCat();
     };
-  }, []);
+  }, [isAuthenticated]);
 
   const availableMissingCodes = useMemo(() => {
     const existingCodes = new Set(productos.map(p => String(p.codigo).padStart(2, '0')));
@@ -168,6 +189,43 @@ export default function AdminPanel() {
     }
   };
 
+  // PANTALLA DE BLOQUEO / VALIDACIÓN DE IDENTIDAD OBLIGATORIA EN CADA CARGA
+  if (!isAuthenticated) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#F4F5FB] font-sans text-[10px]">
+        <div className="bg-white p-6 rounded-2xl shadow-xl border border-[#E4E8F0] max-w-xs w-full space-y-4 text-center">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-sm mx-auto shadow-md shadow-[#7C69EF]/20">
+            CT
+          </div>
+          <div className="space-y-1">
+            <h1 className="text-xs font-black text-[#2D3142] uppercase tracking-wider">Acceso Restringido</h1>
+            <p className="text-[10px] text-[#9EA2B3]">Ingresa la clave de seguridad para visualizar el panel.</p>
+          </div>
+          <form onSubmit={handleLogin} className="space-y-3">
+            <input
+              type="password"
+              value={authInput}
+              onChange={(e) => setAuthInput(e.target.value)}
+              placeholder="Clave de acceso..."
+              className={`w-full bg-[#F4F5FB] border ${authError ? 'border-rose-500' : 'border-[#E4E8F0]'} rounded-xl px-3 py-2 text-xs font-bold text-center text-[#2D3142] focus:outline-none focus:border-[#7C69EF]`}
+              autoFocus
+              required
+            />
+            {authError && (
+              <p className="text-[9px] font-bold text-rose-500">Clave incorrecta. Intenta nuevamente.</p>
+            )}
+            <button
+              type="submit"
+              className="w-full bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold py-2 rounded-xl text-xs shadow-md shadow-[#7C69EF]/20 transition-all"
+            >
+              Verificar Identidad
+            </button>
+          </form>
+        </div>
+      </div>
+    );
+  }
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#F4F5FB]">
@@ -184,76 +242,26 @@ export default function AdminPanel() {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
       
-      {/* SIDEBAR ESCRITORIO (Oculto en móvil) */}
-      <aside className="hidden md:flex w-48 bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs">
-        <div className="p-3 border-b border-[#E4E8F0] flex items-center gap-2">
-          <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
-            CT
-          </div>
-          <div className="truncate">
-            <h1 className="text-[10px] font-extrabold text-[#2D3142] tracking-tight truncate">Carolina Torres</h1>
-            <p className="text-[7px] text-[#9EA2B3]">Admin</p>
-          </div>
-        </div>
-
-        <div className="p-2 flex flex-col gap-1">
-          <button
-            onClick={() => setActiveTab("bingo-productos")}
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-              activeTab === "bingo-productos"
-                ? 'bg-[#7C69EF] text-white shadow-2xs'
-                : 'text-[#6E7387] hover:bg-[#F4F5FB]'
-            }`}
-          >
-            <span>📦</span>
-            <span>Bingo Productos</span>
-          </button>
-
-          <button
-            onClick={() => setActiveTab("inventario-general")}
-            className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-              activeTab === "inventario-general"
-                ? 'bg-[#7C69EF] text-white shadow-2xs'
-                : 'text-[#6E7387] hover:bg-[#F4F5FB]'
-            }`}
-          >
-            <span>📋</span>
-            <span>Inventario General</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* MENÚ HAMBURGUESA DESPLEGABLE MÓVIL (Con transición profesional) */}
-      <div 
-        className={`fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex md:hidden transition-opacity duration-300 ease-in-out ${
-          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={() => setIsMobileMenuOpen(false)}
-      >
-        <div 
-          className={`w-60 bg-white h-full shadow-xl flex flex-col p-3 gap-2 transform transition-transform duration-300 ease-in-out ${
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2.5">
-            <div className="flex items-center gap-2">
-              <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
-                CT
-              </div>
-              <div>
-                <h1 className="text-[10px] font-extrabold text-[#2D3142]">Carolina Torres</h1>
-                <p className="text-[7px] text-[#9EA2B3]">Admin</p>
-              </div>
+      {/* SIDEBAR ESCRITORIO */}
+      <aside className="hidden md:flex w-48 bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs justify-between">
+        <div>
+          <div className="p-3 border-b border-[#E4E8F0] flex items-center gap-2">
+            <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
+              CT
             </div>
-            <button onClick={() => setIsMobileMenuOpen(false)} className="text-[#9EA2B3] text-xs font-bold p-1">✕</button>
+            <div className="truncate">
+              <h1 className="text-[10px] font-extrabold text-[#2D3142] tracking-tight truncate">Carolina Torres</h1>
+              <p className="text-[7px] text-[#9EA2B3]">Admin</p>
+            </div>
           </div>
 
-          <div className="flex flex-col gap-1.5 pt-2">
+          <div className="p-2 flex flex-col gap-1">
             <button
-              onClick={() => { setActiveTab("bingo-productos"); setIsMobileMenuOpen(false); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                activeTab === "bingo-productos" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+              onClick={() => setActiveTab("bingo-productos")}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
+                activeTab === "bingo-productos"
+                  ? 'bg-[#7C69EF] text-white shadow-2xs'
+                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
               }`}
             >
               <span>📦</span>
@@ -261,13 +269,85 @@ export default function AdminPanel() {
             </button>
 
             <button
-              onClick={() => { setActiveTab("inventario-general"); setIsMobileMenuOpen(false); }}
-              className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                activeTab === "inventario-general" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+              onClick={() => setActiveTab("inventario-general")}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
+                activeTab === "inventario-general"
+                  ? 'bg-[#7C69EF] text-white shadow-2xs'
+                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
               }`}
             >
               <span>📋</span>
               <span>Inventario General</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="p-3 border-t border-[#E4E8F0]">
+          <button
+            onClick={handleLock}
+            className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-1.5 px-2 rounded-md text-[9px] transition-all flex items-center justify-center gap-1"
+          >
+            <span>🔒</span> <span>Bloquear Panel</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* MENÚ HAMBURGUESA MÓVIL */}
+      <div 
+        className={`fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex md:hidden transition-opacity duration-300 ease-in-out ${
+          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+        }`}
+        onClick={() => setIsMobileMenuOpen(false)}
+      >
+        <div 
+          className={`w-60 bg-white h-full shadow-xl flex flex-col p-3 justify-between transform transition-transform duration-300 ease-in-out ${
+            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+          onClick={(e) => e.stopPropagation()}
+        >
+          <div>
+            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2.5">
+              <div className="flex items-center gap-2">
+                <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
+                  CT
+                </div>
+                <div>
+                  <h1 className="text-[10px] font-extrabold text-[#2D3142]">Carolina Torres</h1>
+                  <p className="text-[7px] text-[#9EA2B3]">Admin</p>
+                </div>
+              </div>
+              <button onClick={() => setIsMobileMenuOpen(false)} className="text-[#9EA2B3] text-xs font-bold p-1">✕</button>
+            </div>
+
+            <div className="flex flex-col gap-1.5 pt-2">
+              <button
+                onClick={() => { setActiveTab("bingo-productos"); setIsMobileMenuOpen(false); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
+                  activeTab === "bingo-productos" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+                }`}
+              >
+                <span>📦</span>
+                <span>Bingo Productos</span>
+              </button>
+
+              <button
+                onClick={() => { setActiveTab("inventario-general"); setIsMobileMenuOpen(false); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
+                  activeTab === "inventario-general" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+                }`}
+              >
+                <span>📋</span>
+                <span>Inventario General</span>
+              </button>
+            </div>
+          </div>
+
+          <div className="pt-2 border-t border-[#E4E8F0]">
+            <button
+              onClick={handleLock}
+              className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 px-2 rounded-md text-[9px] transition-all flex items-center justify-center gap-1"
+            >
+              <span>🔒</span> <span>Bloquear Panel</span>
             </button>
           </div>
         </div>
@@ -276,7 +356,7 @@ export default function AdminPanel() {
       {/* CONTENIDO CENTRAL */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         
-        {/* BARRA SUPERIOR MÓVIL (Con info de la admin y botón hamburguesa) */}
+        {/* BARRA SUPERIOR MÓVIL */}
         <div className="flex md:hidden bg-white border-b border-[#E4E8F0] px-3 py-2 items-center justify-between shrink-0 shadow-2xs">
           <div className="flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
@@ -295,7 +375,7 @@ export default function AdminPanel() {
           </button>
         </div>
 
-        {/* HEADER / TÍTULO DE LA SECCIÓN ABAJO */}
+        {/* HEADER */}
         <header className="h-9 md:h-11 bg-white border-b border-[#E4E8F0] px-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[10px] md:text-[11px] font-black text-[#2D3142] uppercase tracking-wider">
