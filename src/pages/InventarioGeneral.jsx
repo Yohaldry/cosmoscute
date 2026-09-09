@@ -193,67 +193,52 @@ const calculatedNewPrecio = costoNum > 0 && porcentajeNum < 100
   };
 
   // Guardar cambios desde el Modal de Edición Completa con compresión de imágenes
-  const handleUpdateInventario = async (e) => {
-    e.preventDefault();
-    if (!editingItemData) return;
+const handleUpdateInventario = async (e) => {
+  e.preventDefault();
+  
+  try {
+    // 1. Calculamos el precio final comercial con el porcentaje actual
+    const costoNum = Number(editingItemData.costo) || 0;
+    const porcentajeNum = Number(editingItemData.porcentajeGanancia) || 50;
+    const divisor = 1 - (porcentajeNum / 100);
+    const precioCalculado = divisor > 0 ? Math.round(costoNum / divisor) : costoNum;
 
-    try {
-      setIsUploading(true);
+    // 2. Preparamos los datos actualizados
+    let updatedData = {
+      ...editingItemData,
+      costo: costoNum,
+      udisponibles: Number(editingItemData.udisponibles) || 0,
+      porcentajeGanancia: porcentajeNum,
+      precio: precioCalculado,
+    };
 
-      const compressAndConvert = (file) => {
-        return new Promise((resolve) => {
-          if (!file) {
-            resolve(null);
-            return;
-          }
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-              const canvas = document.createElement("canvas");
-              const MAX_WIDTH = 400;
-              const scaleSize = MAX_WIDTH / img.width;
-              canvas.width = MAX_WIDTH;
-              canvas.height = img.height * scaleSize;
-              const ctx = canvas.getContext("2d");
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              resolve(canvas.toDataURL("image/jpeg", 0.7));
-            };
-          };
-          reader.onerror = () => resolve(null);
-        });
-      };
-
-      const newImgBase64 = await compressAndConvert(editFileImg);
-      const newImg1Base64 = await compressAndConvert(editFileImg1);
-
-      const costoNum = Number(editingItemData.costo) || 0;
-      const precioCalculado = costoNum / 0.50;
-
-      const docRef = doc(db, "inventario", editingItemData.id);
-      await updateDoc(docRef, {
-        nombre: editingItemData.nombre.trim(),
-        categoria: editingItemData.categoria || "General",
-        proveedor: editingItemData.proveedor,
-        costo: String(costoNum),
-        precio: precioCalculado,
-        udisponibles: String(editingItemData.udisponibles),
-        ...(newImgBase64 !== null && { img: newImgBase64 }),
-        ...(newImg1Base64 !== null && { img1: newImg1Base64 })
-      });
-
-      setIsEditModalOpen(false);
-      setEditingItemData(null);
-      triggerSuccessAlert("¡Producto de inventario actualizado exitosamente!");
-    } catch (error) {
-      console.error("Error al actualizar inventario:", error);
-      triggerErrorAlert("Error al actualizar el producto.");
-    } finally {
-      setIsUploading(false);
+    // 3. Manejo de subida de nuevas fotos si se seleccionaron
+    if (typeof editFileImg !== 'undefined' && editFileImg) {
+      const storageRef = ref(storage, `inventario/${Date.now()}_${editFileImg.name}`);
+      await uploadBytes(storageRef, editFileImg);
+      updatedData.img = await getDownloadURL(storageRef);
     }
-  };
+
+    if (typeof editFileImg1 !== 'undefined' && editFileImg1) {
+      const storageRef1 = ref(storage, `inventario/${Date.now()}_${editFileImg1.name}`);
+      await uploadBytes(storageRef1, editFileImg1);
+      updatedData.img1 = await getDownloadURL(storageRef1);
+    }
+
+    // 4. Actualización directa en Firestore
+    const itemRef = doc(db, "inventario", editingItemData.id);
+    await updateDoc(itemRef, updatedData);
+
+    // 5. Cerramos el modal y limpiamos archivos temporales
+    setIsEditModalOpen(false);
+    if (typeof setEditFileImg === 'function') setEditFileImg(null);
+    if (typeof setEditFileImg1 === 'function') setEditFileImg1(null);
+
+  } catch (error) {
+    console.error("Error al actualizar el producto:", error);
+    alert("Hubo un error al actualizar el producto.");
+  }
+};
 
   // Guardar cambios de edición en línea (Fallback por compatibilidad)
   const saveEditing = async (id) => {
@@ -913,7 +898,8 @@ const calculatedNewPrecio = costoNum > 0 && porcentajeNum < 100
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-3">
+              {/* Selector de Costo, Margen de Porcentaje y Precio Final Calculado */}
+              <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
                   <input
@@ -925,10 +911,29 @@ const calculatedNewPrecio = costoNum > 0 && porcentajeNum < 100
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1">Precio Auto-calculado</label>
+                  <label className="block font-bold text-slate-600 mb-1">% Margen Venta</label>
+                  <select
+                    value={editingItemData.porcentajeGanancia || 50}
+                    onChange={(e) => setEditingItemData({...editingItemData, porcentajeGanancia: Number(e.target.value)})}
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                  >
+                    {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
+                      <option key={p} value={p}>{p}%</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1" title="Precio calculado con base en el margen">Precio Final</label>
                   <input
                     type="text"
-                    value={`$${((Number(editingItemData.costo) || 0) / 0.50).toLocaleString()}`}
+                    value={(() => {
+                      const costoNum = Number(editingItemData.costo) || 0;
+                      const porc = Number(editingItemData.porcentajeGanancia) || 50;
+                      // Fórmula basada en tu lógica anterior donde el margen divide o ajusta el precio
+                      const divisor = 1 - (porc / 100); 
+                      const precioFinal = divisor > 0 ? costoNum / divisor : costoNum;
+                      return precioFinal ? `$${Math.round(precioFinal).toLocaleString()}` : "$0";
+                    })()}
                     disabled
                     className="w-full bg-slate-100 border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-slate-500 cursor-not-allowed"
                   />
