@@ -12,26 +12,43 @@ export default function InventarioGeneral({
 }) {
   // Estado para la barra de búsqueda
   const [searchTerm, setSearchTerm] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  
+  // Estado para controlar la apertura/cierre del Modal de "Nuevo Producto"
+  const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
-  // Estados para el formulario de nuevo producto en inventario
+  // Estados para el formulario del modal de nuevo producto
   const [nombre, setNombre] = useState("");
   const [categoria, setCategoria] = useState(categorias[0]?.nombre || "General");
-  const [precio, setPrecio] = useState("");
+  const [costo, setCosto] = useState("");
   const [stock, setStock] = useState("");
   const [portada, setPortada] = useState("");
+
+  const [fileImg, setFileImg] = useState(null);
+  const [fileImg1, setFileImg1] = useState(null);
+  const [detailImgIndex, setDetailImgIndex] = useState(0);
+
+  // Estados para el Modal de Edición Completa
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [editingItemData, setEditingItemData] = useState(null);
+  const [editFileImg, setEditFileImg] = useState(null);
+  const [editFileImg1, setEditFileImg1] = useState(null);
 
   // Control de selección múltiple con checkboxes
   const [selectedIds, setSelectedIds] = useState([]);
 
   // Control de edición en línea (Inline Editing)
   const [editingId, setEditingId] = useState(null);
-  const [editForm, setEditForm] = useState({ nombre: "", categoria: "", precio: 0, stockactual: 0 });
+  const [editForm, setEditForm] = useState({ nombre: "", categoria: "", costo: 0, stockactual: 0 });
 
   // Modal de confirmación para eliminar
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: "", isMultiple: false });
 
   // Modal del "Ojito" para ver detalles completos
   const [detailModal, setDetailModal] = useState({ isOpen: false, item: null });
+
+  // Cálculo automático del precio en tiempo real para el formulario modal
+  const calculatedNewPrecio = costo ? (Number(costo) / 0.50) : 0;
 
   // Filtrado ultra seguro con React.memo para optimizar la búsqueda en tiempo real
   const filteredInventario = React.useMemo(() => {
@@ -41,11 +58,11 @@ export default function InventarioGeneral({
     const term = searchTerm.toLowerCase().trim();
 
     return inventario.filter(item => {
-      const nombre = (item.productos || item.nombre || "").toLowerCase();
-      const categoria = (item.categoria || "").toLowerCase();
+      const nombreItem = (item.nombre || item.productos || "").toLowerCase();
+      const categoriaItem = (item.categoria || "").toLowerCase();
       const id = (item.id || "").toLowerCase();
 
-      return nombre.includes(term) || categoria.includes(term) || id.includes(term);
+      return nombreItem.includes(term) || categoriaItem.includes(term) || id.includes(term);
     });
   }, [inventario, searchTerm]);
 
@@ -66,66 +83,191 @@ export default function InventarioGeneral({
     }
   };
 
-  // Guardar nuevo producto en la colección "inventario" de Firebase
+  // Guardar nuevo producto en la colección "inventario" de Firebase con validación de campos llenos
   const handleAddInventario = async (e) => {
     e.preventDefault();
-    if (!nombre.trim()) return;
+    
+    if (!nombre.trim() || !costo || !stock) {
+      triggerErrorAlert("⚠️ Por favor completa todos los campos obligatorios (Nombre, Costo y Stock).");
+      return;
+    }
+
+    const costoNum = Number(costo);
+    if (isNaN(costoNum) || costoNum <= 0) {
+      triggerErrorAlert("⚠️ El costo ingresado no es válido.");
+      return;
+    }
+
+    const precioCalculado = costoNum / 0.50;
 
     try {
+      setIsUploading(true);
+
+      // Función para comprimir y convertir la imagen a Base64 de tamaño seguro
+      const compressAndConvert = (file) => {
+        return new Promise((resolve) => {
+          if (!file) {
+            resolve("");
+            return;
+          }
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              const MAX_WIDTH = 400; // Ancho máximo seguro para Firestore
+              const scaleSize = MAX_WIDTH / img.width;
+              canvas.width = MAX_WIDTH;
+              canvas.height = img.height * scaleSize;
+
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              
+              // Comprimir a formato JPEG con calidad del 70%
+              resolve(canvas.toDataURL("image/jpeg", 0.7));
+            };
+          };
+          reader.onerror = () => resolve("");
+        });
+      };
+
+      const imgBase64 = await compressAndConvert(fileImg);
+      const img1Base64 = await compressAndConvert(fileImg1);
+
       await addDoc(collection(db, "inventario"), {
-        productos: nombre.trim(),
+        nombre: nombre.trim(),
         categoria: categoria || "General",
-        precio: Number(precio) || 0,
-        udisponibles: String(stock) || "0",
-        uingresadas: String(stock) || "0",
+        costo: String(costoNum),
+        precio: precioCalculado,
+        udisponibles: String(stock),
+        uingresadas: String(stock),
         uvendidas: "0",
         fentrada: new Date().toLocaleDateString('es-CO'),
         fsalida: "--",
-        img: "",
-        img1: "",
-        portada: portada.trim() || ""
+        img: imgBase64,
+        img1: img1Base64,
+        portada: typeof portada !== 'undefined' ? portada.trim() || "" : ""
       });
+
+      // Limpiar formulario y estados
       setNombre("");
-      setPrecio("");
+      setCosto("");
       setStock("");
-      setPortada("");
-      triggerSuccessAlert("¡Producto guardado en el Inventario General!");
+      if (typeof setPortada === 'function') setPortada("");
+      setFileImg(null);
+      setFileImg1(null);
+      setIsAddModalOpen(false);
+
+      triggerSuccessAlert("¡Guardado exitosamente en el Inventario General!");
     } catch (error) {
       console.error("Error al guardar en inventario:", error);
+      triggerErrorAlert("Error al guardar el producto en la base de datos.");
+    } finally {
+      setIsUploading(false);
     }
   };
 
-  // Activar modo edición en línea
+  // Abrir Modal de Edición Completa
   const startEditing = (item) => {
-    setEditingId(item.id);
-    setEditForm({
-      nombre: item.productos || item.nombre || "",
-      categoria: item.categoria || "General",
-      precio: item.precio || 0,
-      stockactual: item.udisponibles ?? item.stockactual ?? 0
+    setEditingItemData({
+      ...item,
+      costo: item.costo || "",
+      udisponibles: item.udisponibles ?? item.stockactual ?? ""
     });
+    setEditFileImg(null);
+    setEditFileImg1(null);
+    setIsEditModalOpen(true);
   };
 
-  // Guardar cambios de edición en línea
+  // Guardar cambios desde el Modal de Edición Completa con compresión de imágenes
+  const handleUpdateInventario = async (e) => {
+    e.preventDefault();
+    if (!editingItemData) return;
+
+    try {
+      setIsUploading(true);
+
+      const compressAndConvert = (file) => {
+        return new Promise((resolve) => {
+          if (!file) {
+            resolve(null);
+            return;
+          }
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = (event) => {
+            const img = new Image();
+            img.src = event.target.result;
+            img.onload = () => {
+              const canvas = document.createElement("canvas");
+              const MAX_WIDTH = 400;
+              const scaleSize = MAX_WIDTH / img.width;
+              canvas.width = MAX_WIDTH;
+              canvas.height = img.height * scaleSize;
+              const ctx = canvas.getContext("2d");
+              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+              resolve(canvas.toDataURL("image/jpeg", 0.7));
+            };
+          };
+          reader.onerror = () => resolve(null);
+        });
+      };
+
+      const newImgBase64 = await compressAndConvert(editFileImg);
+      const newImg1Base64 = await compressAndConvert(editFileImg1);
+
+      const costoNum = Number(editingItemData.costo) || 0;
+      const precioCalculado = costoNum / 0.50;
+
+      const docRef = doc(db, "inventario", editingItemData.id);
+      await updateDoc(docRef, {
+        nombre: editingItemData.nombre.trim(),
+        categoria: editingItemData.categoria || "General",
+        costo: String(costoNum),
+        precio: precioCalculado,
+        udisponibles: String(editingItemData.udisponibles),
+        ...(newImgBase64 !== null && { img: newImgBase64 }),
+        ...(newImg1Base64 !== null && { img1: newImg1Base64 })
+      });
+
+      setIsEditModalOpen(false);
+      setEditingItemData(null);
+      triggerSuccessAlert("¡Producto de inventario actualizado exitosamente!");
+    } catch (error) {
+      console.error("Error al actualizar inventario:", error);
+      triggerErrorAlert("Error al actualizar el producto.");
+    } finally {
+      setIsUploading(false);
+    }
+  };
+
+  // Guardar cambios de edición en línea (Fallback por compatibilidad)
   const saveEditing = async (id) => {
     try {
+      const costoNum = Number(editForm.costo) || 0;
+      const precioCalculado = costoNum / 0.50;
+
       const docRef = doc(db, "inventario", id);
       await updateDoc(docRef, {
-        productos: editForm.nombre,
+        nombre: editForm.nombre,
         categoria: editForm.categoria,
-        precio: Number(editForm.precio) || 0,
+        costo: String(costoNum),
+        precio: precioCalculado,
         udisponibles: String(editForm.stockactual) || "0"
       });
       setEditingId(null);
       triggerSuccessAlert("¡Producto de inventario actualizado!");
     } catch (error) {
       console.error("Error al actualizar inventario:", error);
+      triggerErrorAlert("Error al actualizar el producto.");
     }
   };
 
   // Sincronización Interactiva Individual con la Tabla de Bingo
   const handleToggleBingoStatus = async (item) => {
-    const itemName = item.productos || item.nombre || "";
+    const itemName = item.nombre || item.productos || "";
     const existingInBingo = productosBingo.find(
       p => (p.nombre || "").toLowerCase().trim() === itemName.toLowerCase().trim()
     );
@@ -167,7 +309,7 @@ export default function InventarioGeneral({
     const currentBingoNames = new Set(productosBingo.map(p => (p.nombre || "").toLowerCase().trim()));
     
     const itemsNotYetInBingo = itemsToProcess.filter(item => {
-      const name = (item.productos || item.nombre || "").toLowerCase().trim();
+      const name = (item.nombre || item.productos || "").toLowerCase().trim();
       return !currentBingoNames.has(name);
     });
 
@@ -185,7 +327,7 @@ export default function InventarioGeneral({
       for (let i = 0; i < itemsNotYetInBingo.length; i++) {
         const item = itemsNotYetInBingo[i];
         const assignedCode = availableMissingCodes[i];
-        const itemName = item.productos || item.nombre || "";
+        const itemName = item.nombre || item.productos || "";
 
         await addDoc(collection(db, "productos"), {
           codigo: assignedCode,
@@ -208,23 +350,62 @@ export default function InventarioGeneral({
   // Solicitar eliminación de inventario (individual o múltiple)
   const confirmDelete = (target, isMultiple = false) => {
     if (isMultiple) {
+      // Validar si alguno de los seleccionados existe en el bingo
+      const hayEnBingo = target.some(id => {
+        const item = inventario.find(i => i.id === id);
+        if (!item) return false;
+        const itemName = (item.nombre || item.productos || "").toLowerCase().trim();
+        const bingoItem = productosBingo.find(
+          p => (p.nombre || "").toLowerCase().trim() === itemName
+        );
+        return !!bingoItem; // Retorna true si existe en el bingo
+      });
+
+      if (hayEnBingo) {
+        triggerErrorAlert("Primero saca el producto del bingo");
+        return; // Frena totalmente
+      }
+
       setDeleteModal({ isOpen: true, id: target, name: `${target.length} productos seleccionados`, isMultiple: true });
     } else {
       const item = inventario.find(i => i.id === target);
-      setDeleteModal({ isOpen: true, id: target, name: item?.productos || item?.nombre || "este producto", isMultiple: false });
+      if (!item) return;
+
+      const itemName = (item.nombre || item.productos || "").toLowerCase().trim();
+      const bingoItem = productosBingo.find(
+        p => (p.nombre || "").toLowerCase().trim() === itemName
+      );
+
+      // 👉 REGLA ESTRICTA: Si el producto está registrado en el bingo, se bloquea la eliminación
+      if (bingoItem) {
+        triggerErrorAlert("Primero saca el producto del bingo");
+        return; // Frena y no abre el modal
+      }
+
+      setDeleteModal({ isOpen: true, id: target, name: item?.nombre || item?.productos || "este producto", isMultiple: false });
     }
   };
 
-  const executeDelete = async () => {
+ const executeDelete = async () => {
     try {
       if (deleteModal.isMultiple) {
+        // Eliminar múltiples en Firestore
         for (const id of deleteModal.id) {
           await deleteDoc(doc(db, "inventario", id));
         }
+        
+        // 👉 ACTUALIZAR EL ESTADO LOCAL DE LA TABLA (MÚLTIPLE)
+        setInventario(prevInventario => prevInventario.filter(item => !deleteModal.id.includes(item.id)));
+        
         setSelectedIds([]);
         triggerSuccessAlert("Productos seleccionados eliminados del inventario");
       } else {
+        // Eliminar individual en Firestore
         await deleteDoc(doc(db, "inventario", deleteModal.id));
+        
+        // 👉 ACTUALIZAR EL ESTADO LOCAL DE LA TABLA (INDIVIDUAL)
+        setInventario(prevInventario => prevInventario.filter(item => item.id !== deleteModal.id));
+        
         triggerSuccessAlert("Producto eliminado del inventario");
       }
     } catch (error) {
@@ -237,69 +418,29 @@ export default function InventarioGeneral({
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white">
       
-      {/* SECCIÓN SUPERIOR: FORMULARIO Y BARRA DE BÚSQUEDA */}
-      <div className="p-4 border-b border-[#E4E8F0] bg-[#FAFBFC] space-y-3">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-          <h3 className="text-[11px] font-black text-[#2D3142] uppercase tracking-wider">
-            Guardar Nuevo Producto en Inventario General
-          </h3>
-          
-          {/* BARRA DE BÚSQUEDA */}
-          <div className="w-full sm:w-72">
-            <input 
-              type="text"
-              placeholder="🔍 Buscar por nombre, categoría o ID..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-1.5 text-[11px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] shadow-2xs"
-            />
+      {/* SECCIÓN SUPERIOR: BOTÓN DE APERTURA DE MODAL Y BARRA DE BÚSQUEDA */}
+      <div className="p-4 border-b border-[#E4E8F0] bg-[#FAFBFC] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsAddModalOpen(true)}
+            className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md shadow-[#7C69EF]/20 transition-all flex items-center gap-2 cursor-pointer"
+          >
+            <span className="text-sm font-black">+</span> Guardar Nuevo Producto
+          </button>
+          <div className="text-[10px] font-bold text-[#9EA2B3]">
+            Total registros: {(inventario || []).length}
           </div>
         </div>
-
-        <form onSubmit={handleAddInventario} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-2.5">
+          
+        {/* BARRA DE BÚSQUEDA */}
+        <div className="w-full sm:w-80">
           <input 
-            type="text" 
-            placeholder="Nombre del producto..."
-            value={nombre}
-            onChange={(e) => setNombre(e.target.value)}
-            className="bg-white border border-[#E4E8F0] rounded-xl px-3 py-1.5 text-[11px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-            required
+            type="text"
+            placeholder="🔍 Buscar por nombre, categoría o ID..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-[11px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] shadow-2xs"
           />
-          <select 
-            value={categoria}
-            onChange={(e) => setCategoria(e.target.value)}
-            className="bg-white border border-[#E4E8F0] rounded-xl px-3 py-1.5 text-[11px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-          >
-            <option value="General">General</option>
-            {categorias.map(cat => (
-              <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
-            ))}
-          </select>
-          <input 
-            type="number" 
-            placeholder="Precio ($)"
-            value={precio}
-            onChange={(e) => setPrecio(e.target.value)}
-            className="bg-white border border-[#E4E8F0] rounded-xl px-3 py-1.5 text-[11px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-          />
-          <input 
-            type="number" 
-            placeholder="Stock Actual"
-            value={stock}
-            onChange={(e) => setStock(e.target.value)}
-            className="bg-white border border-[#E4E8F0] rounded-xl px-3 py-1.5 text-[11px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-          />
-          <button 
-            type="submit"
-            className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-3 py-1.5 rounded-xl text-[11px] shadow-sm shadow-[#7C69EF]/20 transition-all flex items-center justify-center gap-1.5"
-          >
-            <span>+</span> Guardar Producto
-          </button>
-        </form>
-
-        <div className="flex justify-between items-center text-[10px] font-bold text-[#9EA2B3] pt-1">
-          <span>Total en inventario: {(inventario || []).length} registros</span>
-          {searchTerm && <span>Filtrados: {filteredInventario.length} resultados</span>}
         </div>
       </div>
 
@@ -342,6 +483,7 @@ export default function InventarioGeneral({
               <th className="py-2.5 px-2.5 bg-[#F4F5FB]">ID Único</th>
               <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Producto</th>
               <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Categoría</th>
+              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Costo</th>
               <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Precio</th>
               <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Stock (Disp)</th>
               <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Ingresadas</th>
@@ -353,13 +495,13 @@ export default function InventarioGeneral({
           <tbody className="divide-y divide-[#F0F2F5]">
             {filteredInventario.length === 0 ? (
               <tr>
-                <td colSpan="10" className="text-center py-12 text-[#9EA2B3] text-[11px]">
+                <td colSpan="11" className="text-center py-12 text-[#9EA2B3] text-[11px]">
                   No se encontraron productos coincidentes en el inventario.
                 </td>
               </tr>
             ) : (
               filteredInventario.map((item) => {
-                const itemName = item.productos || item.nombre || "";
+                const itemName = item.nombre || item.productos || "";
                 const isAssignedToBingo = productosBingo.find(
                   p => (p.nombre || "").toLowerCase().trim() === itemName.toLowerCase().trim()
                 );
@@ -369,6 +511,9 @@ export default function InventarioGeneral({
                 const rowStyle = isAssignedToBingo 
                   ? 'bg-emerald-50/70 hover:bg-emerald-50 border-l-3 border-l-emerald-500 shadow-2xs' 
                   : 'bg-white hover:bg-[#FAFBFC] border-l-3 border-l-transparent';
+
+                const editCostoNum = Number(editForm.costo) || 0;
+                const editPrecioCalculado = editCostoNum / 0.50;
 
                 return (
                   <tr key={item.id} className={`transition-all ${rowStyle}`}>
@@ -418,14 +563,24 @@ export default function InventarioGeneral({
                       )}
                     </td>
 
-                    <td className="py-2 px-2.5 font-extrabold text-[#2D3142]">
+                    <td className="py-2 px-2.5 font-bold text-[#2D3142]">
                       {isEditing ? (
                         <input 
                           type="number"
-                          value={editForm.precio}
-                          onChange={(e) => setEditForm({...editForm, precio: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-1.5 py-0.5 text-[11px] w-16 font-bold"
+                          value={editForm.costo}
+                          onChange={(e) => setEditForm({...editForm, costo: e.target.value})}
+                          className="bg-white border border-[#7C69EF] rounded-md px-1.5 py-0.5 text-[11px] w-20 font-bold"
                         />
+                      ) : (
+                        `$${Number(item.costo || 0).toLocaleString()}`
+                      )}
+                    </td>
+
+                    <td className="py-2 px-2.5 font-extrabold text-[#7C69EF]">
+                      {isEditing ? (
+                        <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-600 text-[11px] font-bold inline-block" title="Calculado automáticamente: Costo / 0.50">
+                          ${editPrecioCalculado.toLocaleString()}
+                        </span>
                       ) : (
                         `$${Number(item.precio || 0).toLocaleString()}`
                       )}
@@ -452,7 +607,6 @@ export default function InventarioGeneral({
                       {item.uvendidas ?? "0"}
                     </td>
 
-                    {/* Estado Visual en Bingo con botones verde (en bingo) o rojo (fuera de bingo) */}
                     <td className="py-2 px-2.5 text-center">
                       {isAssignedToBingo ? (
                         <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide shadow-2xs">
@@ -531,80 +685,409 @@ export default function InventarioGeneral({
         </table>
       </div>
 
-      {/* MODAL DETALLES */}
-      {detailModal.isOpen && detailModal.item && (
+      {/* MODAL PARA AGREGAR NUEVO PRODUCTO */}
+      {isAddModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-[#E4E8F0] space-y-3 text-xs">
-            <div className="flex items-center justify-between border-b pb-2.5">
-              <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-1.5">
-                <span>👁️</span> Detalle Completo
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
+                <span>📦</span> Registrar Nuevo Producto en Inventario
               </h3>
-              <button 
-                onClick={() => setDetailModal({ isOpen: false, item: null })}
+              <button
+                onClick={() => setIsAddModalOpen(false)}
                 className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
               >
                 ✕
               </button>
             </div>
 
-            <div className="space-y-2.5 text-[11px]">
-              <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-100 space-y-1.5">
-                <div><span className="font-bold text-slate-500">Nombre:</span> <span className="text-[#2D3142] font-bold">{detailModal.item.productos || detailModal.item.nombre}</span></div>
-                <div><span className="font-bold text-slate-500">Categoría:</span> <span className="text-[#2D3142] font-semibold">{detailModal.item.categoria || "General"}</span></div>
-                <div><span className="font-bold text-slate-500">Precio:</span> <span className="text-[#2D3142] font-extrabold">${Number(detailModal.item.precio || 0).toLocaleString()}</span></div>
+            <form onSubmit={handleAddInventario} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-600 mb-1">Nombre del producto *</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Cartón de Bingo Premium"
+                  value={nombre}
+                  onChange={(e) => setNombre(e.target.value)}
+                  className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                  required
+                />
               </div>
 
-              <div className="grid grid-cols-2 gap-2">
-                <div className="bg-[#F4F5FB] p-2.5 rounded-xl border border-[#E4E8F0]">
-                  <span className="block font-bold text-slate-500 text-[9px] uppercase">Fecha de Entrada</span>
-                  <span className="text-[#7C69EF] font-black text-xs">{detailModal.item.fentrada || "No registrada"}</span>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">Categoría</label>
+                  <select
+                    value={categoria}
+                    onChange={(e) => setCategoria(e.target.value)}
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                  >
+                    <option value="General">General</option>
+                    {categorias.map(cat => (
+                      <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                    ))}
+                  </select>
                 </div>
-                <div className="bg-[#F4F5FB] p-2.5 rounded-xl border border-[#E4E8F0]">
-                  <span className="block font-bold text-slate-500 text-[9px] uppercase">Fecha de Salida</span>
-                  <span className="text-amber-600 font-black text-xs">{detailModal.item.fsalida || "Pendiente / Activo"}</span>
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">Stock Inicial *</label>
+                  <input
+                    type="number"
+                    placeholder="Ej. 50"
+                    value={stock}
+                    onChange={(e) => setStock(e.target.value)}
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                    required
+                  />
                 </div>
               </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
+                  <input
+                    type="number"
+                    placeholder="Ej. 10000"
+                    value={costo}
+                    onChange={(e) => setCosto(e.target.value)}
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1" title="Costo / 0.50">Precio Auto-calculado</label>
+                  <input
+                    type="text"
+                    value={calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0"}
+                    disabled
+                    className="w-full bg-slate-100 border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                  <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img) *</label>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setFileImg(e.target.files[0])}
+                    className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+                    required
+                  />
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                  <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1) *</label>
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setFileImg1(e.target.files[0])}
+                    className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsAddModalOpen(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-[#7C69EF]/20 transition-all disabled:opacity-50"
+                >
+                  {isUploading ? "Subiendo fotos y guardando..." : "Guardar Producto"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL PARA EDITAR PRODUCTO */}
+      {isEditModalOpen && editingItemData && (
+        <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
+          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn">
+            <div className="flex items-center justify-between border-b pb-3">
+              <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
+                <span>✏️</span> Editar Producto en Inventario
+              </h3>
+              <button
+                type="button"
+                onClick={() => setIsEditModalOpen(false)}
+                className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
+              >
+                ✕
+              </button>
             </div>
 
-            <div className="pt-1">
+            <form onSubmit={handleUpdateInventario} className="space-y-3 text-xs">
+              <div>
+                <label className="block font-bold text-slate-600 mb-1">Nombre del producto *</label>
+                <input
+                  type="text"
+                  value={editingItemData.nombre}
+                  onChange={(e) => setEditingItemData({...editingItemData, nombre: e.target.value})}
+                  className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">Categoría</label>
+                  <select
+                    value={editingItemData.categoria}
+                    onChange={(e) => setEditingItemData({...editingItemData, categoria: e.target.value})}
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                  >
+                    <option value="General">General</option>
+                    {categorias.map(cat => (
+                      <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">Stock Disponible *</label>
+                  <input
+                    type="number"
+                    value={editingItemData.udisponibles}
+                    onChange={(e) => setEditingItemData({...editingItemData, udisponibles: e.target.value})}
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
+                  <input
+                    type="number"
+                    value={editingItemData.costo}
+                    onChange={(e) => setEditingItemData({...editingItemData, costo: e.target.value})}
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block font-bold text-slate-500 mb-1">Precio Auto-calculado</label>
+                  <input
+                    type="text"
+                    value={`$${((Number(editingItemData.costo) || 0) / 0.50).toLocaleString()}`}
+                    disabled
+                    className="w-full bg-slate-100 border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-slate-500 cursor-not-allowed"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-3 pt-1">
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                  <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img)</label>
+                  {editingItemData.img && <img src={editingItemData.img} alt="Actual" className="w-10 h-10 object-cover rounded-md mb-1 border" />}
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setEditFileImg(e.target.files[0])}
+                    className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+                  />
+                </div>
+                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+                  <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
+                  {editingItemData.img1 && <img src={editingItemData.img1} alt="Actual 1" className="w-10 h-10 object-cover rounded-md mb-1 border" />}
+                  <input 
+                    type="file" 
+                    accept="image/*"
+                    onChange={(e) => setEditFileImg1(e.target.files[0])}
+                    className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                <button
+                  type="button"
+                  onClick={() => setIsEditModalOpen(false)}
+                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isUploading}
+                  className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-[#7C69EF]/20 transition-all disabled:opacity-50"
+                >
+                  {isUploading ? "Actualizando..." : "Guardar Cambios"}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DETALLES (ESTILO ANTERIOR + SCROLL Y ALTURA MÁXIMA PARA EVITAR RECORTE) */}
+     {/* MODAL DETALLES CORREGIDO */}
+    {/* MODAL DETALLES DEFINITIVO */}
+      {detailModal.isOpen && detailModal.item && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+          <div className="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-slate-100 space-y-3 animate-fadeIn">
+            
+            {/* Cabecera del Modal */}
+            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+              <div className="flex items-center gap-2">
+                <span className="p-1.5 bg-indigo-50 text-[#7C69EF] rounded-xl text-xs font-black">📦</span>
+                <div>
+                  <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Detalles del Producto</h3>
+                  <p className="text-[10px] font-bold text-slate-400 font-mono">ID: {detailModal.item.id}</p>
+                </div>
+              </div>
               <button 
                 onClick={() => setDetailModal({ isOpen: false, item: null })}
-                className="w-full bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold py-2 px-4 rounded-xl text-xs transition-all shadow-md shadow-[#7C69EF]/20"
+                className="text-slate-400 hover:text-slate-700 font-bold text-xs p-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer"
+              >
+                ✕
+              </button>
+            </div>
+
+            {/* Contenido principal compacto */}
+            <div className="space-y-2.5 text-xs">
+              
+              {/* Carrusel o Mensaje de Sin Imágenes */}
+              {(() => {
+                const images = [detailModal.item.img, detailModal.item.img1].filter(Boolean);
+                
+                if (images.length > 0) {
+                  return (
+                    <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100 flex items-center gap-3">
+                      <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-xs bg-white flex items-center justify-center shrink-0">
+                        <img 
+                          src={images[detailImgIndex] || images[0]} 
+                          alt="Vista previa" 
+                          className="w-full h-full object-contain"
+                          loading="lazy"
+                          onError={(e) => { e.target.style.display = 'none'; }}
+                        />
+                      </div>
+                      <div className="flex flex-col justify-center gap-1 flex-1">
+                        <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400">Multimedia ({images.length})</span>
+                        {images.length > 1 ? (
+                          <div className="flex gap-1.5">
+                            {images.map((imgSrc, idx) => (
+                              <button
+                                key={idx}
+                                onClick={() => setDetailImgIndex(idx)}
+                                className={`w-8 h-8 rounded-lg overflow-hidden border transition-all cursor-pointer bg-white ${detailImgIndex === idx ? 'border-[#7C69EF] ring-2 ring-[#7C69EF]/20 scale-105' : 'border-slate-200 opacity-60'}`}
+                              >
+                                <img src={imgSrc} alt={`Min ${idx}`} className="w-full h-full object-contain" />
+                              </button>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className="text-[10px] font-medium text-slate-500">1 imagen disponible</p>
+                        )}
+                      </div>
+                    </div>
+                  );
+                } else {
+                  return (
+                    <div className="bg-slate-50/70 p-3 rounded-2xl border border-dashed border-slate-200 flex items-center justify-center gap-2 text-slate-400">
+                      <span className="text-base">🖼️</span>
+                      <span className="text-[11px] font-bold">Sin imágenes registradas</span>
+                    </div>
+                  );
+                }
+              })()}
+
+              {/* Nombre y Categoría */}
+              <div className="bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-100 flex items-center justify-between">
+                <div>
+                  <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">Producto</span>
+                  <p className="text-xs font-black text-slate-800">{detailModal.item.nombre || detailModal.item.productos}</p>
+                </div>
+                <span className="bg-indigo-50 text-[#7C69EF] px-2 py-0.5 rounded-md text-[10px] font-extrabold">
+                  {detailModal.item.categoria || "General"}
+                </span>
+              </div>
+
+              {/* Métricas en Grid de 2x2 */}
+              <div className="grid grid-cols-2 gap-2">
+                <div className="bg-emerald-50/60 border border-emerald-100 p-2 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/80 block">Costo</span>
+                  <p className="font-extrabold text-emerald-700 text-xs">${Number(detailModal.item.costo || 0).toLocaleString()}</p>
+                </div>
+
+                <div className="bg-indigo-50/60 border border-indigo-100 p-2 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-[#7C69EF]/80 block">Precio Venta</span>
+                  <p className="font-extrabold text-[#7C69EF] text-xs">${Number(detailModal.item.precio || 0).toLocaleString()}</p>
+                </div>
+
+                <div className="bg-sky-50/60 border border-sky-100 p-2 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-sky-600/80 block">Stock Disponible</span>
+                  <p className="font-extrabold text-sky-700 text-xs">{detailModal.item.udisponibles ?? detailModal.item.stockactual ?? 0} unids</p>
+                </div>
+
+                <div className="bg-amber-50/60 border border-amber-100 p-2 rounded-xl">
+                  <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600/80 block">Vendidas</span>
+                  <p className="font-extrabold text-amber-700 text-xs">{detailModal.item.uvendidas ?? "0"} unids</p>
+                </div>
+              </div>
+
+              {/* Fechas e Ingresos */}
+              <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 grid grid-cols-3 text-center text-[10px]">
+                <div>
+                  <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">Ingresadas</span>
+                  <strong className="text-slate-700">{detailModal.item.uingresadas ?? "0"}</strong>
+                </div>
+                <div className="border-x border-slate-200/60 px-1">
+                  <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">F. Entrada</span>
+                  <strong className="text-slate-700">{detailModal.item.fentrada ?? "--"}</strong>
+                </div>
+                <div>
+                  <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">Salida</span>
+                  <strong className="text-slate-700">{detailModal.item.fsalida ?? "--"}</strong>
+                </div>
+              </div>
+
+              {/* Botón Cerrar */}
+              <button
+                onClick={() => setDetailModal({ isOpen: false, item: null })}
+                className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs transition-all cursor-pointer mt-1"
               >
                 Cerrar Ventana
               </button>
+
             </div>
           </div>
         </div>
       )}
 
-      {/* MODAL ELIMINAR */}
+      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-[#E4E8F0] space-y-3 text-center">
-            <div className="w-10 h-10 bg-rose-50 text-rose-500 rounded-2xl flex items-center justify-center mx-auto text-lg font-black shadow-xs">
-              ⚠️
-            </div>
+          <div className="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl border border-[#E4E8F0] space-y-4 text-center animate-fadeIn">
+            <div className="text-3xl">⚠️</div>
             <div className="space-y-1">
-              <h3 className="text-sm font-black text-[#2D3142]">¿Estás seguro?</h3>
-              <p className="text-[11px] text-[#9EA2B3]">
-                Estás a punto de eliminar <span className="font-bold text-[#2D3142]">{deleteModal.name}</span> del inventario general.
+              <h4 className="text-xs font-black text-[#2D3142] uppercase tracking-wider">¿Estás seguro?</h4>
+              <p className="text-[11px] text-slate-500">
+                Estás a punto de eliminar a <strong className="text-slate-700">{deleteModal.name}</strong> del inventario. Esta acción no se puede deshacer.
               </p>
             </div>
-            <div className="flex gap-2.5 pt-2">
-              <button 
-                type="button"
+            <div className="flex items-center justify-center gap-2 pt-2">
+              <button
                 onClick={() => setDeleteModal({ isOpen: false, id: null, name: "", isMultiple: false })}
-                className="flex-1 bg-[#F4F5FB] hover:bg-[#E4E8F0] text-[#2D3142] font-bold py-2 px-3 rounded-xl text-xs transition-all"
+                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs flex-1"
               >
                 Cancelar
               </button>
-              <button 
-                type="button"
+              <button
                 onClick={executeDelete}
-                className="flex-1 bg-rose-600 hover:bg-rose-700 text-white font-bold py-2 px-3 rounded-xl text-xs transition-all shadow-md shadow-rose-600/20"
+                className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex-1 shadow-md shadow-rose-600/20"
               >
-                Sí, eliminar
+                Eliminar
               </button>
             </div>
           </div>
