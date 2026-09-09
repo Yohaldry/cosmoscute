@@ -14,6 +14,8 @@ export default function InventarioGeneral({
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   
+  const [proveedor, setProveedor] = useState("");
+
   // Estado para controlar la apertura/cierre del Modal de "Nuevo Producto"
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
@@ -139,6 +141,7 @@ export default function InventarioGeneral({
       await addDoc(collection(db, "inventario"), {
         nombre: nombre.trim(),
         categoria: categoria || "General",
+        proveedor: proveedor,
         costo: String(costoNum),
         precio: precioCalculado,
         udisponibles: String(stock),
@@ -225,6 +228,7 @@ export default function InventarioGeneral({
       await updateDoc(docRef, {
         nombre: editingItemData.nombre.trim(),
         categoria: editingItemData.categoria || "General",
+        proveedor: editingItemData.proveedor,
         costo: String(costoNum),
         precio: precioCalculado,
         udisponibles: String(editingItemData.udisponibles),
@@ -714,6 +718,18 @@ export default function InventarioGeneral({
                 />
               </div>
 
+              <div>
+                <label className="block font-bold text-slate-600 mb-1">Proveedor *</label>
+                <input
+                  type="text"
+                  placeholder="Ej. Proveedor Principal S.A.S."
+                  value={proveedor}
+                  onChange={(e) => setProveedor(e.target.value)}
+                  className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                  required
+                />
+              </div>
+
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">Categoría</label>
@@ -782,7 +798,7 @@ export default function InventarioGeneral({
                     accept="image/*"
                     onChange={(e) => setFileImg1(e.target.files[0])}
                     className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
-                    required
+                  
                   />
                 </div>
               </div>
@@ -810,7 +826,7 @@ export default function InventarioGeneral({
 
       {/* MODAL PARA EDITAR PRODUCTO */}
       {isEditModalOpen && editingItemData && (
-        <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
+       <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
@@ -832,6 +848,17 @@ export default function InventarioGeneral({
                   type="text"
                   value={editingItemData.nombre}
                   onChange={(e) => setEditingItemData({...editingItemData, nombre: e.target.value})}
+                  className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="block font-bold text-slate-600 mb-1">Proveedor *</label>
+                <input
+                  type="text"
+                  value={editingItemData.proveedor || ""}
+                  onChange={(e) => setEditingItemData({...editingItemData, proveedor: e.target.value})}
                   className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
                   required
                 />
@@ -937,12 +964,19 @@ export default function InventarioGeneral({
           <div className="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-slate-100 space-y-3 animate-fadeIn">
             
             {/* Cabecera del Modal */}
-            <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
+         <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <span className="p-1.5 bg-indigo-50 text-[#7C69EF] rounded-xl text-xs font-black">📦</span>
                 <div>
                   <h3 className="text-xs font-black text-slate-800 uppercase tracking-wider">Detalles del Producto</h3>
-                  <p className="text-[10px] font-bold text-slate-400 font-mono">ID: {detailModal.item.id}</p>
+                  <p className="text-[10px] font-bold text-slate-400 font-mono flex items-center gap-1.5">
+                    <span>ID: {detailModal.item.id}</span>
+                    {detailModal.item.proveedor && (
+                      <span className="bg-[#7C69EF]/10 text-[#7C69EF] px-1.5 py-0.5 rounded-md font-semibold">
+                        • Proveedor &gt; {detailModal.item.proveedor}
+                      </span>
+                    )}
+                  </p>
                 </div>
               </div>
               <button 
@@ -1067,7 +1101,7 @@ export default function InventarioGeneral({
 
       {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
       {deleteModal.isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
+       <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl border border-[#E4E8F0] space-y-4 text-center animate-fadeIn">
             <div className="text-3xl">⚠️</div>
             <div className="space-y-1">
@@ -1084,7 +1118,22 @@ export default function InventarioGeneral({
                 Cancelar
               </button>
               <button
-                onClick={executeDelete}
+                onClick={async () => {
+                  try {
+                    if (deleteModal.isMultiple) {
+                      for (const id of deleteModal.id) {
+                        await deleteDoc(doc(db, "inventario", id));
+                      }
+                    } else {
+                      await deleteDoc(doc(db, "inventario", deleteModal.id));
+                    }
+                    setDeleteModal({ isOpen: false, id: null, name: "", isMultiple: false });
+                    triggerSuccessAlert("Producto eliminado");
+                  } catch (error) {
+                    console.error("Error al eliminar:", error);
+                    triggerErrorAlert("No se pudo eliminar el producto");
+                  }
+                }}
                 className="bg-rose-600 hover:bg-rose-700 text-white font-bold px-4 py-2 rounded-xl text-xs flex-1 shadow-md shadow-rose-600/20"
               >
                 Eliminar
