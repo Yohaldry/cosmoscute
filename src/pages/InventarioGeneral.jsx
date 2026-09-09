@@ -468,28 +468,28 @@ export default function InventarioGeneral({
       )}
 
       {/* TABLA PRINCIPAL */}
-      <div className="flex-1 overflow-y-auto">
-        <table className="w-full text-left border-collapse text-[11px] relative">
+     <div className="flex-1 overflow-y-auto overflow-x-auto">
+        <table className="w-full text-left border-collapse text-[10px] sm:text-[11px] relative whitespace-nowrap sm:whitespace-normal">
           <thead className="sticky top-0 z-10 bg-[#F4F5FB]">
-            <tr className="border-b border-[#E4E8F0] text-[#9EA2B3] uppercase text-[9px] font-black tracking-wider">
-              <th className="py-2.5 px-2 bg-[#F4F5FB] w-8 text-center">
+            <tr className="border-b border-[#E4E8F0] text-[#9EA2B3] uppercase text-[8px] sm:text-[9px] font-black tracking-wider">
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2 bg-[#F4F5FB] w-6 sm:w-8 text-center">
                 <input 
                   type="checkbox"
                   onChange={handleSelectAll}
                   checked={filteredInventario.length > 0 && selectedIds.length === filteredInventario.length}
-                  className="rounded accent-[#7C69EF] cursor-pointer w-3.5 h-3.5"
+                  className="rounded accent-[#7C69EF] cursor-pointer w-3 h-3 sm:w-3.5 sm:h-3.5"
                 />
               </th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">ID Único</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Producto</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Categoría</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Costo</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Precio</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Stock (Disp)</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Ingresadas</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB]">Vendidas</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB] text-center">Estado en Bingo</th>
-              <th className="py-2.5 px-2.5 bg-[#F4F5FB] text-center">Acciones / Sincronización</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">ID Único</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Producto</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Categoría</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Costo</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Precio</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Stock (Disp)</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Ingresadas</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Vendidas</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB] text-center">Estado en Bingo</th>
+              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB] text-center">Acciones / Sincronización</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#F0F2F5]">
@@ -518,38 +518,38 @@ export default function InventarioGeneral({
                 return (
                   <tr key={item.id} className={`transition-all ${rowStyle}`}>
                     
-                    <td className="py-2 px-2 text-center">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2 text-center">
                       <input 
                         type="checkbox"
                         checked={isSelected}
                         onChange={() => handleSelectOne(item.id)}
-                        className="rounded accent-[#7C69EF] cursor-pointer w-3.5 h-3.5"
+                        className="rounded accent-[#7C69EF] cursor-pointer w-3 h-3 sm:w-3.5 sm:h-3.5"
                       />
                     </td>
 
-                    <td className="py-2 px-2.5 font-mono text-[9px] text-[#9EA2B3]" title={item.id}>
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-mono text-[8px] sm:text-[9px] text-[#9EA2B3]" title={item.id}>
                       {item.id.substring(0, 6)}...
                     </td>
 
-                    <td className="py-2 px-2.5 font-bold text-[#2D3142]">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-[#2D3142]">
                       {isEditing ? (
                         <input 
                           type="text"
                           value={editForm.nombre}
                           onChange={(e) => setEditForm({...editForm, nombre: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-2 py-0.5 text-[11px] w-full font-bold text-[#2D3142] focus:outline-none"
+                          className="bg-white border border-[#7C69EF] rounded-md px-1.5 py-0.5 text-[10px] sm:text-[11px] w-full font-bold text-[#2D3142] focus:outline-none"
                         />
                       ) : (
                         itemName
                       )}
                     </td>
 
-                    <td className="py-2 px-2.5">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
                       {isEditing ? (
                         <select 
                           value={editForm.categoria}
                           onChange={(e) => setEditForm({...editForm, categoria: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-1.5 py-0.5 text-[10px] font-bold"
+                          className="bg-white border border-[#7C69EF] rounded-md px-1 py-0.5 text-[9px] sm:text-[10px] font-bold"
                         >
                           <option value="General">General</option>
                           {categorias.map(cat => (
@@ -557,28 +557,28 @@ export default function InventarioGeneral({
                           ))}
                         </select>
                       ) : (
-                        <span className="bg-[#F4F5FB] px-2 py-0.5 rounded-md text-[#6E7387] font-semibold text-[10px]">
+                        <span className="bg-[#F4F5FB] px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-md text-[#6E7387] font-semibold text-[9px] sm:text-[10px]">
                           {item.categoria || "General"}
                         </span>
                       )}
                     </td>
 
-                    <td className="py-2 px-2.5 font-bold text-[#2D3142]">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-[#2D3142]">
                       {isEditing ? (
                         <input 
                           type="number"
                           value={editForm.costo}
                           onChange={(e) => setEditForm({...editForm, costo: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-1.5 py-0.5 text-[11px] w-20 font-bold"
+                          className="bg-white border border-[#7C69EF] rounded-md px-1 py-0.5 text-[10px] sm:text-[11px] w-16 sm:w-20 font-bold"
                         />
                       ) : (
                         `$${Number(item.costo || 0).toLocaleString()}`
                       )}
                     </td>
 
-                    <td className="py-2 px-2.5 font-extrabold text-[#7C69EF]">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-extrabold text-[#7C69EF]">
                       {isEditing ? (
-                        <span className="bg-slate-100 border border-slate-200 px-2 py-0.5 rounded text-slate-600 text-[11px] font-bold inline-block" title="Calculado automáticamente: Costo / 0.50">
+                        <span className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 text-[10px] sm:text-[11px] font-bold inline-block" title="Calculado automáticamente: Costo / 0.50">
                           ${editPrecioCalculado.toLocaleString()}
                         </span>
                       ) : (
@@ -586,52 +586,52 @@ export default function InventarioGeneral({
                       )}
                     </td>
 
-                    <td className="py-2 px-2.5 font-bold text-[#6E7387]">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-[#6E7387]">
                       {isEditing ? (
                         <input 
                           type="number"
                           value={editForm.stockactual}
                           onChange={(e) => setEditForm({...editForm, stockactual: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-1.5 py-0.5 text-[11px] w-14 font-bold"
+                          className="bg-white border border-[#7C69EF] rounded-md px-1 py-0.5 text-[10px] sm:text-[11px] w-12 sm:w-14 font-bold"
                         />
                       ) : (
                         item.udisponibles ?? item.stockactual ?? 0
                       )}
                     </td>
 
-                    <td className="py-2 px-2.5 font-medium text-slate-600">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-medium text-slate-600">
                       {item.uingresadas ?? "0"}
                     </td>
 
-                    <td className="py-2 px-2.5 font-medium text-slate-600">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-medium text-slate-600">
                       {item.uvendidas ?? "0"}
                     </td>
 
-                    <td className="py-2 px-2.5 text-center">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-center">
                       {isAssignedToBingo ? (
-                        <span className="inline-flex items-center gap-1 bg-emerald-100 text-emerald-800 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide shadow-2xs">
+                        <span className="inline-flex items-center gap-0.5 sm:gap-1 bg-emerald-100 text-emerald-800 px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-wide shadow-2xs">
                           <span>🟢</span> {isAssignedToBingo.codigo}
                         </span>
                       ) : (
-                        <span className="inline-flex items-center gap-1 bg-rose-100 text-rose-800 px-2.5 py-0.5 rounded-full text-[10px] font-black tracking-wide shadow-2xs">
+                        <span className="inline-flex items-center gap-0.5 sm:gap-1 bg-rose-100 text-rose-800 px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-wide shadow-2xs">
                           <span>🔴</span> —
                         </span>
                       )}
                     </td>
 
-                    <td className="py-2 px-2.5">
-                      <div className="flex items-center justify-center gap-1">
+                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
+                      <div className="flex items-center justify-center gap-0.5 sm:gap-1">
                         {isEditing ? (
                           <>
                             <button 
                               onClick={() => saveEditing(item.id)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-2 py-0.5 rounded text-[10px] shadow-2xs"
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-[9px] sm:text-[10px] shadow-2xs"
                             >
                               OK
                             </button>
                             <button 
                               onClick={() => setEditingId(null)}
-                              className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-2 py-0.5 rounded text-[10px]"
+                              className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-[9px] sm:text-[10px]"
                             >
                               ✕
                             </button>
@@ -648,7 +648,7 @@ export default function InventarioGeneral({
 
                             <button
                               onClick={() => handleToggleBingoStatus(item)}
-                              className={`px-2 py-0.5 rounded-lg font-black text-[9px] shadow-2xs transition-all ${
+                              className={`px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-lg font-black text-[8px] sm:text-[9px] shadow-2xs transition-all ${
                                 isAssignedToBingo
                                   ? 'bg-rose-100 hover:bg-rose-200 text-rose-700 border border-rose-300'
                                   : 'bg-[#7C69EF] hover:bg-[#6c59db] text-white'
