@@ -506,9 +506,12 @@ export default function InventarioGeneral({
             ) : (
               filteredInventario.map((item) => {
                 const itemName = item.nombre || item.productos || "";
-                const isAssignedToBingo = productosBingo.find(
-                  p => (p.nombre || "").toLowerCase().trim() === itemName.toLowerCase().trim()
-                );
+                
+                // Validación segura para evitar que falle si productosBingo no es un array
+                const isAssignedToBingo = Array.isArray(productosBingo) 
+                  ? productosBingo.find(p => (p?.nombre || "").toLowerCase().trim() === itemName.toLowerCase().trim())
+                  : null;
+
                 const isSelected = selectedIds.includes(item.id);
                 const isEditing = editingId === item.id;
 
@@ -532,7 +535,7 @@ export default function InventarioGeneral({
                     </td>
 
                     <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-mono text-[8px] sm:text-[9px] text-[#9EA2B3]" title={item.id}>
-                      {item.id.substring(0, 6)}...
+                      {item.id ? `${item.id.substring(0, 6)}...` : 'N/A'}
                     </td>
 
                     <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-[#2D3142]">
@@ -614,7 +617,7 @@ export default function InventarioGeneral({
                     <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-center">
                       {isAssignedToBingo ? (
                         <span className="inline-flex items-center gap-0.5 sm:gap-1 bg-emerald-100 text-emerald-800 px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-wide shadow-2xs">
-                          <span>🟢</span> {isAssignedToBingo.codigo}
+                          <span>🟢</span> {isAssignedToBingo.codigo || "Asignado"}
                         </span>
                       ) : (
                         <span className="inline-flex items-center gap-0.5 sm:gap-1 bg-rose-100 text-rose-800 px-2 py-0.5 sm:px-2.5 sm:py-0.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-wide shadow-2xs">
@@ -626,7 +629,7 @@ export default function InventarioGeneral({
                     <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
                       <div className="flex items-center justify-center gap-0.5 sm:gap-1">
                         {isEditing ? (
-                          <>
+                          <div className="flex items-center gap-1">
                             <button 
                               onClick={() => saveEditing(item.id)}
                               className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-[9px] sm:text-[10px] shadow-2xs"
@@ -639,9 +642,9 @@ export default function InventarioGeneral({
                             >
                               ✕
                             </button>
-                          </>
+                          </div>
                         ) : (
-                          <>
+                          <div className="flex items-center gap-1">
                             <button
                               onClick={() => setDetailModal({ isOpen: true, item })}
                               className="p-1 rounded-md bg-sky-50 hover:bg-sky-500 text-sky-600 hover:text-white transition-all shadow-2xs"
@@ -676,7 +679,7 @@ export default function InventarioGeneral({
                             >
                               🗑️
                             </button>
-                          </>
+                          </div>
                         )}
                       </div>
                     </td>

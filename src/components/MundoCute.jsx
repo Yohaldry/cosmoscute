@@ -1,36 +1,84 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { collection, onSnapshot } from 'firebase/firestore';
+import { db } from '../firebase';
 import { 
   Heart, Star, ShoppingCart, Search, Sparkles, 
-  ArrowRight, ShieldCheck, Truck, Headphones, Send, Gift, Flame
+  ArrowRight, ShieldCheck, Truck, Headphones, Send, Gift, Flame, X, CheckCircle2
 } from 'lucide-react';
 
-const categories = [
-  { id: 'all', name: '✨ Todo', count: '24' },
-  { id: 'papeleria', name: '📚 Papelería', count: '8' },
-  { id: 'tech', name: '⚡ Tech & LED', count: '6' },
-  { id: 'lifestyle', name: '👜 Lifestyle', count: '10' },
-];
-
-const products = [
-  { id: 1, name: "Set de Plumas Minimalistas Premium", price: 24900, category: 'papeleria', rating: 4.9, reviews: 128, image: "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=400&q=80", tag: "BEST SELLER" },
-  { id: 2, name: "Espejo Organizador LED Profesional", price: 89900, category: 'tech', rating: 5.0, reviews: 96, image: "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=400&q=80", tag: "NUEVO" },
-  { id: 3, name: "Mochila Urbana Exec Galaxy", price: 129900, category: 'lifestyle', rating: 4.8, reviews: 74, image: "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=400&q=80", tag: "15% OFF" },
-  { id: 4, name: "Libreta de Notas Exec Hardcover", price: 49900, category: 'papeleria', rating: 4.9, reviews: 53, image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=400&q=80", tag: "PRO" },
-  { id: 5, name: "Lámpara de Escritorio Minimalista LED", price: 59900, category: 'tech', rating: 5.0, reviews: 112, image: "https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=400&q=80", tag: "TRENDY" },
-  { id: 6, name: "Termo Inteligente Display Touch", price: 69900, category: 'tech', rating: 4.9, reviews: 88, image: "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=400&q=80", tag: "LIMITADO" },
-];
-
 export default function CosmosCuteClean() {
+  const [productos, setProductos] = useState([]);
+  const [categoriasDB, setCategoriasDB] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [cartCount, setCartCount] = useState(2);
   const [favorites, setFavorites] = useState([1, 4]);
 
-  const formatPrice = (price) => `$${price.toLocaleString('es-CO')}`;
+  // Estado para el Modal de Detalles
+  const [selectedProduct, setSelectedProduct] = useState(null);
+  const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  const filteredProducts = products.filter(prod => {
-    const matchesCategory = selectedCategory === 'all' || prod.category === selectedCategory;
-    const matchesSearch = prod.name.toLowerCase().includes(searchQuery.toLowerCase());
+  // Sincronización en tiempo real con Firestore
+  useEffect(() => {
+    const unsubProd = onSnapshot(collection(db, "productos"), (snapshot) => {
+      const items = snapshot.docs.map(d => {
+        const data = d.data();
+        return {
+          id: d.id,
+          ...data,
+          // Aseguramos acceso directo a img e img1 independientemente de cómo se serialicen
+          img: data.img || '',
+          img1: data.img1 || ''
+        };
+      });
+      setProductos(items);
+      setIsLoading(false);
+    });
+
+    const unsubCat = onSnapshot(collection(db, "categorias"), (snapshot) => {
+      const cats = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+      setCategoriasDB(cats);
+    });
+
+    return () => {
+      unsubProd();
+      unsubCat();
+    };
+  }, []);
+
+  // Función directa para obtener las imágenes de 'img' y 'img1'
+  // Función para validar que el Base64 sea utilizable
+  const getProductImages = (prod) => {
+    const images = [];
+    
+    // Verificamos que 'img' exista y tenga un formato válido de base64 o URL
+    if (prod.img && typeof prod.img === 'string' && prod.img.length > 20) {
+      images.push(prod.img);
+    }
+    if (prod.img1 && typeof prod.img1 === 'string' && prod.img1.length > 20) {
+      images.push(prod.img1);
+    }
+    
+    return images;
+  };
+
+  // Construir categorías dinámicamente
+  const categories = [
+    { id: 'all', name: '✨ Todo', count: productos.length },
+    ...categoriasDB.map(cat => ({
+      id: cat.nombre,
+      name: `🏷️ ${cat.nombre}`,
+      count: productos.filter(p => p.categoria === cat.nombre).length
+    }))
+  ];
+
+  const formatPrice = (price) => `$${Number(price || 0).toLocaleString('es-CO')}`;
+
+  const filteredProducts = productos.filter(prod => {
+    const matchesCategory = selectedCategory === 'all' || prod.categoria === selectedCategory;
+    const matchesSearch = (prod.nombre || '').toLowerCase().includes(searchQuery.toLowerCase());
     return matchesCategory && matchesSearch;
   });
 
@@ -39,12 +87,26 @@ export default function CosmosCuteClean() {
     setFavorites(prev => prev.includes(id) ? prev.filter(item => item !== id) : [...prev, id]);
   };
 
+  const handleOpenModal = (prod) => {
+    setSelectedProduct(prod);
+    setActiveImageIndex(0);
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-[#FFFDF9]">
+        <div className="flex flex-col items-center gap-2">
+          <div className="w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[10px] font-bold text-pink-600 tracking-tight uppercase">Cargando Mundo Cute...</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-[#FFFDF9] text-[#2D2A32] font-sans antialiased selection:bg-pink-200 selection:text-pink-900">
       
-
-
-      {/* HERO SECTION - RECOGIDO Y MÁS PEQUEÑO */}
+      {/* HERO SECTION */}
       <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-3 pb-1">
         <div className="rounded-xl bg-gradient-to-r from-pink-500 via-purple-600 to-indigo-700 text-white px-4 py-3 sm:py-4 flex flex-col sm:flex-row items-center justify-between gap-3 relative overflow-hidden shadow-md">
           <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
@@ -54,7 +116,7 @@ export default function CosmosCuteClean() {
               <Flame className="w-4 h-4 text-yellow-300 animate-bounce" />
             </div>
             <div>
-              <div className="text-[9px] font-black uppercase text-pink-200 tracking-wider">Colección 2026</div>
+              <div className="text-[9px] font-black uppercase text-pink-200 tracking-wider">Inventario en Vivo</div>
               <h2 className="text-xs sm:text-sm font-extrabold tracking-tight text-white leading-snug">
                 Diseño, Estética y Funcionalidad para tu Día a Día ✨
               </h2>
@@ -62,8 +124,22 @@ export default function CosmosCuteClean() {
           </div>
 
           <button className="bg-white text-slate-900 hover:bg-pink-100 font-extrabold text-[10px] sm:text-xs px-4 py-2 rounded-full flex items-center gap-1.5 shadow-sm transition-transform hover:scale-105 flex-shrink-0 z-10">
-            <span>Ver Catálogo</span> <ArrowRight className="w-3 h-3 text-pink-600" />
+            <span>Explorar</span> <ArrowRight className="w-3 h-3 text-pink-600" />
           </button>
+        </div>
+      </section>
+
+      {/* BARRA DE BÚSQUEDA */}
+      <section className="max-w-7xl mx-auto px-4 sm:px-6 pt-2">
+        <div className="relative">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
+          <input 
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder="Buscar productos en el inventario..."
+            className="w-full bg-white border border-pink-100 rounded-full pl-9 pr-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-400 shadow-2xs"
+          />
         </div>
       </section>
 
@@ -80,63 +156,189 @@ export default function CosmosCuteClean() {
                   : 'bg-white text-slate-600 border border-pink-100 hover:bg-pink-50/50'
               }`}
             >
-              {cat.name}
+              {cat.name} ({cat.count})
             </button>
           ))}
         </div>
       </section>
 
-      {/* GRILLA DE PRODUCTOS (Ultra compacta en móviles con 2 columnas proporcionales) */}
+      {/* GRILLA DE PRODUCTOS */}
       <section className="max-w-7xl mx-auto px-3 sm:px-6 py-1 pb-16">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-          {filteredProducts.map((prod) => (
-            <div key={prod.id} className="bg-white border border-pink-100/80 rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 flex flex-col justify-between relative group shadow-xs hover:shadow-xl hover:border-pink-300 transition-all duration-300">
-              
-              <span className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-extrabold text-[7px] sm:text-[8px] px-1.5 sm:px-2 py-0.5 rounded-full uppercase shadow-xs">
-                {prod.tag}
-              </span>
+          {filteredProducts.map((prod) => {
+            const productImages = getProductImages(prod);
+            const mainImage = productImages.length > 0 ? productImages[0] : null;
 
-              <button 
-                onClick={(e) => toggleFavorite(prod.id, e)}
-                className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 text-slate-400 hover:text-pink-500 bg-white/90 backdrop-blur-xs p-1 sm:p-1.5 rounded-full border border-pink-100 shadow-xs transition-transform active:scale-95"
+            return (
+              <div 
+                key={prod.id} 
+                onClick={() => handleOpenModal(prod)}
+                className="bg-white border border-pink-100/80 rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 flex flex-col justify-between relative group shadow-xs hover:shadow-xl hover:border-pink-300 transition-all duration-300 cursor-pointer"
               >
-                <Heart className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${favorites.includes(prod.id) ? 'fill-pink-500 text-pink-500' : ''}`} />
-              </button>
+                
+                <span className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-extrabold text-[7px] sm:text-[8px] px-1.5 sm:px-2 py-0.5 rounded-full uppercase shadow-xs">
+                  {prod.categoria || "General"}
+                </span>
 
-              <div>
-                <div className="w-full h-24 sm:h-32 bg-pink-50/40 rounded-lg sm:rounded-xl overflow-hidden border border-pink-100/60 mb-2 relative group-hover:shadow-inner">
-                  <img src={prod.image} alt={prod.name} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" />
-                </div>
-                <div className="flex items-center gap-1 mb-1">
-                  <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400 text-amber-400" />
-                  <span className="text-[9px] sm:text-[10px] font-extrabold text-slate-700">{prod.rating}</span>
-                  <span className="text-[8px] sm:text-[9px] text-slate-400 font-medium">({prod.reviews})</span>
-                </div>
-                <h3 className="font-bold text-[10px] sm:text-[11px] text-slate-800 line-clamp-2 leading-snug mb-2 sm:mb-3 group-hover:text-pink-600 transition-colors">{prod.name}</h3>
-              </div>
-
-              <div>
-                <div className="font-black text-[11px] sm:text-xs sm:text-sm text-slate-900 mb-1.5 sm:mb-2">{formatPrice(prod.price)}</div>
                 <button 
-                  onClick={() => setCartCount(c => c + 1)}
-                  className="w-full bg-pink-50 hover:bg-gradient-to-r hover:from-pink-500 hover:to-purple-600 hover:text-white text-pink-600 font-extrabold text-[9px] sm:text-[10px] py-1.5 sm:py-2 rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs"
+                  onClick={(e) => toggleFavorite(prod.id, e)}
+                  className="absolute top-2 right-2 sm:top-3 sm:right-3 z-10 text-slate-400 hover:text-pink-500 bg-white/90 backdrop-blur-xs p-1 sm:p-1.5 rounded-full border border-pink-100 shadow-xs transition-transform active:scale-95"
                 >
-                  <ShoppingCart className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Agregar
+                  <Heart className={`w-3 h-3 sm:w-3.5 sm:h-3.5 ${favorites.includes(prod.id) ? 'fill-pink-500 text-pink-500' : ''}`} />
                 </button>
-              </div>
 
-            </div>
-          ))}
+                <div>
+                  <div className="w-full h-28 sm:h-36 bg-pink-50/40 rounded-lg sm:rounded-xl overflow-hidden border border-pink-100/60 mb-2 relative flex items-center justify-center">
+                   {mainImage ? (
+                      <img 
+                        src={mainImage} 
+                        alt={prod.nombre} 
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                        onError={(e) => {
+                          console.error("Error al renderizar la imagen Base64 para el producto:", prod.nombre, mainImage);
+                        }}
+                      />
+                    ) : (
+                      <div className="text-pink-300 text-[10px] font-bold text-center p-2">
+                        Imagen no válida o vacía
+                      </div>
+                    )}
+                  </div>
+                  
+                  <div className="flex items-center justify-between mb-1">
+                    <div className="flex items-center gap-1">
+                      <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400 text-amber-400" />
+                      <span className="text-[9px] sm:text-[10px] font-extrabold text-slate-700">5.0</span>
+                    </div>
+                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${Number(prod.udisponibles || prod.stockactual) > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
+                      Stock: {prod.udisponibles || prod.stockactual || 0}
+                    </span>
+                  </div>
+
+                  <h3 className="font-bold text-[10px] sm:text-[11px] text-slate-800 line-clamp-2 leading-snug mb-2 sm:mb-3 group-hover:text-pink-600 transition-colors">
+                    {prod.nombre}
+                  </h3>
+                </div>
+
+                <div>
+                  <div className="font-black text-[11px] sm:text-xs sm:text-sm text-slate-900 mb-1.5 sm:mb-2">
+                    {formatPrice(prod.precio)}
+                  </div>
+                  <button 
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setCartCount(c => c + 1);
+                    }}
+                    className="w-full bg-pink-50 hover:bg-gradient-to-r hover:from-pink-500 hover:to-purple-600 hover:text-white text-pink-600 font-extrabold text-[9px] sm:text-[10px] py-1.5 sm:py-2 rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs"
+                  >
+                    <ShoppingCart className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Agregar
+                  </button>
+                </div>
+
+              </div>
+            );
+          })}
         </div>
 
         {filteredProducts.length === 0 && (
           <div className="text-center py-16 bg-white rounded-2xl border border-pink-100 shadow-sm">
             <Gift className="w-10 h-10 text-pink-300 mx-auto mb-2" />
-            <p className="text-xs font-bold text-slate-700">No encontramos productos con esa búsqueda.</p>
-            <p className="text-[10px] text-slate-400 mt-1">Prueba con otra palabra clave o categoría.</p>
+            <p className="text-xs font-bold text-slate-700">No hay productos en esta categoría o búsqueda.</p>
+            <p className="text-[10px] text-slate-400 mt-1">Agrega productos desde tu panel de administración.</p>
           </div>
         )}
       </section>
+
+      {/* MODAL DE DETALLES DEL PRODUCTO */}
+      {selectedProduct && (() => {
+        const modalImages = getProductImages(selectedProduct);
+        const currentActiveImg = modalImages[activeImageIndex] || modalImages[0];
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
+            <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-pink-100 overflow-hidden relative animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
+              
+              {/* Botón Cerrar */}
+              <button 
+                onClick={() => setSelectedProduct(null)}
+                className="absolute top-4 right-4 z-20 bg-white/80 hover:bg-pink-100 text-slate-700 p-2 rounded-full backdrop-blur-md shadow-md transition-transform active:scale-95"
+              >
+                <X className="w-5 h-5" />
+              </button>
+
+              <div className="overflow-y-auto p-6 sm:p-8 flex flex-col md:flex-row gap-6">
+                
+                {/* Sección de Imágenes en Grande */}
+                <div className="w-full md:w-1/2 flex flex-col gap-3">
+                  <div className="w-full h-72 sm:h-80 bg-pink-50/50 rounded-2xl overflow-hidden border border-pink-100 flex items-center justify-center relative shadow-inner">
+                    {currentActiveImg ? (
+                      <img src={currentActiveImg} alt={selectedProduct.nombre} className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="text-pink-300 text-xs font-bold">Sin imágenes disponibles</div>
+                    )}
+                  </div>
+
+                  {/* Miniaturas dinámicas para img e img1 */}
+                  {modalImages.length > 1 && (
+                    <div className="flex gap-2 justify-center">
+                      {modalImages.map((img, idx) => (
+                        <button
+                          key={idx}
+                          onClick={() => setActiveImageIndex(idx)}
+                          className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${activeImageIndex === idx ? 'border-pink-500 scale-105 shadow-md' : 'border-pink-100 opacity-70'}`}
+                        >
+                          <img src={img} alt="" className="w-full h-full object-cover" />
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Información del Producto */}
+                <div className="w-full md:w-1/2 flex flex-col justify-between">
+                  <div>
+                    <span className="bg-pink-100 text-pink-700 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3">
+                      {selectedProduct.categoria || "Mundo Cute"}
+                    </span>
+
+                    <h2 className="text-lg sm:text-xl font-black text-slate-900 leading-snug mb-2">
+                      {selectedProduct.nombre}
+                    </h2>
+
+                    <div className="text-2xl font-black text-pink-600 mb-4">
+                      {formatPrice(selectedProduct.precio)}
+                    </div>
+
+                    <div className="flex items-center gap-2 mb-4">
+                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 ${Number(selectedProduct.udisponibles || selectedProduct.stockactual) > 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
+                        <CheckCircle2 className="w-3 h-3" /> Stock disponible: {selectedProduct.udisponibles || selectedProduct.stockactual || 0} unidades
+                      </span>
+                    </div>
+
+                    {selectedProduct.descripcion && (
+                      <p className="text-xs text-slate-600 leading-relaxed mb-6 bg-pink-50/30 p-3.5 rounded-xl border border-pink-100/50">
+                        {selectedProduct.descripcion}
+                      </p>
+                    )}
+                  </div>
+
+                  <button 
+                    onClick={() => {
+                      setCartCount(c => c + 1);
+                      setSelectedProduct(null);
+                    }}
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-extrabold text-xs py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-pink-500/25 transition-transform active:scale-95"
+                  >
+                    <ShoppingCart className="w-4 h-4" /> Agregar al Carrito
+                  </button>
+
+                </div>
+
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
     </div>
   );

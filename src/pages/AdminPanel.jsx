@@ -11,7 +11,6 @@ export default function AdminPanel() {
 
   const [isLoading, setIsLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("bingo-productos");
-  const [subTab, setSubTab] = useState("productos");
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
   const [productos, setProductos] = useState([]);
@@ -28,7 +27,11 @@ export default function AdminPanel() {
   const [prodStockActual, setProdStockActual] = useState("");
   const [prodPortada, setProdPortada] = useState("");
   
+  // Estados para Categorías (Crear / Editar / Buscar)
   const [catNombre, setCatNombre] = useState("");
+  const [catSearch, setCatSearch] = useState("");
+  const [editingCategory, setEditingCategory] = useState(null);
+
   const [successAlert, setSuccessAlert] = useState({ isOpen: false, message: "" });
   const [errorAlert, setErrorAlert] = useState({ isOpen: false, message: "" });
 
@@ -92,6 +95,14 @@ export default function AdminPanel() {
     return missing;
   }, [productos]);
 
+  // Filtrar categorías basado en el buscador del modal
+  const filteredCategorias = useMemo(() => {
+    if (!catSearch.trim()) return categorias;
+    return categorias.filter(cat => 
+      cat.nombre.toLowerCase().includes(catSearch.toLowerCase())
+    );
+  }, [categorias, catSearch]);
+
   const handleUpdateProduct = async (id, updatedFields) => {
     try {
       const docRef = doc(db, "productos", id);
@@ -146,24 +157,43 @@ export default function AdminPanel() {
     }
   };
 
-  const handleAddCategory = async (e) => {
+  // Funciones de Categorías
+  const handleSaveCategory = async (e) => {
     e.preventDefault();
+    if (!catNombre.trim()) return;
     try {
-      await addDoc(collection(db, "categorias"), { nombre: catNombre });
-      setIsCategoryModalOpen(false);
+      if (editingCategory) {
+        await updateDoc(doc(db, "categorias", editingCategory.id), { nombre: catNombre });
+        triggerSuccessAlert("Categoría actualizada con éxito");
+      } else {
+        await addDoc(collection(db, "categorias"), { nombre: catNombre });
+        triggerSuccessAlert("Categoría creada con éxito");
+      }
       setCatNombre("");
-      triggerSuccessAlert("Categoría creada con éxito");
+      setEditingCategory(null);
     } catch (error) {
-      console.error("Error al crear categoría:", error);
+      console.error("Error al guardar categoría:", error);
+      triggerErrorAlert("No se pudo guardar la categoría");
     }
   };
 
-  const handleDeleteCategoryRequest = (id, name) => {
+  const handleEditCategoryClick = (cat) => {
+    setEditingCategory(cat);
+    setCatNombre(cat.nombre);
+  };
+
+  const handleCancelCategoryEdit = () => {
+    setEditingCategory(null);
+    setCatNombre("");
+  };
+
+  const handleDeleteCategoryRequest = (id) => {
+    const cat = categorias.find(c => c.id === id);
     setDeleteModal({
       isOpen: true,
       type: "categoria",
       id: id,
-      name: name,
+      name: cat?.nombre || "esta categoría",
       isMultiple: false
     });
   };
@@ -184,12 +214,12 @@ export default function AdminPanel() {
       }
     } catch (error) {
       console.error("Error al eliminar:", error);
+      triggerErrorAlert("Error al eliminar el elemento");
     } finally {
       setDeleteModal({ isOpen: false, type: null, id: null, name: "", isMultiple: false });
     }
   };
 
-  // PANTALLA DE BLOQUEO / VALIDACIÓN DE IDENTIDAD OBLIGATORIA EN CADA CARGA
   if (!isAuthenticated) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#F4F5FB] font-sans text-[10px]">
@@ -382,107 +412,33 @@ export default function AdminPanel() {
               {activeTab === "bingo-productos" ? "Bingo Productos" : "Inventario General"}
             </h2>
           </div>
-
-          <div className="flex items-center gap-1">
-            {activeTab === "bingo-productos" && subTab === "productos" ? (
-              <button 
-                onClick={() => setIsProductModalOpen(true)}
-                className="bg-[#7C69EF] text-white px-2 py-1 rounded-md text-[9px] font-bold shadow-2xs flex items-center gap-0.5"
-              >
-                <span>+</span> <span>Nuevo</span>
-              </button>
-            ) : activeTab === "bingo-productos" && subTab === "categorias" ? (
-              <button 
-                onClick={() => setIsCategoryModalOpen(true)}
-                className="bg-[#7C69EF] text-white px-2 py-1 rounded-md text-[9px] font-bold shadow-2xs flex items-center gap-0.5"
-              >
-                <span>+</span> <span>Categoría</span>
-              </button>
-            ) : null}
-          </div>
+          {activeTab === "inventario-general" && (
+            <button
+              onClick={() => { setEditingCategory(null); setCatNombre(""); setCatSearch(""); setIsCategoryModalOpen(true); }}
+              className="bg-gradient-to-r from-[#7C69EF] to-[#9B8AFB] hover:opacity-90 text-white font-extrabold px-3 py-1.5 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20 transition-all flex items-center gap-1.5"
+            >
+              <span>🏷️</span> Gestionar Categorías
+            </button>
+          )}
         </header>
 
         {/* CONTENEDOR */}
         <main className="flex-1 p-1.5 md:p-3 overflow-hidden flex flex-col">
           
           {activeTab === "bingo-productos" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
-              
-              <div className="px-2 py-1 border-b border-[#E4E8F0] flex items-center gap-1 bg-white shrink-0">
-                <button
-                  onClick={() => setSubTab("productos")}
-                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all ${
-                    subTab === "productos" ? 'bg-[#7C69EF] text-white' : 'bg-[#F4F5FB] text-[#9EA2B3]'
-                  }`}
-                >
-                  📦 Productos ({productos.length})
-                </button>
-                <button
-                  onClick={() => setSubTab("categorias")}
-                  className={`px-2 py-0.5 rounded-md text-[9px] font-bold transition-all ${
-                    subTab === "categorias" ? 'bg-[#7C69EF] text-white' : 'bg-[#F4F5FB] text-[#9EA2B3]'
-                  }`}
-                >
-                  🏷️ Categorías ({categorias.length})
-                </button>
+            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs p-2">
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <ProductosBingo 
+                  productos={productos}
+                  categorias={categorias}
+                  activeTab={activeTab}
+                  setActiveTab={setActiveTab}
+                  onOpenProductModal={() => setIsProductModalOpen(true)}
+                  onUpdateProduct={handleUpdateProduct}
+                  onDeleteProduct={handleDeleteProductRequest}
+                  triggerSuccessAlert={triggerSuccessAlert}
+                />
               </div>
-
-              {subTab === "productos" && (
-                <div className="flex-1 flex flex-col overflow-hidden">
-                  <ProductosBingo 
-                    productos={productos}
-                    categorias={categorias}
-                    activeTab={activeTab}
-                    setActiveTab={setActiveTab}
-                    onOpenProductModal={() => setIsProductModalOpen(true)}
-                    onUpdateProduct={handleUpdateProduct}
-                    onDeleteProduct={handleDeleteProductRequest}
-                    triggerSuccessAlert={triggerSuccessAlert}
-                  />
-                </div>
-              )}
-
-              {subTab === "categorias" && (
-                <div className="flex-1 overflow-y-auto flex flex-col">
-                  <table className="w-full text-left border-collapse text-[10px]">
-                    <thead className="sticky top-0 z-10 bg-[#F4F5FB]">
-                      <tr className="border-b border-[#E4E8F0] text-[#9EA2B3] uppercase text-[7px] font-black tracking-wider">
-                        <th className="py-1.5 px-2">ID</th>
-                        <th className="py-1.5 px-2">Nombre</th>
-                        <th className="py-1.5 px-2 text-center">Acción</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-[#F0F2F5]">
-                      {categorias.length === 0 ? (
-                        <tr>
-                          <td colSpan="3" className="text-center py-4 text-[#9EA2B3] text-[9px]">Sin categorías.</td>
-                        </tr>
-                      ) : (
-                        categorias.map((cat) => (
-                          <tr key={cat.id} className="hover:bg-[#FAFBFC]">
-                            <td className="py-1.5 px-2 font-mono text-[8px] text-[#9EA2B3]">
-                              {cat.id.substring(0, 5)}...
-                            </td>
-                            <td className="py-1.5 px-2 font-bold text-[#2D3142] text-[9px]">
-                              {cat.nombre}
-                            </td>
-                            <td className="py-1.5 px-2 text-center">
-                              <button 
-                                type="button"
-                                onClick={() => handleDeleteCategoryRequest(cat.id, cat.nombre)}
-                                className="w-5 h-5 rounded bg-rose-50 hover:bg-rose-600 text-rose-500 hover:text-white transition-all flex items-center justify-center mx-auto text-[9px]"
-                              >
-                                🗑️
-                              </button>
-                            </td>
-                          </tr>
-                        ))
-                      )}
-                    </tbody>
-                  </table>
-                </div>
-              )}
-
             </div>
           )}
 
@@ -493,6 +449,8 @@ export default function AdminPanel() {
                 productosBingo={productos}
                 categorias={categorias}
                 availableMissingCodes={availableMissingCodes}
+                onOpenCategoryModal={() => { setEditingCategory(null); setCatNombre(""); setCatSearch(""); setIsCategoryModalOpen(true); }}
+                onDeleteCategory={handleDeleteCategoryRequest}
                 triggerSuccessAlert={triggerSuccessAlert}
                 triggerErrorAlert={triggerErrorAlert}
               />
@@ -505,18 +463,18 @@ export default function AdminPanel() {
       {/* MODAL PRODUCTO */}
       {isProductModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
-          <div className="bg-white rounded-lg max-w-xs w-full p-3 shadow-xl border border-[#E4E8F0] space-y-2">
-            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-1.5">
-              <h3 className="text-[10px] font-black text-[#2D3142]">Nuevo Producto</h3>
-              <button onClick={() => setIsProductModalOpen(false)} className="text-[#9EA2B3] text-[10px] font-bold">✕</button>
+          <div className="bg-white rounded-2xl max-w-xs w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3">
+            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
+              <h3 className="text-xs font-black text-[#2D3142]">Nuevo Producto</h3>
+              <button onClick={() => setIsProductModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold">✕</button>
             </div>
-            <form onSubmit={handleAddProduct} className="space-y-1.5">
+            <form onSubmit={handleAddProduct} className="space-y-2">
               <div>
                 <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Código</label>
                 <select 
                   value={prodCodigo} 
                   onChange={(e) => setProdCodigo(e.target.value)}
-                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded px-1.5 py-1 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
                   required
                 >
                   <option value="">Selecciona código...</option>
@@ -532,7 +490,7 @@ export default function AdminPanel() {
                   value={prodNombre} 
                   onChange={(e) => setProdNombre(e.target.value)}
                   placeholder="Ej. Silla..."
-                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded px-1.5 py-1 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
                   required
                 />
               </div>
@@ -541,7 +499,7 @@ export default function AdminPanel() {
                 <select 
                   value={prodCategoria} 
                   onChange={(e) => setProdCategoria(e.target.value)}
-                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded px-1.5 py-1 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
                 >
                   <option value="General">General</option>
                   {categorias.map(cat => (
@@ -549,7 +507,7 @@ export default function AdminPanel() {
                   ))}
                 </select>
               </div>
-              <div className="grid grid-cols-2 gap-1">
+              <div className="grid grid-cols-2 gap-1.5">
                 <div>
                   <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Precio ($)</label>
                   <input 
@@ -557,7 +515,7 @@ export default function AdminPanel() {
                     value={prodPrecio} 
                     onChange={(e) => setProdPrecio(e.target.value)}
                     placeholder="0"
-                    className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded px-1.5 py-1 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                    className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
                   />
                 </div>
                 <div>
@@ -567,44 +525,116 @@ export default function AdminPanel() {
                     value={prodStockActual} 
                     onChange={(e) => setProdStockActual(e.target.value)}
                     placeholder="0"
-                    className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded px-1.5 py-1 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                    className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
                   />
                 </div>
               </div>
-              <div className="flex justify-end gap-1 pt-1 border-t border-[#E4E8F0]">
-                <button type="button" onClick={() => setIsProductModalOpen(false)} className="px-2 py-1 rounded text-[9px] font-bold text-[#9EA2B3]">Cancelar</button>
-                <button type="submit" className="px-2 py-1 rounded text-[9px] font-bold bg-[#7C69EF] text-white">Guardar</button>
+              <div className="flex justify-end gap-1.5 pt-2 border-t border-[#E4E8F0]">
+                <button type="button" onClick={() => setIsProductModalOpen(false)} className="px-3 py-1.5 rounded-xl text-[9px] font-bold text-[#9EA2B3] bg-[#F4F5FB]">Cancelar</button>
+                <button type="submit" className="px-3 py-1.5 rounded-xl text-[9px] font-bold bg-[#7C69EF] text-white shadow-md shadow-[#7C69EF]/20">Guardar</button>
               </div>
             </form>
           </div>
         </div>
       )}
 
-      {/* MODAL CATEGORÍA */}
+      {/* MODAL CATEGORÍA CON CAMPO DE BUSCAR */}
       {isCategoryModalOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
-          <div className="bg-white rounded-lg max-w-xs w-full p-3 shadow-xl border border-[#E4E8F0] space-y-2">
-            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-1.5">
-              <h3 className="text-[10px] font-black text-[#2D3142]">Nueva Categoría</h3>
-              <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-[10px] font-bold">✕</button>
+          <div className="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs">🏷️</span>
+                <h3 className="text-xs font-black text-[#2D3142]">Gestión de Categorías</h3>
+              </div>
+              <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold hover:text-[#2D3142]">✕</button>
             </div>
-            <form onSubmit={handleAddCategory} className="space-y-1.5">
-              <div>
-                <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Nombre</label>
+
+            {/* Formulario interno para Guardar o Editar Categoría */}
+            <form onSubmit={handleSaveCategory} className="bg-[#F4F5FB] p-3 rounded-xl border border-[#E4E8F0] space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#7C69EF]">
+                  {editingCategory ? "✏️ Editando Categoría" : "✨ Nueva Categoría"}
+                </label>
+                {editingCategory && (
+                  <button type="button" onClick={handleCancelCategoryEdit} className="text-[8px] font-bold text-rose-500 hover:underline">
+                    Cancelar edición
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-1.5">
                 <input 
                   type="text" 
                   value={catNombre} 
                   onChange={(e) => setCatNombre(e.target.value)}
-                  placeholder="Ej. Hogar..."
-                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded px-1.5 py-1 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                  placeholder="Nombre de la categoría..."
+                  className="flex-1 bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
                   required
                 />
-              </div>
-              <div className="flex justify-end gap-1 pt-1 border-t border-[#E4E8F0]">
-                <button type="button" onClick={() => setIsCategoryModalOpen(false)} className="px-2 py-1 rounded text-[9px] font-bold text-[#9EA2B3]">Cancelar</button>
-                <button type="submit" className="px-2 py-1 rounded text-[9px] font-bold bg-[#7C69EF] text-white">Guardar</button>
+                <button 
+                  type="submit" 
+                  className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-extrabold px-3 py-1.5 rounded-xl text-[9px] shadow-sm transition-all shrink-0"
+                >
+                  {editingCategory ? "Actualizar" : "Guardar"}
+                </button>
               </div>
             </form>
+
+            {/* Campo de búsqueda de categorías */}
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#9EA2B3]">🔍</span>
+              <input 
+                type="text"
+                value={catSearch}
+                onChange={(e) => setCatSearch(e.target.value)}
+                placeholder="Buscar categoría..."
+                className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl pl-7 pr-3 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+              />
+            </div>
+
+            {/* Listado de Categorías Filtradas */}
+            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-44">
+              <p className="text-[8px] font-black uppercase tracking-wider text-[#9EA2B3] px-1">
+                Resultados ({filteredCategorias.length} de {categorias.length})
+              </p>
+              {filteredCategorias.length === 0 ? (
+                <div className="p-4 text-center text-[#9EA2B3] bg-[#F4F5FB]/50 rounded-xl text-[9px]">
+                  {catSearch ? "No se encontraron categorías con ese nombre." : "No hay categorías registradas todavía."}
+                </div>
+              ) : (
+                filteredCategorias.map((cat) => (
+                  <div key={cat.id} className="flex items-center justify-between bg-white border border-[#E4E8F0] p-2 rounded-xl shadow-2xs hover:border-[#7C69EF]/50 transition-all">
+                    <span className="text-[9px] font-bold text-[#2D3142] truncate max-w-[180px]">{cat.nombre}</span>
+                    <div className="flex items-center gap-1">
+                      <button 
+                        type="button" 
+                        onClick={() => handleEditCategoryClick(cat)}
+                        className="bg-[#7C69EF]/10 hover:bg-[#7C69EF]/20 text-[#7C69EF] font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
+                      >
+                        Editar
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleDeleteCategoryRequest(cat.id)}
+                        className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-[#E4E8F0]">
+              <button 
+                type="button" 
+                onClick={() => setIsCategoryModalOpen(false)} 
+                className="w-full bg-[#7C69EF] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20"
+              >
+                Cerrar Ventana
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -612,17 +642,17 @@ export default function AdminPanel() {
       {/* MODAL ELIMINAR */}
       {deleteModal.isOpen && (
         <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
-          <div className="bg-white rounded-lg p-3 max-w-xs w-full shadow-xl border border-[#E4E8F0] space-y-2 text-center">
-            <div className="w-7 h-7 bg-rose-50 text-rose-500 rounded-md flex items-center justify-center mx-auto text-xs font-black">⚠️</div>
-            <div className="space-y-0.5">
-              <h3 className="text-[10px] font-black text-[#2D3142]">¿Estás seguro?</h3>
+          <div className="bg-white rounded-2xl p-4 max-w-xs w-full shadow-2xl border border-[#E4E8F0] space-y-3 text-center">
+            <div className="w-8 h-8 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center mx-auto text-xs font-black shadow-sm">⚠️</div>
+            <div className="space-y-1">
+              <h3 className="text-xs font-black text-[#2D3142]">¿Estás seguro?</h3>
               <p className="text-[9px] text-[#9EA2B3]">
                 Vas a eliminar <span className="font-bold text-[#2D3142]">{deleteModal.name}</span>.
               </p>
             </div>
-            <div className="flex gap-1 pt-1">
-              <button type="button" onClick={() => setDeleteModal({ isOpen: false, type: null, id: null, name: "", isMultiple: false })} className="flex-1 bg-[#F4F5FB] text-[#2D3142] font-bold py-1 px-2 rounded text-[9px]">Cancelar</button>
-              <button type="button" onClick={executeDelete} className="flex-1 bg-rose-600 text-white font-bold py-1 px-2 rounded text-[9px]">Eliminar</button>
+            <div className="flex gap-1.5 pt-1">
+              <button type="button" onClick={() => setDeleteModal({ isOpen: false, type: null, id: null, name: "", isMultiple: false })} className="flex-1 bg-[#F4F5FB] text-[#2D3142] font-bold py-2 px-2 rounded-xl text-[9px]">Cancelar</button>
+              <button type="button" onClick={executeDelete} className="flex-1 bg-rose-600 text-white font-bold py-2 px-2 rounded-xl text-[9px] shadow-md shadow-rose-600/20">Eliminar</button>
             </div>
           </div>
         </div>
@@ -630,12 +660,12 @@ export default function AdminPanel() {
 
       {/* ALERTAS */}
       {successAlert.isOpen && (
-        <div className="fixed bottom-2 right-2 z-50 bg-emerald-600 text-white px-2 py-1 rounded shadow-md flex items-center gap-1 text-[9px] font-bold">
+        <div className="fixed bottom-3 right-3 z-50 bg-emerald-600 text-white px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-[9px] font-bold animate-bounce">
           <span>✅</span> <span>{successAlert.message}</span>
         </div>
       )}
       {errorAlert.isOpen && (
-        <div className="fixed bottom-2 right-2 z-50 bg-rose-600 text-white px-2 py-1 rounded shadow-md flex items-center gap-1 text-[9px] font-bold">
+        <div className="fixed bottom-3 right-3 z-50 bg-rose-600 text-white px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-[9px] font-bold">
           <span>⚠️</span> <span>{errorAlert.message}</span>
         </div>
       )}
