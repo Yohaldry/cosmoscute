@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
-import { db } from "../firebase";
+import { db, storage } from "../firebase"; // O la ruta de tu archivo de configuración
+import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
 
 export default function InventarioGeneral({
   inventario,
@@ -96,91 +97,53 @@ const calculatedNewPrecio = costoNum > 0 && porcentajeNum < 100
   };
 
   // Guardar nuevo producto en la colección "inventario" de Firebase con validación de campos llenos
-  const handleAddInventario = async (e) => {
-    e.preventDefault();
-    
-    if (!nombre.trim() || !costo || !stock) {
-      triggerErrorAlert("⚠️ Por favor completa todos los campos obligatorios (Nombre, Costo y Stock).");
-      return;
+const handleAddInventario = async (e) => {
+  e.preventDefault();
+  setIsUploading(true);
+
+  try {
+    const costoNum = Number(costo) || 0;
+    let precioFinalParaGuardar = 0;
+
+    // Si el costo es 0, respetamos el precio manual
+    if (costoNum === 0) {
+      precioFinalParaGuardar = Number(precioManual) || 0;
+    } else {
+      const porc = Number(porcentajeGanancia) || 50;
+      const divisor = 1 - (porc / 100);
+      precioFinalParaGuardar = divisor > 0 ? Math.round(costoNum / divisor) : costoNum;
     }
 
-    const costoNum = Number(costo);
-    if (isNaN(costoNum) || costoNum <= 0) {
-      triggerErrorAlert("⚠️ El costo ingresado no es válido.");
-      return;
-    }
+    const nuevoProducto = {
+      nombre: nombre,
+      proveedor: proveedor,
+      categoria: categoria || "General",
+      udisponibles: Number(stock) || 0,
+      costo: costoNum,
+      porcentajeGanancia: costoNum === 0 ? 0 : Number(porcentajeGanancia),
+      precio: precioFinalParaGuardar, // Se guarda el precio manual si el costo es 0, o el calculado
+      img: fileImg ? URL.createObjectURL(fileImg) : "", // O la forma en que manejabas las imágenes antes
+      img1: fileImg1 ? URL.createObjectURL(fileImg1) : "",
+      vistas: 0
+    };
 
-    const precioCalculado = costoNum / 0.50;
+    await addDoc(collection(db, "inventario"), nuevoProducto);
 
-    try {
-      setIsUploading(true);
+    setIsAddModalOpen(false);
+    setNombre("");
+    setProveedor("");
+    setStock("");
+    setCosto("");
+    setPrecioManual("");
+    setFileImg(null);
+    setFileImg1(null);
 
-      // Función para comprimir y convertir la imagen a Base64 de tamaño seguro
-      const compressAndConvert = (file) => {
-        return new Promise((resolve) => {
-          if (!file) {
-            resolve("");
-            return;
-          }
-          const reader = new FileReader();
-          reader.readAsDataURL(file);
-          reader.onload = (event) => {
-            const img = new Image();
-            img.src = event.target.result;
-            img.onload = () => {
-              const canvas = document.createElement("canvas");
-              const MAX_WIDTH = 400; // Ancho máximo seguro para Firestore
-              const scaleSize = MAX_WIDTH / img.width;
-              canvas.width = MAX_WIDTH;
-              canvas.height = img.height * scaleSize;
-
-              const ctx = canvas.getContext("2d");
-              ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-              
-              // Comprimir a formato JPEG con calidad del 70%
-              resolve(canvas.toDataURL("image/jpeg", 0.7));
-            };
-          };
-          reader.onerror = () => resolve("");
-        });
-      };
-
-      const imgBase64 = await compressAndConvert(fileImg);
-      const img1Base64 = await compressAndConvert(fileImg1);
-
-      await addDoc(collection(db, "inventario"), {
-        nombre: nombre.trim(),
-        categoria: categoria || "General",
-        proveedor: proveedor,
-        costo: String(costoNum),
-        precio: precioCalculado,
-        udisponibles: String(stock),
-        uingresadas: String(stock),
-        uvendidas: "0",
-        fentrada: new Date().toLocaleDateString('es-CO'),
-        fsalida: "--",
-        img: imgBase64,
-        img1: img1Base64,
-        portada: typeof portada !== 'undefined' ? portada.trim() || "" : ""
-      });
-
-      // Limpiar formulario y estados
-      setNombre("");
-      setCosto("");
-      setStock("");
-      if (typeof setPortada === 'function') setPortada("");
-      setFileImg(null);
-      setFileImg1(null);
-      setIsAddModalOpen(false);
-
-      triggerSuccessAlert("¡Guardado exitosamente en el Inventario General!");
-    } catch (error) {
-      console.error("Error al guardar en inventario:", error);
-      triggerErrorAlert("Error al guardar el producto en la base de datos.");
-    } finally {
-      setIsUploading(false);
-    }
-  };
+  } catch (error) {
+    console.error("Error al registrar el producto:", error);
+  } finally {
+    setIsUploading(false);
+  }
+};
 
   // Abrir Modal de Edición Completa
   const startEditing = (item) => {
@@ -197,48 +160,43 @@ const calculatedNewPrecio = costoNum > 0 && porcentajeNum < 100
   // Guardar cambios desde el Modal de Edición Completa con compresión de imágenes
 const handleUpdateInventario = async (e) => {
   e.preventDefault();
-  
-  try {
-    // 1. Calculamos el precio final comercial con el porcentaje actual
-    const costoNum = Number(editingItemData.costo) || 0;
-    const porcentajeNum = Number(editingItemData.porcentajeGanancia) || 50;
-    const divisor = 1 - (porcentajeNum / 100);
-    const precioCalculado = divisor > 0 ? Math.round(costoNum / divisor) : costoNum;
+  setIsUploading(true);
 
-    // 2. Preparamos los datos actualizados
-    let updatedData = {
-      ...editingItemData,
-      costo: costoNum,
+  try {
+    const costoNum = Number(editingItemData.costo) || 0;
+    let precioFinalParaGuardar = 0;
+
+    // Si el costo es 0, respetamos el precio manual que ingresó el usuario
+    if (costoNum === 0) {
+      precioFinalParaGuardar = Number(editingItemData.precio) || 0;
+    } else {
+      // Si tiene costo, se calcula automáticamente con el margen de venta
+      const porc = Number(editingItemData.porcentajeGanancia) || 50;
+      const divisor = 1 - (porc / 100);
+      precioFinalParaGuardar = divisor > 0 ? Math.round(costoNum / divisor) : costoNum;
+    }
+
+    // Objeto limpio con los datos que se enviarán a Firebase Firestore
+    const datosActualizados = {
+      nombre: editingItemData.nombre,
+      proveedor: editingItemData.proveedor,
+      categoria: editingItemData.categoria || "General",
       udisponibles: Number(editingItemData.udisponibles) || 0,
-      porcentajeGanancia: porcentajeNum,
-      precio: precioCalculado,
+      costo: costoNum,
+      porcentajeGanancia: costoNum === 0 ? 0 : Number(editingItemData.porcentajeGanancia),
+      precio: precioFinalParaGuardar, // <--- Aquí se guarda el precio correcto (manual o calculado)
+      // Agrega tus campos de imágenes (img, img1) si ya los manejas en esta función
     };
 
-    // 3. Manejo de subida de nuevas fotos si se seleccionaron
-    if (typeof editFileImg !== 'undefined' && editFileImg) {
-      const storageRef = ref(storage, `inventario/${Date.now()}_${editFileImg.name}`);
-      await uploadBytes(storageRef, editFileImg);
-      updatedData.img = await getDownloadURL(storageRef);
-    }
+    const productoRef = doc(db, "inventario", editingItemData.id);
+    await updateDoc(productoRef, datosActualizados);
 
-    if (typeof editFileImg1 !== 'undefined' && editFileImg1) {
-      const storageRef1 = ref(storage, `inventario/${Date.now()}_${editFileImg1.name}`);
-      await uploadBytes(storageRef1, editFileImg1);
-      updatedData.img1 = await getDownloadURL(storageRef1);
-    }
-
-    // 4. Actualización directa en Firestore
-    const itemRef = doc(db, "inventario", editingItemData.id);
-    await updateDoc(itemRef, updatedData);
-
-    // 5. Cerramos el modal y limpiamos archivos temporales
     setIsEditModalOpen(false);
-    if (typeof setEditFileImg === 'function') setEditFileImg(null);
-    if (typeof setEditFileImg1 === 'function') setEditFileImg1(null);
-
+    // Opcional: recargar tu lista de inventario si no usas onSnapshot
   } catch (error) {
-    console.error("Error al actualizar el producto:", error);
-    alert("Hubo un error al actualizar el producto.");
+    console.error("Error al actualizar producto:", error);
+  } finally {
+    setIsUploading(false);
   }
 };
 
@@ -690,169 +648,169 @@ const handleUpdateInventario = async (e) => {
       {/* MODAL PARA AGREGAR NUEVO PRODUCTO */}
       {isAddModalOpen && (
       <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
-                <span>📦</span> Registrar Nuevo Producto en Inventario
-              </h3>
-              <button
-                onClick={() => setIsAddModalOpen(false)}
-                className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
-              >
-                ✕
-              </button>
-            </div>
+  <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn">
+    <div className="flex items-center justify-between border-b pb-3">
+      <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
+        <span>📦</span> Registrar Nuevo Producto en Inventario
+      </h3>
+      <button
+        type="button"
+        onClick={() => setIsAddModalOpen(false)}
+        className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
+      >
+        ✕
+      </button>
+    </div>
 
-            <form onSubmit={handleAddInventario} className="space-y-3 text-xs">
-              <div>
-                <label className="block font-bold text-slate-600 mb-1">Nombre del producto *</label>
-                <input
-                  type="text"
-                  placeholder="Ej. Cartón de Bingo Premium"
-                  value={nombre}
-                  onChange={(e) => setNombre(e.target.value)}
-                  className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-                  required
-                />
-              </div>
+    <form onSubmit={handleAddInventario} className="space-y-3 text-xs">
+      <div>
+        <label className="block font-bold text-slate-600 mb-1">Nombre del producto *</label>
+        <input
+          type="text"
+          placeholder="Ej. Cartón de Bingo Premium"
+          value={nombre}
+          onChange={(e) => setNombre(e.target.value)}
+          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          required
+        />
+      </div>
 
-              <div>
-                <label className="block font-bold text-slate-600 mb-1">Proveedor *</label>
-                <input
-                  type="text"
-                  placeholder="Ej. Proveedor Principal S.A.S."
-                  value={proveedor}
-                  onChange={(e) => setProveedor(e.target.value)}
-                  className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-                  required
-                />
-              </div>
+      <div>
+        <label className="block font-bold text-slate-600 mb-1">Proveedor *</label>
+        <input
+          type="text"
+          placeholder="Ej. Proveedor Principal S.A.S."
+          value={proveedor}
+          onChange={(e) => setProveedor(e.target.value)}
+          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          required
+        />
+      </div>
 
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-slate-600 mb-1">Categoría</label>
-                  <select
-                    value={categoria}
-                    onChange={(e) => setCategoria(e.target.value)}
-                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-                  >
-                    <option value="General">General</option>
-                    {categorias.map(cat => (
-                      <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-600 mb-1">Stock Inicial *</label>
-                  <input
-                    type="number"
-                    placeholder="Ej. 50"
-                    value={stock}
-                    onChange={(e) => setStock(e.target.value)}
-                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-                    required
-                  />
-                </div>
-              </div>
-
-              {/* Selector de Costo, Margen y Precio condicional con estado controlado */}
-              <div className="grid grid-cols-3 gap-2">
-                <div>
-                  <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
-                  <input
-                    type="number"
-                    placeholder="Ej. 10000"
-                    value={costo}
-                    onChange={(e) => setCosto(e.target.value)}
-                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-600 mb-1">% Margen Venta</label>
-                  <select
-                    value={porcentajeGanancia}
-                    onChange={(e) => setPorcentajeGanancia(Number(e.target.value))}
-                    disabled={Number(costo) === 0}
-                    className={`w-full rounded-xl px-2 py-2 text-xs font-bold focus:outline-none focus:border-[#7C69EF] ${
-                      Number(costo) === 0 
-                        ? "bg-slate-100 border border-[#E4E8F0] text-slate-400 cursor-not-allowed" 
-                        : "bg-white border border-[#E4E8F0] text-[#2D3142]"
-                    }`}
-                  >
-                    {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
-                      <option key={p} value={p}>{p}%</option>
-                    ))}
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-slate-600 mb-1" title="Precio final del producto">Precio Final *</label>
-                  <input
-                    type={Number(costo) === 0 ? "number" : "text"}
-                    placeholder={Number(costo) === 0 ? "Ej. 15000" : undefined}
-                    value={Number(costo) === 0 ? precioManual : (calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0")}
-                    disabled={Number(costo) !== 0}
-                    onChange={(e) => {
-                      if (Number(costo) === 0) {
-                        setPrecioManual(e.target.value);
-                      }
-                    }}
-                    className={`w-full rounded-xl px-3 py-2 text-xs font-bold ${
-                      Number(costo) === 0 
-                        ? "bg-white border border-[#E4E8F0] text-[#2D3142] focus:outline-none focus:border-[#7C69EF]" 
-                        : "bg-slate-100 border border-[#E4E8F0] text-slate-500 cursor-not-allowed"
-                    }`}
-                    required={Number(costo) === 0}
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-2 gap-3 pt-1">
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
-                  <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img) *</label>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={(e) => setFileImg(e.target.files[0])}
-                    className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
-                    required
-                  />
-                </div>
-                <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
-                  <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1) *</label>
-                  <input 
-                    type="file" 
-                    accept="image/*"
-                    onChange={(e) => setFileImg1(e.target.files[0])}
-                    className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
-                  />
-                </div>
-              </div>
-
-              <div className="flex items-center justify-end gap-2 pt-3 border-t">
-                <button
-                  type="button"
-                  onClick={() => setIsAddModalOpen(false)}
-                  className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all"
-                >
-                  Cancelar
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUploading}
-                  className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-[#7C69EF]/20 transition-all disabled:opacity-50"
-                >
-                  {isUploading ? "Subiendo fotos y guardando..." : "Guardar Producto"}
-                </button>
-              </div>
-            </form>
-          </div>
+      <div className="grid grid-cols-2 gap-3">
+        <div>
+          <label className="block font-bold text-slate-600 mb-1">Categoría</label>
+          <select
+            value={categoria}
+            onChange={(e) => setCategoria(e.target.value)}
+            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          >
+            <option value="General">General</option>
+            {categorias.map(cat => (
+              <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+            ))}
+          </select>
         </div>
+        <div>
+          <label className="block font-bold text-slate-600 mb-1">Stock Inicial *</label>
+          <input
+            type="number"
+            placeholder="Ej. 50"
+            value={stock}
+            onChange={(e) => setStock(e.target.value)}
+            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            required
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-3 gap-2">
+        <div>
+          <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
+          <input
+            type="number"
+            placeholder="Ej. 10000"
+            value={costo}
+            onChange={(e) => setCosto(e.target.value)}
+            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            required
+          />
+        </div>
+        <div>
+          <label className="block font-bold text-slate-600 mb-1">% Margen Venta</label>
+          <select
+            value={porcentajeGanancia}
+            onChange={(e) => setPorcentajeGanancia(Number(e.target.value))}
+            disabled={Number(costo) === 0}
+            className={`w-full rounded-xl px-2 py-2 text-xs font-bold focus:outline-none focus:border-[#7C69EF] ${
+              Number(costo) === 0 
+                ? "bg-slate-100 border border-[#E4E8F0] text-slate-400 cursor-not-allowed" 
+                : "bg-white border border-[#E4E8F0] text-[#2D3142]"
+            }`}
+          >
+            {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
+              <option key={p} value={p}>{p}%</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block font-bold text-slate-600 mb-1" title="Precio final del producto">Precio Final *</label>
+          <input
+            type={Number(costo) === 0 ? "number" : "text"}
+            placeholder={Number(costo) === 0 ? "Ej. 15000" : undefined}
+            value={Number(costo) === 0 ? precioManual : (calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0")}
+            disabled={Number(costo) !== 0}
+            onChange={(e) => {
+              if (Number(costo) === 0) {
+                setPrecioManual(e.target.value);
+              }
+            }}
+            className={`w-full rounded-xl px-3 py-2 text-xs font-bold ${
+              Number(costo) === 0 
+                ? "bg-white border border-[#E4E8F0] text-[#2D3142] focus:outline-none focus:border-[#7C69EF]" 
+                : "bg-slate-100 border border-[#E4E8F0] text-slate-500 cursor-not-allowed"
+            }`}
+            required={Number(costo) === 0}
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+          <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img) *</label>
+          <input 
+            type="file" 
+            accept="image/*"
+            onChange={(e) => setFileImg(e.target.files[0])}
+            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+            required
+          />
+        </div>
+        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+          <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
+          <input 
+            type="file" 
+            accept="image/*"
+            onChange={(e) => setFileImg1(e.target.files[0])}
+            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+          />
+        </div>
+      </div>
+
+      <div className="flex items-center justify-end gap-2 pt-3 border-t">
+        <button
+          type="button"
+          onClick={() => setIsAddModalOpen(false)}
+          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all"
+        >
+          Cancelar
+        </button>
+        <button
+          type="submit"
+          disabled={isUploading}
+          className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-[#7C69EF]/20 transition-all disabled:opacity-50"
+        >
+          {isUploading ? "Subiendo fotos y guardando..." : "Guardar Producto"}
+        </button>
+      </div>
+    </form>
+  </div>
+</div>
       )}
 
       {/* MODAL PARA EDITAR PRODUCTO */}
       {isEditModalOpen && editingItemData && (
-       <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
@@ -872,7 +830,7 @@ const handleUpdateInventario = async (e) => {
                 <label className="block font-bold text-slate-600 mb-1">Nombre del producto *</label>
                 <input
                   type="text"
-                  value={editingItemData.nombre}
+                  value={editingItemData.nombre || ""}
                   onChange={(e) => setEditingItemData({...editingItemData, nombre: e.target.value})}
                   className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
                   required
@@ -894,7 +852,7 @@ const handleUpdateInventario = async (e) => {
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">Categoría</label>
                   <select
-                    value={editingItemData.categoria}
+                    value={editingItemData.categoria || "General"}
                     onChange={(e) => setEditingItemData({...editingItemData, categoria: e.target.value})}
                     className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
                   >
@@ -908,7 +866,7 @@ const handleUpdateInventario = async (e) => {
                   <label className="block font-bold text-slate-600 mb-1">Stock Disponible *</label>
                   <input
                     type="number"
-                    value={editingItemData.udisponibles}
+                    value={editingItemData.udisponibles ?? ""}
                     onChange={(e) => setEditingItemData({...editingItemData, udisponibles: e.target.value})}
                     className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
                     required
@@ -916,14 +874,22 @@ const handleUpdateInventario = async (e) => {
                 </div>
               </div>
 
-              {/* Selector de Costo, Margen de Porcentaje y Precio Final condicional para Edición */}
+              {/* Selector de Costo, Margen de Porcentaje y Precio Final (Manual o Automático) */}
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
                   <input
                     type="number"
-                    value={editingItemData.costo}
-                    onChange={(e) => setEditingItemData({...editingItemData, costo: e.target.value})}
+                    value={editingItemData.costo ?? ""}
+                    onChange={(e) => {
+                      const nuevoCosto = e.target.value;
+                      // Si el costo pasa a ser 0, inicializamos el precio manual si no tiene
+                      setEditingItemData({
+                        ...editingItemData, 
+                        costo: nuevoCosto,
+                        precio: Number(nuevoCosto) === 0 ? (editingItemData.precio || "") : editingItemData.precio
+                      });
+                    }}
                     className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
                     required
                   />
@@ -946,7 +912,7 @@ const handleUpdateInventario = async (e) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-600 mb-1" title="Precio final del producto">Precio Final *</label>
+                  <label className="block font-bold text-slate-600 mb-1" title="Precio calculado o manual">Precio Final *</label>
                   <input
                     type={Number(editingItemData.costo) === 0 ? "number" : "text"}
                     placeholder={Number(editingItemData.costo) === 0 ? "Ej. 15000" : undefined}
