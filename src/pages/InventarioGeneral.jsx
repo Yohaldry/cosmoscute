@@ -39,6 +39,8 @@ export default function InventarioGeneral({
   const [editFileImg, setEditFileImg] = useState(null);
   const [editFileImg1, setEditFileImg1] = useState(null);
 
+  const [precioManual, setPrecioManual] = useState("");
+
   // Control de selección múltiple con checkboxes
   const [selectedIds, setSelectedIds] = useState([]);
 
@@ -687,7 +689,7 @@ const handleUpdateInventario = async (e) => {
 
       {/* MODAL PARA AGREGAR NUEVO PRODUCTO */}
       {isAddModalOpen && (
-       <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn">
             <div className="flex items-center justify-between border-b pb-3">
               <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
@@ -753,7 +755,7 @@ const handleUpdateInventario = async (e) => {
                 </div>
               </div>
 
-              {/* Selector de Porcentaje (de 10 en 10 hasta el 95%) y Costo */}
+              {/* Selector de Costo, Margen y Precio condicional con estado controlado */}
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
@@ -768,23 +770,39 @@ const handleUpdateInventario = async (e) => {
                 </div>
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">% Margen Venta</label>
-                 <select
-  value={porcentajeGanancia}
-  onChange={(e) => setPorcentajeGanancia(Number(e.target.value))}
-  className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
->
-  {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
-    <option key={p} value={p}>{p}%</option>
-  ))}
-</select>
+                  <select
+                    value={porcentajeGanancia}
+                    onChange={(e) => setPorcentajeGanancia(Number(e.target.value))}
+                    disabled={Number(costo) === 0}
+                    className={`w-full rounded-xl px-2 py-2 text-xs font-bold focus:outline-none focus:border-[#7C69EF] ${
+                      Number(costo) === 0 
+                        ? "bg-slate-100 border border-[#E4E8F0] text-slate-400 cursor-not-allowed" 
+                        : "bg-white border border-[#E4E8F0] text-[#2D3142]"
+                    }`}
+                  >
+                    {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
+                      <option key={p} value={p}>{p}%</option>
+                    ))}
+                  </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1" title="Precio calculado con base en el margen comercial">Precio Final</label>
+                  <label className="block font-bold text-slate-600 mb-1" title="Precio final del producto">Precio Final *</label>
                   <input
-                    type="text"
-                    value={calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0"}
-                    disabled
-                    className="w-full bg-slate-100 border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-slate-500 cursor-not-allowed"
+                    type={Number(costo) === 0 ? "number" : "text"}
+                    placeholder={Number(costo) === 0 ? "Ej. 15000" : undefined}
+                    value={Number(costo) === 0 ? precioManual : (calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0")}
+                    disabled={Number(costo) !== 0}
+                    onChange={(e) => {
+                      if (Number(costo) === 0) {
+                        setPrecioManual(e.target.value);
+                      }
+                    }}
+                    className={`w-full rounded-xl px-3 py-2 text-xs font-bold ${
+                      Number(costo) === 0 
+                        ? "bg-white border border-[#E4E8F0] text-[#2D3142] focus:outline-none focus:border-[#7C69EF]" 
+                        : "bg-slate-100 border border-[#E4E8F0] text-slate-500 cursor-not-allowed"
+                    }`}
+                    required={Number(costo) === 0}
                   />
                 </div>
               </div>
@@ -898,7 +916,7 @@ const handleUpdateInventario = async (e) => {
                 </div>
               </div>
 
-              {/* Selector de Costo, Margen de Porcentaje y Precio Final Calculado */}
+              {/* Selector de Costo, Margen de Porcentaje y Precio Final condicional para Edición */}
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
@@ -915,7 +933,12 @@ const handleUpdateInventario = async (e) => {
                   <select
                     value={editingItemData.porcentajeGanancia || 50}
                     onChange={(e) => setEditingItemData({...editingItemData, porcentajeGanancia: Number(e.target.value)})}
-                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                    disabled={Number(editingItemData.costo) === 0}
+                    className={`w-full rounded-xl px-2 py-2 text-xs font-bold focus:outline-none focus:border-[#7C69EF] ${
+                      Number(editingItemData.costo) === 0 
+                        ? "bg-slate-100 border border-[#E4E8F0] text-slate-400 cursor-not-allowed" 
+                        : "bg-white border border-[#E4E8F0] text-[#2D3142]"
+                    }`}
                   >
                     {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
                       <option key={p} value={p}>{p}%</option>
@@ -923,19 +946,33 @@ const handleUpdateInventario = async (e) => {
                   </select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1" title="Precio calculado con base en el margen">Precio Final</label>
+                  <label className="block font-bold text-slate-600 mb-1" title="Precio final del producto">Precio Final *</label>
                   <input
-                    type="text"
-                    value={(() => {
-                      const costoNum = Number(editingItemData.costo) || 0;
-                      const porc = Number(editingItemData.porcentajeGanancia) || 50;
-                      // Fórmula basada en tu lógica anterior donde el margen divide o ajusta el precio
-                      const divisor = 1 - (porc / 100); 
-                      const precioFinal = divisor > 0 ? costoNum / divisor : costoNum;
-                      return precioFinal ? `$${Math.round(precioFinal).toLocaleString()}` : "$0";
-                    })()}
-                    disabled
-                    className="w-full bg-slate-100 border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-slate-500 cursor-not-allowed"
+                    type={Number(editingItemData.costo) === 0 ? "number" : "text"}
+                    placeholder={Number(editingItemData.costo) === 0 ? "Ej. 15000" : undefined}
+                    value={
+                      Number(editingItemData.costo) === 0 
+                        ? (editingItemData.precio ?? "") 
+                        : (() => {
+                            const costoNum = Number(editingItemData.costo) || 0;
+                            const porc = Number(editingItemData.porcentajeGanancia) || 50;
+                            const divisor = 1 - (porc / 100); 
+                            const precioFinal = divisor > 0 ? costoNum / divisor : costoNum;
+                            return precioFinal ? `$${Math.round(precioFinal).toLocaleString()}` : "$0";
+                          })()
+                    }
+                    disabled={Number(editingItemData.costo) !== 0}
+                    onChange={(e) => {
+                      if (Number(editingItemData.costo) === 0) {
+                        setEditingItemData({ ...editingItemData, precio: e.target.value });
+                      }
+                    }}
+                    className={`w-full rounded-xl px-3 py-2 text-xs font-bold ${
+                      Number(editingItemData.costo) === 0 
+                        ? "bg-white border border-[#E4E8F0] text-[#2D3142] focus:outline-none focus:border-[#7C69EF]" 
+                        : "bg-slate-100 border border-[#E4E8F0] text-slate-500 cursor-not-allowed"
+                    }`}
+                    required={Number(editingItemData.costo) === 0}
                   />
                 </div>
               </div>

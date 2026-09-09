@@ -3,6 +3,7 @@ import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "fireb
 import { db } from "../firebase";
 import ProductosBingo from "./bingoinfo/ProductosBingo";
 import InventarioGeneral from "../pages/InventarioGeneral";
+import Visitas from "./estadisticas_web/View"; // <--- Importación de la vista de Estadísticas
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -309,6 +310,18 @@ export default function AdminPanel() {
               <span>📋</span>
               <span>Inventario General</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("estadisticas")}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
+                activeTab === "estadisticas"
+                  ? 'bg-[#7C69EF] text-white shadow-2xs'
+                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
+              }`}
+            >
+              <span>📊</span>
+              <span>Estadísticas</span>
+            </button>
           </div>
         </div>
 
@@ -369,6 +382,16 @@ export default function AdminPanel() {
                 <span>📋</span>
                 <span>Inventario General</span>
               </button>
+
+              <button
+                onClick={() => { setActiveTab("estadisticas"); setIsMobileMenuOpen(false); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
+                  activeTab === "estadisticas" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+                }`}
+              >
+                <span>📊</span>
+                <span>Estadísticas</span>
+              </button>
             </div>
           </div>
 
@@ -409,7 +432,9 @@ export default function AdminPanel() {
         <header className="h-9 md:h-11 bg-white border-b border-[#E4E8F0] px-3 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <h2 className="text-[10px] md:text-[11px] font-black text-[#2D3142] uppercase tracking-wider">
-              {activeTab === "bingo-productos" ? "Bingo Productos" : "Inventario General"}
+              {activeTab === "bingo-productos" && "Bingo Productos"}
+              {activeTab === "inventario-general" && "Inventario General"}
+              {activeTab === "estadisticas" && "Estadísticas y Visitas"}
             </h2>
           </div>
           {activeTab === "inventario-general" && (
@@ -454,6 +479,14 @@ export default function AdminPanel() {
                 triggerSuccessAlert={triggerSuccessAlert}
                 triggerErrorAlert={triggerErrorAlert}
               />
+            </div>
+          )}
+
+          {activeTab === "estadisticas" && (
+            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs p-2">
+              <div className="flex-1 flex flex-col overflow-hidden">
+                <Visitas />
+              </div>
             </div>
           )}
 
