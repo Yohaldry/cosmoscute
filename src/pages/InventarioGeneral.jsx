@@ -53,10 +53,13 @@ export default function InventarioGeneral({
   const [detailModal, setDetailModal] = useState({ isOpen: false, item: null });
 
   // Cálculo automático del precio en tiempo real para el formulario modal
-const calculatedNewPrecio = costo 
-  ? Math.round(Number(costo) * (1 + porcentajeGanancia / 100)) 
-  : 0;
+const costoNum = parseFloat(costo) || 0;
+const porcentajeNum = Number(porcentajeGanancia) || 0;
 
+// Fórmula comercial de margen sobre venta (del 10% hasta el 95%)
+const calculatedNewPrecio = costoNum > 0 && porcentajeNum < 100 
+  ? Math.round(costoNum / (1 - (porcentajeNum / 100))) 
+  : 0;
   // Filtrado ultra seguro con React.memo para optimizar la búsqueda en tiempo real
   const filteredInventario = React.useMemo(() => {
     if (!Array.isArray(inventario)) return [];
@@ -765,7 +768,7 @@ const calculatedNewPrecio = costo
                 </div>
               </div>
 
-              {/* Selector de Porcentaje y Costo */}
+              {/* Selector de Porcentaje (de 10 en 10 hasta el 95%) y Costo */}
               <div className="grid grid-cols-3 gap-2">
                 <div>
                   <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
@@ -779,19 +782,19 @@ const calculatedNewPrecio = costo
                   />
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-600 mb-1">% Ganancia</label>
-                  <select
-                    value={porcentajeGanancia} // Asegúrate de tener este estado definido en tu componente principal (ej: const [porcentajeGanancia, setPorcentajeGanancia] = useState(50);)
-                    onChange={(e) => setPorcentajeGanancia(Number(e.target.value))}
-                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-                  >
-                    {Array.from({ length: 20 }, (_, i) => (i + 1) * 10).map((p) => (
-                      <option key={p} value={p}>{p}%</option>
-                    ))}
-                  </select>
+                  <label className="block font-bold text-slate-600 mb-1">% Margen Venta</label>
+                 <select
+  value={porcentajeGanancia}
+  onChange={(e) => setPorcentajeGanancia(Number(e.target.value))}
+  className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+>
+  {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
+    <option key={p} value={p}>{p}%</option>
+  ))}
+</select>
                 </div>
                 <div>
-                  <label className="block font-bold text-slate-500 mb-1" title="Precio calculado con base en el porcentaje">Precio Final</label>
+                  <label className="block font-bold text-slate-500 mb-1" title="Precio calculado con base en el margen comercial">Precio Final</label>
                   <input
                     type="text"
                     value={calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0"}
