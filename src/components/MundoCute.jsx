@@ -230,7 +230,7 @@ export default function CosmosCuteClean() {
                       <span className="text-[9px] sm:text-[10px] font-extrabold text-slate-700">5.0</span>
                     </div>
                     <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${Number(prod.udisponibles || prod.stockactual) > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                      Stock: {prod.udisponibles || prod.stockactual || 0}
+                      Stock Disponible
                     </span>
                   </div>
 
@@ -330,7 +330,7 @@ export default function CosmosCuteClean() {
 
                     <div className="flex items-center gap-2 mb-4">
                       <span className={`text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 ${Number(selectedProduct.udisponibles || selectedProduct.stockactual) > 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
-                        <CheckCircle2 className="w-3 h-3" /> Stock disponible: {selectedProduct.udisponibles || selectedProduct.stockactual || 0} unidades
+                        <CheckCircle2 className="w-3 h-3" /> Stock disponible
                       </span>
                     </div>
 
