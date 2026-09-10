@@ -128,18 +128,27 @@ const handleAddInventario = async (e) => {
 
   try {
     // Función auxiliar para convertir un archivo a Base64
-    const convertirABase64 = (archivo) => {
-      return new Promise((resolve, reject) => {
-        if (!archivo) {
-          resolve("");
-          return;
-        }
-        const reader = new FileReader();
-        reader.readAsDataURL(archivo);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (error) => reject(error);
-      });
-    };
+   const convertirABase64 = (archivo) => {
+  return new Promise((resolve) => {
+    // Si viene vacío, retornamos vacío
+    if (!archivo) return resolve("");
+    
+    // Si ya es un texto (como un Base64 o URL), lo devolvemos directo sin rompernos
+    if (typeof archivo === 'string') {
+      return resolve(archivo);
+    }
+    
+    // Si es un archivo real (Blob o File), lo leemos con seguridad
+    if (archivo instanceof Blob || archivo instanceof File) {
+      const reader = new FileReader();
+      reader.readAsDataURL(archivo);
+      reader.onload = () => resolve(reader.result);
+      reader.onerror = () => resolve("");
+    } else {
+      resolve("");
+    }
+  });
+};
 
     // Convertimos ambas imágenes a Base64 si el usuario las seleccionó
     const imgBase64 = await convertirABase64(fileImg);
@@ -171,8 +180,8 @@ const handleAddInventario = async (e) => {
       estado: estado,
       fentrada: new Date().toLocaleDateString(),
       fsalida: "--",
-      img: imgBase64,   // Guarda la imagen completa en formato Base64
-      img1: img1Base64  // Guarda la segunda imagen completa en formato Base64
+      img: fileImg || "",  
+      img1: fileImg1 || ""
     };
 
     await addDoc(collection(db, "inventario"), nuevoProducto);
@@ -252,13 +261,21 @@ const handleUpdateInventario = async (e) => {
       costo: costoNum,
       porcentajeGanancia: costoNum === 0 ? 0 : Number(editingItemData.porcentajeGanancia),
       precio: precioFinalParaGuardar,
-      estado: estadoBooleano // <--- Ahora se guarda limpiamente como true o false
+      estado: estadoBooleano, // <--- Guardado limpiamente como true o false
+      // Si seleccionaste una foto nueva la usa, de lo contrario mantiene la existente
+      img: editFileImg ? editFileImg : (editingItemData.img || ""),
+      img1: editFileImg1 ? editFileImg1 : (editingItemData.img1 || "")
     };
 
     const productoRef = doc(db, "inventario", editingItemData.id);
     await updateDoc(productoRef, datosActualizados);
 
     setIsEditModalOpen(false);
+    
+    // Limpiamos los estados temporales de los inputs de edición de fotos
+    if (typeof setEditFileImg === 'function') setEditFileImg(null);
+    if (typeof setEditFileImg1 === 'function') setEditFileImg1(null);
+
     // Opcional: recargar tu lista de inventario si no usas onSnapshot
   } catch (error) {
     console.error("Error al actualizar producto:", error);
@@ -784,27 +801,67 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
         </div>
       </div>
 
-      <div className="grid grid-cols-2 gap-3 pt-1">
-        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
-          <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img) *</label>
-          <input 
-            type="file" 
-            accept="image/*"
-            onChange={(e) => setFileImg(e.target.files[0])}
-            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
-            required
-          />
-        </div>
-        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
-          <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
-          <input 
-            type="file" 
-            accept="image/*"
-            onChange={(e) => setFileImg1(e.target.files[0])}
-            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
-          />
-        </div>
-      </div>
+     <div className="grid grid-cols-2 gap-3 pt-1">
+  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+    <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img) *</label>
+    <input 
+      type="file" 
+      accept="image/*"
+      onChange={(e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX = 500; // Reducimos tamaño para asegurar <1MB
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+            else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            setFileImg(canvas.toDataURL('image/jpeg', 0.5)); // Calidad 0.5
+          };
+        };
+        reader.readAsDataURL(file);
+      }}
+      className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+      required
+    />
+  </div>
+  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+    <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
+    <input 
+      type="file" 
+      accept="image/*"
+      onChange={(e) => {
+        const file = e.target.files[0];
+        if (!file) return;
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const img = new Image();
+          img.src = event.target.result;
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            const MAX = 500;
+            let w = img.width, h = img.height;
+            if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+            else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+            canvas.width = w; canvas.height = h;
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, w, h);
+            setFileImg1(canvas.toDataURL('image/jpeg', 0.5));
+          };
+        };
+        reader.readAsDataURL(file);
+      }}
+      className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+    />
+  </div>
+</div>
 
       <div className="flex items-center justify-end gap-2 pt-3 border-t">
         <button
@@ -998,6 +1055,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       </div>
 
       {/* Imágenes */}
+    {/* Imágenes */}
       <div className="grid grid-cols-2 gap-3 pt-1">
         <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
           <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img)</label>
@@ -1005,7 +1063,27 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           <input 
             type="file" 
             accept="image/*"
-            onChange={(e) => setEditFileImg(e.target.files[0])}
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const MAX = 500;
+                  let w = img.width, h = img.height;
+                  if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+                  else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                  canvas.width = w; canvas.height = h;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, w, h);
+                  setEditFileImg(canvas.toDataURL('image/jpeg', 0.5));
+                };
+              };
+              reader.readAsDataURL(file);
+            }}
             className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
           />
         </div>
@@ -1015,7 +1093,27 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           <input 
             type="file" 
             accept="image/*"
-            onChange={(e) => setEditFileImg1(e.target.files[0])}
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const MAX = 500;
+                  let w = img.width, h = img.height;
+                  if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+                  else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                  canvas.width = w; canvas.height = h;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, w, h);
+                  setEditFileImg1(canvas.toDataURL('image/jpeg', 0.5));
+                };
+              };
+              reader.readAsDataURL(file);
+            }}
             className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
           />
         </div>

@@ -21,18 +21,27 @@ export default function CosmosCuteClean() {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
   // Sincronización en tiempo real con Firestore
+// Sincronización en tiempo real con Firestore desde la colección "inventario" filtrando solo los activos
   useEffect(() => {
-    const unsubProd = onSnapshot(collection(db, "productos"), (snapshot) => {
+    const unsubProd = onSnapshot(collection(db, "inventario"), (snapshot) => {
       const items = snapshot.docs.map(d => {
         const data = d.data();
         return {
           id: d.id,
           ...data,
-          // Aseguramos acceso directo a img e img1 independientemente de cómo se serialicen
           img: data.img || '',
           img1: data.img1 || ''
         };
+      }).filter(prod => {
+        // Filtramos estrictamente para que solo pasen los que tienen estado true / activo
+        const isActivo = 
+          prod.estado === true || 
+          String(prod.estado || "").toLowerCase() === "activo" || 
+          String(prod.estado || "").toLowerCase() === "true" || 
+          prod.estado === 1;
+        return isActivo;
       });
+
       setProductos(items);
       setIsLoading(false);
     });
@@ -50,16 +59,26 @@ export default function CosmosCuteClean() {
 
   // Función directa para obtener las imágenes de 'img' y 'img1'
   // Función para validar que el Base64 sea utilizable
-  const getProductImages = (prod) => {
+ const getProductImages = (prod) => {
     const images = [];
     
-    // Verificamos que 'img' exista y tenga un formato válido de base64 o URL
-    if (prod.img && typeof prod.img === 'string' && prod.img.length > 20) {
-      images.push(prod.img);
-    }
-    if (prod.img1 && typeof prod.img1 === 'string' && prod.img1.length > 20) {
-      images.push(prod.img1);
-    }
+    [prod.img, prod.img1].forEach(imgVal => {
+      if (imgVal && typeof imgVal === 'string' && imgVal.trim().length > 10) {
+        let val = imgVal.trim();
+        
+        // Si por error se guardó un blob temporal de la PC, lo ignoramos para que no intente cargarlo en vano
+        if (val.startsWith('blob:')) {
+          return; 
+        }
+        
+        // Si es un base64 crudo sin el encabezado, se lo añadimos
+        if (!val.startsWith('http') && !val.startsWith('data:image')) {
+          val = `data:image/jpeg;base64,${val}`;
+        }
+        
+        images.push(val);
+      }
+    });
     
     return images;
   };
