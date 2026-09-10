@@ -260,7 +260,7 @@ const verificarLineaBingo = (currentDrawn) => {
     };
 
 useEffect(() => {
-    const unsubscribe = onSnapshot(collection(db, "productos"), (querySnapshot) => {
+    const unsubscribe = onSnapshot(collection(db, "productosBingo"), (querySnapshot) => {
         const items = querySnapshot.docs.map((doc) => {
             const data = doc.data();
             return {
@@ -272,10 +272,14 @@ useEffect(() => {
         
         setProductsData(items);
 
-        if (items.length > 0) {
-            const cardGenerada = generateRandomMasterCard(items);
-            setBingoMasterCard(cardGenerada);
+        // Alerta y bloqueo si hay menos de 20 productos
+        if (items.length < 20) {
+            setBingoMasterCard([]);
+            return;
         }
+
+        const cardGenerada = generateRandomMasterCard(items);
+        setBingoMasterCard(cardGenerada);
     }, (error) => {
         console.error("Error al escuchar productos:", error);
     });
