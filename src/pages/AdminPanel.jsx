@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useMemo } from "react";
-import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, onSnapshot, addDoc, updateDoc, deleteDoc, doc, getDocs, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import ProductosBingo from "./bingoinfo/ProductosBingo";
 import InventarioGeneral from "../pages/InventarioGeneral";
-import Visitas from "./estadisticas_web/View"; // <--- Importación de la vista de Estadísticas
+import Visitas from "./estadisticas_web/View"; 
+
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -63,6 +64,44 @@ export default function AdminPanel() {
     setIsAuthenticated(false);
     setAuthInput("");
   };
+
+  const normalizarProductos = async () => {
+    if (!window.confirm("¿Seguro que deseas actualizar todos los productos?")) return;
+    try {
+        const querySnapshot = await getDocs(collection(db, "inventario"));
+        const promesas = querySnapshot.docs.map(async (documento) => {
+            const data = documento.data();
+            const docRef = doc(db, "inventario", documento.id);
+
+            const productoEstandar = {
+                categoria: data.categoria || "OTROS",
+                costo: data.costo ?? 2600,
+                fentrada: data.fentrada || "9/9/2026",
+                fsalida: data.fsalida || "--",
+                id: data.id || documento.id,
+                img: data.img || "",
+                img1: data.img1 || "",
+                nombre: data.nombre || "Sin nombre",
+                porcentajeGanancia: data.porcentajeGanancia ?? 50,
+                portada: data.portada || "",
+                precio: data.precio ?? 5200,
+                proveedor: data.proveedor || "MORITA",
+                udisponibles: data.udisponibles ?? 2,
+                uingresadas: data.uingresadas || "2",
+                uvendidas: data.uvendidas || "0",
+                estado: data.estado !== undefined ? data.estado : "true",
+                descripcion: data.descripcion || "bueno producto"
+            };
+
+            return setDoc(docRef, productoEstandar, { merge: true });
+        });
+
+        await Promise.all(promesas);
+        alert("¡Todos los productos se normalizaron con éxito!");
+    } catch (error) {
+        console.error("Error en la migración:", error);
+    }
+};
 
   useEffect(() => {
     if (!isAuthenticated) return;
@@ -323,6 +362,15 @@ export default function AdminPanel() {
               <span>Estadísticas</span>
             </button>
           </div>
+             {/* 
+           
+  <button 
+    onClick={normalizarProductos}
+    className="bg-purple-600 text-white font-bold p-2 rounded-xl text-xs shadow hover:bg-purple-700"
+>
+    🚀 Ejecutar Normalización en Firestore
+</button>
+*/}
         </div>
 
         <div className="p-3 border-t border-[#E4E8F0]">
