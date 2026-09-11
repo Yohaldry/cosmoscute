@@ -30,12 +30,12 @@ export default function Header() {
       }`}>
         {/* Navegación principal */}
         <div className="w-full px-4 md:px-20 flex items-center justify-between">
-          {/* Logo y texto ultra compacto */}
-          <div className="flex items-center gap-2 cursor-pointer group" onClick={() => navigate('/')}>
+          {/* Logo más grande que sobresale visualmente sin afectar el grosor del header */}
+          <div className="flex items-center cursor-pointer group relative py-2 mt-3" onClick={() => navigate('/')}>
             <img 
               src="https://res.cloudinary.com/dtkirmtfq/image/upload/q_auto,f_auto,w_400/v1784603746/CosmosCute/uyjhbf3bqmox7ovppbmn.png" 
               alt="Cosmos Cute Logo" 
-              className="w-12 h-12 shadow-sm transition-transform"
+              className="w-16 h-16 md:w-20 md:h-20 object-contain drop-shadow-md transition-transform transform group-hover:scale-105"
               style={{ imageRendering: 'high-quality' }}
             />
           </div>

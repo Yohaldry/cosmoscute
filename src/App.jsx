@@ -10,7 +10,8 @@ import './index.css';
 import BoxGame from './components/BoxGame';
 import MundoCute from './components/MundoCute';
 import Footer from './components/Footer';
-import useContadorVisitas from './pages/estadisticas_web/useContadorVisitas'
+import useContadorVisitas from './pages/estadisticas_web/useContadorVisitas';
+import WhatsAppButton from './components/WhatsApp'; // 1. Importa tu componente de WhatsApp
 
 function HomeView() {
   return (
@@ -29,13 +30,11 @@ function RedirectWithUniqueId({ baseRoute }) {
   useContadorVisitas();
   const uniqueId = crypto.randomUUID().slice(0, 8);
   return <Navigate to={`${baseRoute}/${uniqueId}`} replace />;
-  
 }
 
 export default function App() {
   return (
     <BrowserRouter>
-  
       <Routes>
         <Route path="/" element={<HomeView />} />
         <Route path="/admin" element={<AdminPanel />} />
@@ -48,6 +47,9 @@ export default function App() {
         <Route path="/boxgame/:gameId" element={<BoxGame />} />
         <Route path="/bingo/:gameId" element={<BingoGalactico />} />
       </Routes>
+
+      {/* 2. Colócalo aquí abajo (dentro de BrowserRouter pero fuera de Routes) */}
+      <WhatsAppButton />
     </BrowserRouter>
   );
 }

@@ -62,10 +62,10 @@ export default function Hero() {
               {/* Micro-badges informativos */}
               <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[10px] font-bold text-purple-300/80">
                 <span className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
-                  <Trophy className="w-3 h-3 text-amber-400" /> Sorteo en Vivo
+                  <Trophy className="w-3 h-3 text-amber-400" /> Prueba tu suerte
                 </span>
                 <span className="flex items-center gap-1 bg-white/5 px-2 py-0.5 rounded-full border border-white/10 backdrop-blur-sm">
-                  ✨ Música Activa
+                  ✨ Sesiones Grabadas
                 </span>
               </div>
 
