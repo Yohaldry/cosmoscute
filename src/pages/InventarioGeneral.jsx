@@ -19,7 +19,7 @@ export default function InventarioGeneral({
 
   // Estado para controlar la apertura/cierre del Modal de "Nuevo Producto"
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
-
+const [porcentajeDescuento, setPorcentajeDescuento] = useState(0);
   const [porcentajeGanancia, setPorcentajeGanancia] = useState(50);
 
 
@@ -643,19 +643,19 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       </div>
 
       {/* MODAL PARA AGREGAR NUEVO PRODUCTO */}
-      {isAddModalOpen && (
-     <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
-  <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 my-auto transition-all duration-300 ease-out transform scale-100 opacity-100">  <div className="flex items-center justify-between border-b pb-3">
-      <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
-        <span>📦</span> Registrar Nuevo Producto en Inventario
-      </h3>
-      <button
-        type="button"
-        onClick={() => setIsAddModalOpen(false)}
-        className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
-      >
-        ✕
-      </button>
+ {isAddModalOpen && (
+   <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
+ <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 my-auto transition-all duration-300 ease-out transform scale-100 opacity-100">  <div className="flex items-center justify-between border-b pb-3">
+     <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
+       <span>📦</span> Registrar Nuevo Producto en Inventario
+     </h3>
+     <button
+       type="button"
+       onClick={() => setIsAddModalOpen(false)}
+       className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
+     >
+       ✕
+     </button>
     </div>
 
     <form onSubmit={handleAddInventario} className="space-y-3 text-xs">
@@ -683,7 +683,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
         />
       </div>
 
-      {/* Nuevo campo: Descripción */}
+      {/* Descripción */}
       <div>
         <label className="block font-bold text-slate-600 mb-1">Descripción</label>
         <input
@@ -746,7 +746,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
                 : "bg-white border border-[#E4E8F0] text-[#2D3142]"
             }`}
           >
-            {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
+            {Array.from({ length: 19 }, (_, i) => (i + 1) * 5).map((p) => (
               <option key={p} value={p}>{p}%</option>
             ))}
           </select>
@@ -756,7 +756,11 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           <input
             type={Number(costo) === 0 ? "number" : "text"}
             placeholder={Number(costo) === 0 ? "Ej. 15000" : undefined}
-            value={Number(costo) === 0 ? precioManual : (calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0")}
+            value={
+              Number(costo) === 0 
+                ? precioManual 
+                : (calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0")
+            }
             disabled={Number(costo) !== 0}
             onChange={(e) => {
               if (Number(costo) === 0) {
@@ -773,7 +777,34 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
         </div>
       </div>
 
-      {/* Botón interactivo de Estado (Encendido / Apagado) y Fecha de entrada automática */}
+      {/* Campo % Descuento y visualización del precio con descuento */}
+      <div className="grid grid-cols-2 gap-3 bg-purple-50/50 p-2.5 rounded-xl border border-purple-100 items-center">
+        <div>
+          <label className="block font-bold text-slate-700 mb-1">% Descuento aplicable</label>
+          <select
+            value={porcentajeDescuento}
+            onChange={(e) => setPorcentajeDescuento(Number(e.target.value))}
+            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          >
+            {Array.from({ length: 21 }, (_, i) => i * 5).map((p) => (
+              <option key={p} value={p}>{p}% {p === 0 ? "(Sin desc.)" : ""}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block font-bold text-purple-900 mb-1">Precio con Descuento</label>
+          <div className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-black text-purple-700 flex items-center">
+            {(() => {
+              const precioBase = Number(costo) === 0 ? (Number(precioManual) || 0) : (calculatedNewPrecio || 0);
+              const desc = Number(porcentajeDescuento) || 0;
+              const precioConDesc = precioBase * (1 - desc / 100);
+              return `$${Math.round(precioConDesc).toLocaleString()}`;
+            })()}
+          </div>
+        </div>
+      </div>
+
+      {/* Estado y Fecha */}
       <div className="grid grid-cols-2 gap-3 items-center bg-slate-50 p-2.5 rounded-xl border border-slate-200">
         <div>
           <label className="block font-bold text-slate-700 text-[11px] mb-1">Estado del Producto</label>
@@ -802,7 +833,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       </div>
 
      <div className="grid grid-cols-2 gap-3 pt-1">
-  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+ <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
     <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img) *</label>
     <input 
       type="file" 
@@ -816,14 +847,14 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           img.src = event.target.result;
           img.onload = () => {
             const canvas = document.createElement('canvas');
-            const MAX = 500; // Reducimos tamaño para asegurar <1MB
+            const MAX = 500;
             let w = img.width, h = img.height;
             if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
             else { if (h > MAX) { w *= MAX / h; h = MAX; } }
             canvas.width = w; canvas.height = h;
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, w, h);
-            setFileImg(canvas.toDataURL('image/jpeg', 0.5)); // Calidad 0.5
+            setFileImg(canvas.toDataURL('image/jpeg', 0.5));
           };
         };
         reader.readAsDataURL(file);
@@ -831,8 +862,8 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
       required
     />
-  </div>
-  <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
+ </div>
+ <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
     <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
     <input 
       type="file" 
@@ -860,7 +891,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       }}
       className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
     />
-  </div>
+ </div>
 </div>
 
       <div className="flex items-center justify-end gap-2 pt-3 border-t">
@@ -880,12 +911,12 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
         </button>
       </div>
     </form>
-  </div>
+ </div>
 </div>
-      )}
+)}
 
       {/* MODAL PARA EDITAR PRODUCTO */}
-      {isEditModalOpen && editingItemData && (
+    {isEditModalOpen && editingItemData && (
   <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
   <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn max-h-[90vh] overflow-y-auto">
     <div className="flex items-center justify-between border-b pb-3">
@@ -990,7 +1021,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
                 : "bg-white border border-[#E4E8F0] text-[#2D3142]"
             }`}
           >
-            {[10, 20, 30, 40, 50, 60, 70, 80, 90, 95].map((p) => (
+            {Array.from({ length: 19 }, (_, i) => (i + 1) * 5).map((p) => (
               <option key={p} value={p}>{p}%</option>
             ))}
           </select>
@@ -1026,14 +1057,46 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
         </div>
       </div>
 
+      {/* Campo % Descuento y visualización del precio con descuento */}
+      <div className="grid grid-cols-2 gap-3 bg-purple-50/50 p-2.5 rounded-xl border border-purple-100 items-center">
+        <div>
+          <label className="block font-bold text-slate-700 mb-1">% Descuento aplicable</label>
+          <select
+            value={editingItemData.porcentajeDescuento || 0}
+            onChange={(e) => setEditingItemData({...editingItemData, porcentajeDescuento: Number(e.target.value)})}
+            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          >
+            {Array.from({ length: 21 }, (_, i) => i * 5).map((p) => (
+              <option key={p} value={p}>{p}% {p === 0 ? "(Sin desc.)" : ""}</option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block font-bold text-purple-900 mb-1">Precio con Descuento</label>
+          <div className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-black text-purple-700 flex items-center">
+            {(() => {
+              const precioBase = Number(editingItemData.costo) === 0 
+                ? (Number(editingItemData.precio) || 0) 
+                : (() => {
+                    const costoNum = Number(editingItemData.costo) || 0;
+                    const porc = Number(editingItemData.porcentajeGanancia) || 50;
+                    const divisor = 1 - (porc / 100); 
+                    return divisor > 0 ? costoNum / divisor : costoNum;
+                  })();
+              const desc = Number(editingItemData.porcentajeDescuento) || 0;
+              const precioConDesc = precioBase * (1 - desc / 100);
+              return `$${Math.round(precioConDesc).toLocaleString()}`;
+            })()}
+          </div>
+        </div>
+      </div>
+
       {/* Botón Switch de Estado (Encendido / Apagado) */}
-    {/* Botón Switch de Estado (Encendido / Apagado) */}
       <div>
         <label className="block font-bold text-slate-600 mb-1">Estado del Producto</label>
         <button
           type="button"
           onClick={() => {
-            // Alternamos el valor booleano actual (si era true pasa a false, y viceversa)
             setEditingItemData({ ...editingItemData, estado: !editingItemData.estado });
           }}
           className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
@@ -1055,7 +1118,6 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       </div>
 
       {/* Imágenes */}
-    {/* Imágenes */}
       <div className="grid grid-cols-2 gap-3 pt-1">
         <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
           <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img)</label>
@@ -1138,7 +1200,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
     </form>
   </div>
 </div>
-      )}
+)}
 
       {/* MODAL DETALLES (ESTILO ANTERIOR + SCROLL Y ALTURA MÁXIMA PARA EVITAR RECORTE) */}
      {/* MODAL DETALLES CORREGIDO */}
