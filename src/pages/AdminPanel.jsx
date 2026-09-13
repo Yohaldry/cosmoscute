@@ -405,7 +405,7 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
       </aside>
 
       {/* MENÚ HAMBURGUESA MÓVIL */}
-      <div 
+     <div 
         className={`fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex md:hidden transition-opacity duration-300 ease-in-out ${
           isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
         }`}
@@ -435,31 +435,41 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
               <button
                 onClick={() => { setActiveTab("bingo-productos"); setIsMobileMenuOpen(false); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                  activeTab === "bingo-productos" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+                    activeTab === "bingo-productos" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
                 }`}
               >
-                <span>📦</span>
-                <span>Bingo Productos</span>
+                  <span>📦</span>
+                  <span>Bingo Productos</span>
               </button>
 
               <button
                 onClick={() => { setActiveTab("inventario-general"); setIsMobileMenuOpen(false); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                  activeTab === "inventario-general" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+                    activeTab === "inventario-general" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
                 }`}
               >
-                <span>📋</span>
-                <span>Inventario General</span>
+                  <span>📋</span>
+                  <span>Inventario General</span>
               </button>
 
               <button
                 onClick={() => { setActiveTab("estadisticas"); setIsMobileMenuOpen(false); }}
                 className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                  activeTab === "estadisticas" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+                    activeTab === "estadisticas" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
                 }`}
               >
-                <span>📊</span>
-                <span>Estadísticas</span>
+                  <span>📊</span>
+                  <span>Estadísticas</span>
+              </button>
+
+              <button
+                onClick={() => { setActiveTab("banners-promociones"); setIsMobileMenuOpen(false); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
+                  activeTab === "banners-promociones" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+                }`}
+              >
+                <span>🖼️</span>
+                <span>Banners y Promociones</span>
               </button>
             </div>
           </div>
