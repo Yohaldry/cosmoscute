@@ -218,10 +218,7 @@ export default function CosmoscuteRappiPromo() {
                     <span className="text-[9px] text-white/80">({combo.reviews})</span>
                   </div>
 
-                  {/* Descripción corta */}
-                  <p className="text-[9px] sm:text-[10px] text-white/90 line-clamp-2 mb-1.5 leading-tight font-medium">
-                    {combo.description}
-                  </p>
+              
                 </div>
 
                 {/* Precio y Botones */}
