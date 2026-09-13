@@ -54,12 +54,42 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
   }, []);
 
   // Manejar la carga de imagen desde la galería (convirtiendo a Base64)
+// Manejar la carga de imagen comprimiéndola para evitar el límite de 1MB de Firebase
   const handleImageChange = (e) => {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () => {
-        setFormData(prev => ({ ...prev, imagen: reader.result }));
+      reader.onload = (event) => {
+        const img = new Image();
+        img.src = event.target.result;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          // Definir un ancho o alto máximo seguro (ej. 800 pixeles)
+          const MAX_DIMENSION = 800;
+          if (width > height) {
+            if (width > MAX_DIMENSION) {
+              height *= MAX_DIMENSION / width;
+              width = MAX_DIMENSION;
+            }
+          } else {
+            if (height > MAX_DIMENSION) {
+              width *= MAX_DIMENSION / height;
+              height = MAX_DIMENSION;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx.drawImage(img, 0, 0, width, height);
+
+          // Convertir a JPEG con calidad del 70% para reducir el peso por debajo de 1MB
+          const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+          setFormData(prev => ({ ...prev, imagen: compressedDataUrl }));
+        };
       };
       reader.readAsDataURL(file);
     }
@@ -188,7 +218,7 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
       </div>
 
       {/* Tabla de Registros */}
-      {loading ? (
+   {loading ? (
         <div className="text-center py-12 text-slate-400 font-medium text-sm">Cargando banners...</div>
       ) : banners.length === 0 ? (
         <div className="text-center py-16 bg-white rounded-3xl border border-dashed border-slate-200">
@@ -198,17 +228,26 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
         </div>
       ) : (
         <div className="bg-white rounded-3xl shadow-sm border border-purple-100 overflow-hidden">
-          <div className="overflow-x-auto">
+          {/* Forzado con estilo en línea nativo para evitar conflictos de CSS o de altura del padre */}
+          <div 
+            style={{ 
+              maxHeight: '350px', 
+              height: '350px', 
+              overflowY: 'scroll', 
+              overflowX: 'auto' 
+            }} 
+            className="relative w-full"
+          >
             <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="bg-purple-50/60 border-b border-purple-100 text-purple-900 text-[11px] font-black uppercase tracking-wider">
-                  <th className="py-4 px-6">Imagen</th>
-                  <th className="py-4 px-6">Título del Combo</th>
-                  <th className="py-4 px-6">Precio</th>
-                  <th className="py-4 px-6">Ahorro</th>
-                  <th className="py-4 px-6">Estado</th>
-                  <th className="py-4 px-6">Productos Asociados</th>
-                  <th className="py-4 px-6 text-right">Acciones</th>
+              <thead className="sticky top-0 bg-purple-50 z-20 shadow-xs">
+                <tr className="border-b border-purple-100 text-purple-900 text-[11px] font-black uppercase tracking-wider">
+                  <th className="py-4 px-6 bg-purple-50">Imagen</th>
+                  <th className="py-4 px-6 bg-purple-50">Título del Combo</th>
+                  <th className="py-4 px-6 bg-purple-50">Precio</th>
+                  <th className="py-4 px-6 bg-purple-50">Ahorro</th>
+                  <th className="py-4 px-6 bg-purple-50">Estado</th>
+                  <th className="py-4 px-6 bg-purple-50">Productos Asociados</th>
+                  <th className="py-4 px-6 bg-purple-50 text-right">Acciones</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
@@ -219,7 +258,7 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
                     item.producto9, item.producto10
                   ].filter(Boolean);
                   
-                  const isActivo = item.estado !== false; // Por defecto true si no está definido
+                  const isActivo = item.estado !== false;
 
                   return (
                     <tr key={item.id} className="hover:bg-purple-50/30 transition-colors">
@@ -513,6 +552,6 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
         </div>
       )}
 
-    </div>
+  </div>
   );
 }

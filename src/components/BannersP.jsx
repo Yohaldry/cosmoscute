@@ -234,9 +234,7 @@ export default function CosmoscuteRappiPromo() {
                       <span className="font-black text-xs sm:text-sm text-white tracking-tight block leading-none drop-shadow-sm">
                         {combo.price}
                       </span>
-                      <span className="text-[9px] text-white/70 line-through font-semibold">
-                        {combo.originalPrice}
-                      </span>
+                     
                     </div>
 
                     <button 
@@ -340,9 +338,7 @@ export default function CosmoscuteRappiPromo() {
                     <span className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                       {selectedCombo.price}
                     </span>
-                    <span className="text-xs text-slate-400 line-through font-bold">
-                      {selectedCombo.originalPrice}
-                    </span>
+                    
                   </div>
                 </div>
 
