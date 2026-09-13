@@ -4,6 +4,7 @@ import { db } from "../firebase";
 import ProductosBingo from "./bingoinfo/ProductosBingo";
 import InventarioGeneral from "../pages/InventarioGeneral";
 import Visitas from "./estadisticas_web/View"; 
+import BannersPromociones from './bannerspromociones/BannersPromociones';
 
 
 export default function AdminPanel() {
@@ -313,7 +314,7 @@ export default function AdminPanel() {
     <div className="flex flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
       
       {/* SIDEBAR ESCRITORIO */}
-      <aside className="hidden md:flex w-48 bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs justify-between">
+    <aside className="hidden md:flex w-48 bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs justify-between">
         <div>
           <div className="p-3 border-b border-[#E4E8F0] flex items-center gap-2">
             <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
@@ -361,16 +362,28 @@ export default function AdminPanel() {
               <span>📊</span>
               <span>Estadísticas</span>
             </button>
+
+            <button
+              onClick={() => setActiveTab("banners-promociones")}
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
+                activeTab === "banners-promociones"
+                  ? 'bg-[#7C69EF] text-white shadow-2xs'
+                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
+              }`}
+            >
+              <span>🖼️</span>
+              <span>Banners y Promociones</span>
+            </button>
+
           </div>
-             {/* 
-           
-  <button 
-    onClick={normalizarProductos}
-    className="bg-purple-600 text-white font-bold p-2 rounded-xl text-xs shadow hover:bg-purple-700"
->
-    🚀 Ejecutar Normalización en Firestore
-</button>
-*/}
+          {/* 
+           <button 
+              onClick={normalizarProductos}
+              className="bg-purple-600 text-white font-bold p-2 rounded-xl text-xs shadow hover:bg-purple-700"
+          >
+              🚀 Ejecutar Normalización en Firestore
+          </button>
+          */}
         </div>
 
         <div className="p-3 border-t border-[#E4E8F0]">
@@ -524,6 +537,15 @@ export default function AdminPanel() {
                 availableMissingCodes={availableMissingCodes}
                 onOpenCategoryModal={() => { setEditingCategory(null); setCatNombre(""); setCatSearch(""); setIsCategoryModalOpen(true); }}
                 onDeleteCategory={handleDeleteCategoryRequest}
+                triggerSuccessAlert={triggerSuccessAlert}
+                triggerErrorAlert={triggerErrorAlert}
+              />
+            </div>
+          )}
+
+          {activeTab === "banners-promociones" && (
+            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
+              <BannersPromociones 
                 triggerSuccessAlert={triggerSuccessAlert}
                 triggerErrorAlert={triggerErrorAlert}
               />

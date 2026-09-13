@@ -1,125 +1,99 @@
 import { useState, useEffect, useRef } from 'react';
+import { db } from '../firebase';
+import { collection, getDocs, query, where } from 'firebase/firestore';
 import { Heart, Star, ShoppingCart, Eye, ChevronLeft, ChevronRight, Sparkles, Gift, Zap, X, CheckCircle2 } from 'lucide-react';
-
-const promoCombos = [
-  { 
-    name: "Combo Estudio Kawaii Pro", 
-    price: "$49.900", 
-    originalPrice: "$69.900",
-    rating: "4.9",
-    reviews: "142",
-    images: [
-      "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80"
-    ], 
-    discount: "-28%",
-    tag: "COMBO TOP",
-    itemsCount: "3 Artículos",
-    description: "Plumas minimalistas de tinta suave + libreta hardcover aesthetic de diseño exclusivo + pack de stickers holográficos de alta calidad.",
-    includedItems: ["Pluma minimalista de gel", "Libreta Hardcover 100 hojas", "Pack de 20 stickers holográficos"],
-    bgGradient: "from-pink-500 via-rose-500 to-purple-600 text-white"
-  },
-  { 
-    name: "Kit Glow Beauty & LED", 
-    price: "$109.900", 
-    originalPrice: "$149.900",
-    rating: "5.0",
-    reviews: "118",
-    images: [
-      "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=600&q=80"
-    ], 
-    discount: "-26%",
-    tag: "PACK EXCLUSIVO",
-    itemsCount: "2 Artículos",
-    description: "Espejo LED profesional con ajuste de intensidad táctil + lámpara minimalista de escritorio con puerto de carga USB.",
-    includedItems: ["Espejo de vanidad con luz LED recargable", "Lámpara minimalista táctil de escritorio"],
-    bgGradient: "from-purple-600 via-fuchsia-600 to-pink-600 text-white"
-  },
-  { 
-    name: "Dupla Urbana Galaxy Chic", 
-    price: "$169.900", 
-    originalPrice: "$219.900",
-    rating: "4.8",
-    reviews: "95",
-    images: [
-      "https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1602143407151-7111542de6e8?auto=format&fit=crop&w=600&q=80"
-    ], 
-    discount: "-22%",
-    tag: "COMBO VIP",
-    itemsCount: "2 Artículos",
-    description: "Mochila ejecutiva impermeable Galaxy + termo inteligente de acero inoxidable con indicador LED de temperatura touch.",
-    includedItems: ["Mochila ejecutiva impermeable", "Termo inteligente LED de 500ml"],
-    bgGradient: "from-indigo-600 via-purple-600 to-pink-600 text-white"
-  },
-  { 
-    name: "Set Cuddle & Notes", 
-    price: "$89.900", 
-    originalPrice: "$119.900",
-    rating: "4.9",
-    reviews: "84",
-    images: [
-      "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=600&q=80"
-    ], 
-    discount: "-25%",
-    tag: "AHORRO FLASH",
-    itemsCount: "3 Artículos",
-    description: "Libreta premium de apuntes + peluche decorativo ultra suave estilo kawaii + luz LED portátil recargable.",
-    includedItems: ["Libreta premium pastel", "Peluche decorativo suave", "Luz LED portátil USB"],
-    bgGradient: "from-amber-500 via-orange-500 to-rose-600 text-white"
-  },
-  { 
-    name: "Mega Pack Escritorio Estética", 
-    price: "$124.900", 
-    originalPrice: "$169.900",
-    rating: "5.0",
-    reviews: "156",
-    images: [
-      "https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=600&q=80",
-      "https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=600&q=80"
-    ], 
-    discount: "-30%",
-    tag: "MÁS VENDIDO",
-    itemsCount: "4 Artículos",
-    description: "Lámpara LED regulable + set de plumas estéticas + termo inteligente + regalo sorpresa de la marca.",
-    includedItems: ["Lámpara LED regulable", "Set de 4 plumas estéticas", "Termo inteligente", "Regalo sorpresa especial"],
-    bgGradient: "from-teal-600 via-cyan-600 to-indigo-600 text-white"
-  }
-];
 
 export default function CosmoscuteRappiPromo() {
   const scrollRef = useRef(null);
-  const [isPaused, setIsPaused] = useState(false);
-  const [selectedCombo, setSelectedCombo] = useState(null); // Estado para controlar el modal
+  const [selectedCombo, setSelectedCombo] = useState(null);
+  const [promoCombos, setPromoCombos] = useState([]);
+  const [loading, setLoading] = useState(true);
 
+  // Cargar banners y combos desde Firestore filtrando únicamente los que tienen estado en true
   useEffect(() => {
-    const container = scrollRef.current;
-    if (!container) return;
+    const fetchBanners = async () => {
+      try {
+        setLoading(true);
+        
+        const q = query(collection(db, 'bannerspromociones'), where('estado', '==', true));
+        const querySnapshot = await getDocs(q);
+        
+        const list = querySnapshot.docs.map(doc => {
+          const data = doc.data();
+          
+          // Filtrar productos asociados que no estén vacíos
+          const included = [
+            data.producto1, 
+            data.producto2, 
+            data.producto3, 
+            data.producto4, 
+            data.producto5, 
+            data.producto6, 
+            data.producto7
+          ].filter(Boolean);
 
-    let animationFrameId;
-    const speed = 0.6;
+          // Construir array dinámico de imágenes disponibles
+          const imgList = [];
+          if (data.imagen) imgList.push(data.imagen);
+          if (data.imagen2) imgList.push(data.imagen2);
 
-    const autoScroll = () => {
-      if (!isPaused && container && !selectedCombo) {
-        container.scrollLeft += speed;
-        if (container.scrollLeft >= container.scrollWidth / 2) {
-          container.scrollLeft = 0;
-        }
+          const finalImages = imgList.length > 0 
+            ? imgList 
+            : ["https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=600&q=80"];
+
+          // Formatear el precio obtenido de la base de datos (campo "precio")
+          // Si está almacenado como número o texto, lo adaptamos de forma segura
+          const rawPrice = data.precio;
+          let formattedPrice = "$99.900"; // Fallback por defecto
+          
+          if (rawPrice !== undefined && rawPrice !== null && rawPrice !== "") {
+            // Si ya es un string con formato (ej: "$99.900" o "99900"), lo manejamos
+            formattedPrice = typeof rawPrice === 'number' 
+              ? `$${rawPrice.toLocaleString('es-CO')}` 
+              : (rawPrice.startsWith('$') ? rawPrice : `$${rawPrice}`);
+          }
+
+          return {
+            id: doc.id,
+            name: data.titulo || "Combo Especial",
+            price: formattedPrice,
+            originalPrice: data.precioOriginal || "$139.900", // Opcional si también guardas el precio tachado
+            rating: "4.9",
+            reviews: "128",
+            images: finalImages,
+            discount: data.descuento || "-25%",
+            tag: "COMBO TOP",
+            itemsCount: `${included.length} Artículos`,
+            description: `Pack promocional exclusivo que incluye una selección especial de artículos de alta calidad: ${included.join(', ')}.`,
+            includedItems: included.length > 0 ? included : ["Artículo exclusivo principal", "Regalo sorpresa de la marca"],
+            bgGradient: "from-pink-500 via-rose-500 to-purple-600 text-white",
+          };
+        });
+
+        setPromoCombos(list);
+      } catch (error) {
+        console.error("Error al cargar banners desde Firebase:", error);
+      } finally {
+        setLoading(false);
       }
-      animationFrameId = requestAnimationFrame(autoScroll);
     };
 
-    animationFrameId = requestAnimationFrame(autoScroll);
-    return () => cancelAnimationFrame(animationFrameId);
-  }, [isPaused, selectedCombo]);
+    fetchBanners();
+  }, []);
 
   const scrollByAmount = (amount) => {
     if (scrollRef.current) {
       scrollRef.current.scrollBy({ left: amount, behavior: 'smooth' });
     }
   };
+
+  if (loading) {
+    return <div className="text-center py-8 text-xs text-slate-400 font-medium">Cargando promos exclusivas...</div>;
+  }
+
+  if (promoCombos.length === 0) {
+    return null; 
+  }
 
   return (
     <section className="max-w-7xl mx-auto px-4 sm:px-6 py-8 overflow-hidden bg-transparent font-sans">
@@ -143,42 +117,40 @@ export default function CosmoscuteRappiPromo() {
         </div>
 
         {/* Controles de Navegación */}
-        <div className="hidden sm:flex items-center gap-2">
-          <button 
-            onClick={() => scrollByAmount(-340)}
-            className="p-2 rounded-full bg-white border border-pink-200 hover:bg-pink-50 text-pink-600 transition-all shadow-sm hover:scale-105 active:scale-95"
-            aria-label="Anterior"
-          >
-            <ChevronLeft className="w-4 h-4" />
-          </button>
-          <button 
-            onClick={() => scrollByAmount(340)}
-            className="p-2 rounded-full bg-white border border-pink-200 hover:bg-pink-50 text-pink-600 transition-all shadow-sm hover:scale-105 active:scale-95"
-            aria-label="Siguiente"
-          >
-            <ChevronRight className="w-4 h-4" />
-          </button>
-        </div>
+        {promoCombos.length > 1 && (
+          <div className="hidden sm:flex items-center gap-2">
+            <button 
+              onClick={() => scrollByAmount(-340)}
+              className="p-2 rounded-full bg-white border border-pink-200 hover:bg-pink-50 text-pink-600 transition-all shadow-sm hover:scale-105 active:scale-95"
+              aria-label="Anterior"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button 
+              onClick={() => scrollByAmount(340)}
+              className="p-2 rounded-full bg-white border border-pink-200 hover:bg-pink-50 text-pink-600 transition-all shadow-sm hover:scale-105 active:scale-95"
+              aria-label="Siguiente"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+          </div>
+        )}
       </div>
 
-      {/* Carrusel de Banners Compactos y Delgados */}
+      {/* Contenedor de Banners */}
       <div 
         ref={scrollRef}
-        onMouseEnter={() => setIsPaused(true)}
-        onMouseLeave={() => setIsPaused(false)}
-        onTouchStart={() => setIsPaused(true)}
-        onTouchEnd={() => setIsPaused(false)}
         className="flex gap-4 overflow-x-auto no-scrollbar scroll-smooth py-2 px-1 cursor-grab active:cursor-grabbing"
       >
-        {promoCombos.concat(promoCombos).map((combo, index) => (
+        {promoCombos.map((combo) => (
           <div 
-            key={index} 
+            key={combo.id} 
             className="flex-shrink-0 w-[310px] sm:w-[340px] group"
           >
             {/* Tarjeta Rectangular Compacta */}
             <div className={`relative bg-gradient-to-br ${combo.bgGradient} rounded-2xl p-3.5 border border-white/30 shadow-[0_10px_25px_rgba(0,0,0,0.12)] hover:shadow-[0_16px_35px_rgba(0,0,0,0.2)] transition-all duration-300 group-hover:-translate-y-1 flex items-center gap-3`}>
               
-              {/* Contenedor Izquierdo: Imágenes Duales */}
+              {/* Contenedor Izquierdo: Galería Dinámica (1 o 2 fotos) */}
               <div className="relative w-28 sm:w-32 flex-shrink-0 h-28 sm:h-32 bg-white/90 backdrop-blur-md rounded-xl overflow-hidden p-1 flex gap-1 border border-white/60 shadow-inner">
                 
                 {/* Badge de Descuento */}
@@ -187,20 +159,32 @@ export default function CosmoscuteRappiPromo() {
                   <span>{combo.discount}</span>
                 </div>
 
-                <div className="w-1/2 h-full rounded-lg overflow-hidden relative shadow-inner">
-                  <img 
-                    src={combo.images[0]} 
-                    alt={combo.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                </div>
-                <div className="w-1/2 h-full rounded-lg overflow-hidden relative shadow-inner">
-                  <img 
-                    src={combo.images[1]} 
-                    alt={combo.name}
-                    className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
-                  />
-                </div>
+                {combo.images.length === 1 ? (
+                  <div className="w-full h-full rounded-lg overflow-hidden relative shadow-inner">
+                    <img 
+                      src={combo.images[0]} 
+                      alt={combo.name}
+                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                    />
+                  </div>
+                ) : (
+                  <>
+                    <div className="w-1/2 h-full rounded-lg overflow-hidden relative shadow-inner">
+                      <img 
+                        src={combo.images[0]} 
+                        alt={combo.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      />
+                    </div>
+                    <div className="w-1/2 h-full rounded-lg overflow-hidden relative shadow-inner">
+                      <img 
+                        src={combo.images[1]} 
+                        alt={combo.name}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" 
+                      />
+                    </div>
+                  </>
+                )}
 
                 {/* Tag de Artículos */}
                 <div className="absolute bottom-1.5 left-1.5 bg-slate-900/90 text-white text-[7px] font-extrabold px-1.5 py-0.5 rounded flex items-center gap-0.5 backdrop-blur-md shadow-xs border border-white/20">
@@ -240,7 +224,7 @@ export default function CosmoscuteRappiPromo() {
                   </p>
                 </div>
 
-                {/* Precio y Botones ("Ver Más" abre el modal + "Agregar") */}
+                {/* Precio y Botones */}
                 <div className="pt-1.5 border-t border-white/20 mt-auto">
                   <div className="flex items-center justify-between mb-1.5">
                     <div>
@@ -252,7 +236,6 @@ export default function CosmoscuteRappiPromo() {
                       </span>
                     </div>
 
-                    {/* Botón Ver Más que abre el Modal */}
                     <button 
                       onClick={() => setSelectedCombo(combo)}
                       className="bg-white/20 hover:bg-white/30 text-white font-bold text-[9px] py-1 px-2 rounded-lg backdrop-blur-md transition-all flex items-center gap-1 border border-white/30 hover:scale-105 active:scale-95"
@@ -262,7 +245,6 @@ export default function CosmoscuteRappiPromo() {
                     </button>
                   </div>
 
-                  {/* Botón Principal Agregar al Carrito */}
                   <button className="w-full bg-white hover:bg-pink-50 text-purple-900 font-extrabold text-[10px] py-1.5 px-2 rounded-xl transition-all duration-300 flex items-center justify-center gap-1 shadow-md hover:shadow-lg hover:scale-[1.02] active:scale-95">
                     <ShoppingCart className="w-3 h-3 text-purple-600" />
                     <span>AGREGAR AL CARRITO</span>
@@ -313,24 +295,16 @@ export default function CosmoscuteRappiPromo() {
             {/* Contenido del Modal */}
             <div className="p-6 max-h-[70vh] overflow-y-auto">
               
-              {/* Galería de imágenes duales en el modal */}
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className={`grid gap-3 mb-6 ${selectedCombo.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {selectedCombo.images.map((img, idx) => (
-                  <div key={idx} className="h-36 rounded-2xl overflow-hidden shadow-md border border-slate-100 relative group">
+                  <div key={idx} className={`rounded-2xl overflow-hidden shadow-md border border-slate-100 relative group ${selectedCombo.images.length === 1 ? 'h-48' : 'h-36'}`}>
                     <img src={img} alt="Vista previa combo" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
                   </div>
                 ))}
               </div>
 
-              {/* Descripción detallada */}
-              <div className="mb-5">
-                <h4 className="text-xs font-black tracking-wider text-purple-900 uppercase mb-1">Descripción del Combo</h4>
-                <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-medium">
-                  {selectedCombo.description}
-                </p>
-              </div>
+            
 
-              {/* Artículos incluidos */}
               <div className="mb-6 bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
                 <h4 className="text-xs font-black tracking-wider text-purple-900 uppercase mb-2.5 flex items-center gap-1.5">
                   <Gift className="w-4 h-4 text-pink-500" />
@@ -346,7 +320,6 @@ export default function CosmoscuteRappiPromo() {
                 </ul>
               </div>
 
-              {/* Precios y Acción de Compra en el Modal */}
               <div className="flex items-center justify-between pt-4 border-t border-slate-100">
                 <div>
                   <span className="text-[10px] text-slate-400 font-semibold block uppercase">Precio Promocional</span>

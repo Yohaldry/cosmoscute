@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
 import Hero from './components/Hero';
 import Categories from './components/Categories';
-import Products from './components/Products';
+import BannersP from './components/BannersP';
 import AdminPanel from './pages/AdminPanel';
 import BingoGalactico from './components/BingoGalactico';
 import './index.css';
@@ -18,7 +18,7 @@ function HomeView() {
     <div>
       <Header />
       <Hero />
-      <Products />
+      <BannersP />
       <MundoCute />
       <Footer />
     </div>
