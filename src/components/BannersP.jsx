@@ -1,13 +1,16 @@
 import { useState, useEffect, useRef } from 'react';
 import { db } from '../firebase';
 import { collection, getDocs, query, where } from 'firebase/firestore';
-import { Heart, Star, ShoppingCart, Eye, ChevronLeft, ChevronRight, Sparkles, Gift, Zap, X, CheckCircle2 } from 'lucide-react';
+import { Heart, Star, ShoppingCart, Eye, ChevronLeft, ChevronRight, Sparkles, Gift, Zap, X, CheckCircle2, Maximize2 } from 'lucide-react';
 
 export default function CosmoscuteRappiPromo() {
   const scrollRef = useRef(null);
   const [selectedCombo, setSelectedCombo] = useState(null);
   const [promoCombos, setPromoCombos] = useState([]);
   const [loading, setLoading] = useState(true);
+  
+  // Estado para controlar la imagen seleccionada que se mostrará en pantalla completa
+  const [fullscreenImage, setFullscreenImage] = useState(null);
 
   // Cargar banners y combos desde Firestore filtrando únicamente los que tienen estado en true
   useEffect(() => {
@@ -21,7 +24,7 @@ export default function CosmoscuteRappiPromo() {
         const list = querySnapshot.docs.map(doc => {
           const data = doc.data();
           
-          // Filtrar productos asociados que no estén vacíos
+          // Filtrar los 10 productos asociados que no estén vacíos
           const included = [
             data.producto1, 
             data.producto2, 
@@ -29,7 +32,10 @@ export default function CosmoscuteRappiPromo() {
             data.producto4, 
             data.producto5, 
             data.producto6, 
-            data.producto7
+            data.producto7,
+            data.producto8,
+            data.producto9,
+            data.producto10
           ].filter(Boolean);
 
           // Construir array dinámico de imágenes disponibles
@@ -42,26 +48,28 @@ export default function CosmoscuteRappiPromo() {
             : ["https://images.unsplash.com/photo-1583485088034-697b5bc54ccd?auto=format&fit=crop&w=600&q=80"];
 
           // Formatear el precio obtenido de la base de datos (campo "precio")
-          // Si está almacenado como número o texto, lo adaptamos de forma segura
           const rawPrice = data.precio;
           let formattedPrice = "$99.900"; // Fallback por defecto
           
           if (rawPrice !== undefined && rawPrice !== null && rawPrice !== "") {
-            // Si ya es un string con formato (ej: "$99.900" o "99900"), lo manejamos
             formattedPrice = typeof rawPrice === 'number' 
               ? `$${rawPrice.toLocaleString('es-CO')}` 
               : (rawPrice.startsWith('$') ? rawPrice : `$${rawPrice}`);
           }
 
+          // Procesar el porcentaje de ahorro real guardado en el documento
+          const rawAhorro = data.ahorro;
+          const formattedAhorro = rawAhorro ? `${rawAhorro}%` : "25%";
+
           return {
             id: doc.id,
             name: data.titulo || "Combo Especial",
             price: formattedPrice,
-            originalPrice: data.precioOriginal || "$139.900", // Opcional si también guardas el precio tachado
+            originalPrice: data.precioOriginal || "$139.900",
             rating: "4.9",
             reviews: "128",
             images: finalImages,
-            discount: data.descuento || "-25%",
+            discount: formattedAhorro,
             tag: "COMBO TOP",
             itemsCount: `${included.length} Artículos`,
             description: `Pack promocional exclusivo que incluye una selección especial de artículos de alta calidad: ${included.join(', ')}.`,
@@ -153,10 +161,10 @@ export default function CosmoscuteRappiPromo() {
               {/* Contenedor Izquierdo: Galería Dinámica (1 o 2 fotos) */}
               <div className="relative w-28 sm:w-32 flex-shrink-0 h-28 sm:h-32 bg-white/90 backdrop-blur-md rounded-xl overflow-hidden p-1 flex gap-1 border border-white/60 shadow-inner">
                 
-                {/* Badge de Descuento */}
+                {/* Badge de Descuento / Ahorro */}
                 <div className="absolute top-2 left-2 z-20 bg-gradient-to-r from-amber-400 to-orange-500 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-md shadow-sm tracking-wide flex items-center gap-0.5">
                   <Sparkles className="w-2 h-2 text-slate-950" />
-                  <span>{combo.discount}</span>
+                  <span>-{combo.discount}</span>
                 </div>
 
                 {combo.images.length === 1 ? (
@@ -217,8 +225,6 @@ export default function CosmoscuteRappiPromo() {
                     <span className="text-[10px] font-bold text-white">{combo.rating}</span>
                     <span className="text-[9px] text-white/80">({combo.reviews})</span>
                   </div>
-
-              
                 </div>
 
                 {/* Precio y Botones */}
@@ -284,7 +290,7 @@ export default function CosmoscuteRappiPromo() {
                   <span className="text-[10px] opacity-80">({selectedCombo.reviews} reseñas)</span>
                 </div>
                 <div className="bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-lg shadow-sm">
-                  Ahorro {selectedCombo.discount}
+                  Ahorro de {selectedCombo.discount}
                 </div>
               </div>
             </div>
@@ -292,22 +298,32 @@ export default function CosmoscuteRappiPromo() {
             {/* Contenido del Modal */}
             <div className="p-6 max-h-[70vh] overflow-y-auto">
               
+              {/* Galería de Fotos Interactiva (Clic para ampliar) */}
               <div className={`grid gap-3 mb-6 ${selectedCombo.images.length === 1 ? 'grid-cols-1' : 'grid-cols-2'}`}>
                 {selectedCombo.images.map((img, idx) => (
-                  <div key={idx} className={`rounded-2xl overflow-hidden shadow-md border border-slate-100 relative group ${selectedCombo.images.length === 1 ? 'h-48' : 'h-36'}`}>
+                  <div 
+                    key={idx} 
+                    onClick={() => setFullscreenImage(img)}
+                    className={`rounded-2xl overflow-hidden shadow-md border border-slate-100 relative group cursor-pointer ${selectedCombo.images.length === 1 ? 'h-48' : 'h-36'}`}
+                    title="Haz clic para ver la imagen completa"
+                  >
                     <img src={img} alt="Vista previa combo" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+                    
+                    {/* Overlay al hacer hover para indicar que se puede ampliar */}
+                    <div className="absolute inset-0 bg-black/30 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-1.5 text-white font-bold text-xs backdrop-blur-[2px]">
+                      <Maximize2 className="w-4 h-4" />
+                      <span>Ampliar</span>
+                    </div>
                   </div>
                 ))}
               </div>
-
-            
 
               <div className="mb-6 bg-purple-50/60 p-4 rounded-2xl border border-purple-100">
                 <h4 className="text-xs font-black tracking-wider text-purple-900 uppercase mb-2.5 flex items-center gap-1.5">
                   <Gift className="w-4 h-4 text-pink-500" />
                   ¿Qué incluye este combo? ({selectedCombo.itemsCount})
                 </h4>
-                <ul className="space-y-2">
+                <ul className="space-y-2 max-h-44 overflow-y-auto pr-1">
                   {selectedCombo.includedItems.map((item, idx) => (
                     <li key={idx} className="flex items-center gap-2 text-xs sm:text-sm text-slate-700 font-medium">
                       <CheckCircle2 className="w-4 h-4 text-emerald-500 flex-shrink-0" />
@@ -352,6 +368,33 @@ export default function CosmoscuteRappiPromo() {
 
             </div>
 
+          </div>
+        </div>
+      )}
+
+      {/* --- MODAL DE IMAGEN EN PANTALLA COMPLETA --- */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 z-[60] flex items-center justify-center p-4 bg-black/90 backdrop-blur-md animate-fadeIn"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <button 
+            onClick={() => setFullscreenImage(null)}
+            className="absolute top-6 right-6 bg-white/20 hover:bg-white/40 text-white p-2.5 rounded-full transition-colors backdrop-blur-md z-10"
+            aria-label="Cerrar imagen completa"
+          >
+            <X className="w-6 h-6" />
+          </button>
+
+          <div 
+            className="relative max-w-4xl max-h-[90vh] overflow-hidden rounded-2xl flex items-center justify-center"
+            onClick={(e) => e.stopPropagation()} // Evita que se cierre al hacer clic sobre la foto
+          >
+            <img 
+              src={fullscreenImage} 
+              alt="Vista completa" 
+              className="max-w-full max-h-[85vh] object-contain rounded-xl shadow-2xl border border-white/10" 
+            />
           </div>
         </div>
       )}

@@ -1,3 +1,4 @@
+import { useLocation } from 'react-router-dom';
 import React from 'react';
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import Header from './components/Header';
@@ -11,7 +12,7 @@ import BoxGame from './components/BoxGame';
 import MundoCute from './components/MundoCute';
 import Footer from './components/Footer';
 import useContadorVisitas from './pages/estadisticas_web/useContadorVisitas';
-import WhatsAppButton from './components/WhatsApp'; // 1. Importa tu componente de WhatsApp
+import WhatsAppButton from './components/WhatsApp';
 
 function HomeView() {
   return (
@@ -23,6 +24,18 @@ function HomeView() {
       <Footer />
     </div>
   );
+}
+
+// Componente Wrapper para manejar la visibilidad del botón de WhatsApp según la ruta
+function ConditionalWhatsApp() {
+  const location = useLocation();
+
+  // Si la ruta actual incluye '/admin', no renderizamos el botón
+  if (location.pathname.includes('/admin')) {
+    return null;
+  }
+
+  return <WhatsAppButton />;
 }
 
 // Función auxiliar para redirigir automáticamente a una URL con ID único
@@ -48,8 +61,8 @@ export default function App() {
         <Route path="/bingo/:gameId" element={<BingoGalactico />} />
       </Routes>
 
-      {/* 2. Colócalo aquí abajo (dentro de BrowserRouter pero fuera de Routes) */}
-      <WhatsAppButton />
+      {/* Botón de WhatsApp condicional (se oculta automáticamente en /admin) */}
+      <ConditionalWhatsApp />
     </BrowserRouter>
   );
 }

@@ -34,7 +34,7 @@ export default function AdminPanel() {
   const [catNombre, setCatNombre] = useState("");
   const [catSearch, setCatSearch] = useState("");
   const [editingCategory, setEditingCategory] = useState(null);
-
+const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [successAlert, setSuccessAlert] = useState({ isOpen: false, message: "" });
   const [errorAlert, setErrorAlert] = useState({ isOpen: false, message: "" });
 
@@ -314,84 +314,92 @@ export default function AdminPanel() {
     <div className="flex flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
       
       {/* SIDEBAR ESCRITORIO */}
-    <aside className="hidden md:flex w-48 bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs justify-between">
+      <aside className={`hidden md:flex ${isSidebarCollapsed ? "w-16" : "w-48"} bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs justify-between transition-all duration-300 ease-in-out relative`}>
         <div>
-          <div className="p-3 border-b border-[#E4E8F0] flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
-              CT
+          <div className="p-3 border-b border-[#E4E8F0] flex items-center justify-between gap-2 overflow-hidden">
+            <div className="flex items-center gap-2 truncate">
+              <div className="w-6 h-6 shrink-0 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
+                CT
+              </div>
+              <div className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100"}`}>
+                <h1 className="text-[10px] font-extrabold text-[#2D3142] tracking-tight truncate">Carolina Torres</h1>
+                <p className="text-[7px] text-[#9EA2B3]">Admin</p>
+              </div>
             </div>
-            <div className="truncate">
-              <h1 className="text-[10px] font-extrabold text-[#2D3142] tracking-tight truncate">Carolina Torres</h1>
-              <p className="text-[7px] text-[#9EA2B3]">Admin</p>
-            </div>
+            
+            {/* Botón cosmoccute para contraer/expandir */}
+            <button
+              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+              className="w-6 h-6 flex items-center justify-center bg-[#F4F5FB] hover:bg-[#7C69EF]/10 text-[#9EA2B3] hover:text-[#7C69EF] rounded-lg border border-[#E4E8F0] hover:border-[#7C69EF]/30 transition-all shadow-2xs shrink-0 text-[8px]"
+              title={isSidebarCollapsed ? "Expandir barra" : "Colapsar barra"}
+            >
+              {isSidebarCollapsed ? "→" : "←"}
+            </button>
           </div>
 
           <div className="p-2 flex flex-col gap-1">
             <button
               onClick={() => setActiveTab("bingo-productos")}
+              title="Bingo Productos"
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
                 activeTab === "bingo-productos"
                   ? 'bg-[#7C69EF] text-white shadow-2xs'
                   : 'text-[#6E7387] hover:bg-[#F4F5FB]'
               }`}
             >
-              <span>📦</span>
-              <span>Bingo Productos</span>
+              <span className="text-sm shrink-0">📦</span>
+              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Bingo Productos</span>
             </button>
 
             <button
               onClick={() => setActiveTab("inventario-general")}
+              title="Inventario General"
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
                 activeTab === "inventario-general"
                   ? 'bg-[#7C69EF] text-white shadow-2xs'
                   : 'text-[#6E7387] hover:bg-[#F4F5FB]'
               }`}
             >
-              <span>📋</span>
-              <span>Inventario General</span>
+              <span className="text-sm shrink-0">📋</span>
+              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Inventario General</span>
             </button>
 
             <button
               onClick={() => setActiveTab("estadisticas")}
+              title="Estadísticas"
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
                 activeTab === "estadisticas"
                   ? 'bg-[#7C69EF] text-white shadow-2xs'
                   : 'text-[#6E7387] hover:bg-[#F4F5FB]'
               }`}
             >
-              <span>📊</span>
-              <span>Estadísticas</span>
+              <span className="text-sm shrink-0">📊</span>
+              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Estadísticas</span>
             </button>
 
             <button
               onClick={() => setActiveTab("banners-promociones")}
+              title="Banners y Promociones"
               className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
                 activeTab === "banners-promociones"
                   ? 'bg-[#7C69EF] text-white shadow-2xs'
                   : 'text-[#6E7387] hover:bg-[#F4F5FB]'
               }`}
             >
-              <span>🖼️</span>
-              <span>Banners y Promociones</span>
+              <span className="text-sm shrink-0">🖼️</span>
+              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Banners y Promociones</span>
             </button>
 
           </div>
-          {/* 
-           <button 
-              onClick={normalizarProductos}
-              className="bg-purple-600 text-white font-bold p-2 rounded-xl text-xs shadow hover:bg-purple-700"
-          >
-              🚀 Ejecutar Normalización en Firestore
-          </button>
-          */}
         </div>
 
         <div className="p-3 border-t border-[#E4E8F0]">
           <button
             onClick={handleLock}
+            title="Bloquear Panel"
             className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-1.5 px-2 rounded-md text-[9px] transition-all flex items-center justify-center gap-1"
           >
-            <span>🔒</span> <span>Bloquear Panel</span>
+            <span className="shrink-0">🔒</span> <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Bloquear Panel</span>
           </button>
         </div>
       </aside>
@@ -653,7 +661,6 @@ export default function AdminPanel() {
               <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold hover:text-[#2D3142]">✕</button>
             </div>
 
-            {/* Formulario interno para Guardar o Editar Categoría */}
             <form onSubmit={handleSaveCategory} className="bg-[#F4F5FB] p-3 rounded-xl border border-[#E4E8F0] space-y-2">
               <div className="flex justify-between items-center">
                 <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#7C69EF]">
@@ -683,7 +690,6 @@ export default function AdminPanel() {
               </div>
             </form>
 
-            {/* Campo de búsqueda de categorías */}
             <div className="relative">
               <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#9EA2B3]">🔍</span>
               <input 
@@ -695,7 +701,6 @@ export default function AdminPanel() {
               />
             </div>
 
-            {/* Listado de Categorías Filtradas */}
             <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-44">
               <p className="text-[8px] font-black uppercase tracking-wider text-[#9EA2B3] px-1">
                 Resultados ({filteredCategorias.length} de {categorias.length})

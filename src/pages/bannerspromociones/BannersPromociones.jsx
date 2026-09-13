@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { db } from '../../firebase';
 import { collection, getDocs, addDoc, updateDoc, deleteDoc, doc } from 'firebase/firestore';
-import { Sparkles, Plus, Trash2, Edit3, Image as ImageIcon, Tag, Layers, X, Check, Upload, AlertCircle } from 'lucide-react';
+import { Sparkles, Plus, Trash2, Edit3, Image as ImageIcon, Tag, Layers, X, Check, Upload, AlertCircle, Percent } from 'lucide-react';
 
 export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAlert }) {
   const [banners, setBanners] = useState([]);
@@ -12,10 +12,11 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
   // Estado para la alerta de confirmación con diseño "cosmos cute"
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null });
 
-  // Campos del formulario (incluyendo precio y estado como boolean, por defecto true)
+  // Campos del formulario (incluyendo producto8, producto9, producto10 y ahorro)
   const [formData, setFormData] = useState({
     titulo: '',
     precio: '',
+    ahorro: '',
     imagen: '',
     estado: true,
     producto1: '',
@@ -24,7 +25,10 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
     producto4: '',
     producto5: '',
     producto6: '',
-    producto7: ''
+    producto7: '',
+    producto8: '',
+    producto9: '',
+    producto10: ''
   });
 
   // Cargar datos de Firestore
@@ -68,6 +72,7 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
       setFormData({
         titulo: banner.titulo || '',
         precio: banner.precio || '',
+        ahorro: banner.ahorro || '',
         imagen: banner.imagen || '',
         estado: banner.estado !== undefined ? banner.estado : true,
         producto1: banner.producto1 || '',
@@ -76,13 +81,17 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
         producto4: banner.producto4 || '',
         producto5: banner.producto5 || '',
         producto6: banner.producto6 || '',
-        producto7: banner.producto7 || ''
+        producto7: banner.producto7 || '',
+        producto8: banner.producto8 || '',
+        producto9: banner.producto9 || '',
+        producto10: banner.producto10 || ''
       });
     } else {
       setCurrentBanner(null);
       setFormData({
         titulo: '',
         precio: '',
+        ahorro: '',
         imagen: '',
         estado: true,
         producto1: '',
@@ -91,7 +100,10 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
         producto4: '',
         producto5: '',
         producto6: '',
-        producto7: ''
+        producto7: '',
+        producto8: '',
+        producto9: '',
+        producto10: ''
       });
     }
     setIsModalOpen(true);
@@ -193,6 +205,7 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
                   <th className="py-4 px-6">Imagen</th>
                   <th className="py-4 px-6">Título del Combo</th>
                   <th className="py-4 px-6">Precio</th>
+                  <th className="py-4 px-6">Ahorro</th>
                   <th className="py-4 px-6">Estado</th>
                   <th className="py-4 px-6">Productos Asociados</th>
                   <th className="py-4 px-6 text-right">Acciones</th>
@@ -200,7 +213,12 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
               </thead>
               <tbody className="divide-y divide-slate-100 text-xs">
                 {banners.map((item) => {
-                  const productsList = [item.producto1, item.producto2, item.producto3, item.producto4, item.producto5, item.producto6, item.producto7].filter(Boolean);
+                  const productsList = [
+                    item.producto1, item.producto2, item.producto3, item.producto4, 
+                    item.producto5, item.producto6, item.producto7, item.producto8, 
+                    item.producto9, item.producto10
+                  ].filter(Boolean);
+                  
                   const isActivo = item.estado !== false; // Por defecto true si no está definido
 
                   return (
@@ -225,6 +243,11 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
                       <td className="py-4 px-6">
                         <span className="font-extrabold text-purple-700 text-sm">
                           {item.precio ? `$${item.precio}` : "Sin precio"}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="bg-amber-100 text-amber-800 font-black text-[10px] px-2.5 py-1 rounded-lg border border-amber-200 inline-block">
+                          {item.ahorro ? `${item.ahorro}%` : "0%"}
                         </span>
                       </td>
                       <td className="py-4 px-6">
@@ -346,18 +369,40 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
                 </div>
               </div>
 
-              {/* Campo Precio */}
-              <div>
-                <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
-                  Precio
-                </label>
-                <input
-                  type="text"
-                  placeholder="Ej. 49.990"
-                  value={formData.precio}
-                  onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
-                  className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-purple-500"
-                />
+              {/* Campos Precio y Ahorro */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
+                    Precio
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ej. 49.990"
+                    value={formData.precio}
+                    onChange={(e) => setFormData({ ...formData, precio: e.target.value })}
+                    className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-purple-500"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-black text-slate-700 uppercase tracking-wider mb-1">
+                    Porcentaje de Ahorro
+                  </label>
+                  <div className="relative">
+                    <select
+                      value={formData.ahorro}
+                      onChange={(e) => setFormData({ ...formData, ahorro: e.target.value })}
+                      className="w-full px-4 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:outline-none focus:border-purple-500 bg-white appearance-none cursor-pointer"
+                    >
+                      <option value="">Selecciona porcentaje</option>
+                      {Array.from({ length: 20 }, (_, i) => (i + 1) * 5).map((percent) => (
+                        <option key={percent} value={percent}>
+                          {percent}% de Ahorro
+                        </option>
+                      ))}
+                    </select>
+                    <Percent className="absolute right-3 top-3 w-4 h-4 text-slate-400 pointer-events-none" />
+                  </div>
+                </div>
               </div>
 
               {/* Subir imagen desde la galería */}
@@ -386,14 +431,14 @@ export default function BannersPromociones({ triggerSuccessAlert, triggerErrorAl
                 </div>
               </div>
 
-              {/* Grid de Productos (1 al 7) */}
+              {/* Grid de Productos (1 al 10) */}
               <div className="pt-2">
                 <h4 className="text-xs font-black text-purple-900 uppercase tracking-wider mb-3 flex items-center gap-1.5">
                   <Tag className="w-3.5 h-3.5 text-pink-500" />
-                  Productos Asociados (hasta 7)
+                  Productos Asociados (hasta 10)
                 </h4>
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  {[1, 2, 3, 4, 5, 6, 7].map((num) => {
+                  {[1, 2, 3, 4, 5, 6, 7, 8, 9, 10].map((num) => {
                     const fieldName = `producto${num}`;
                     return (
                       <div key={num}>
