@@ -14,7 +14,6 @@ const generateRandomMasterCard = (products) => {
     const totalCells = 20; // 4 filas x 5 columnas
     const specialIcons = ['⭐', '🍪', '❤️'];
     
-    // Clonamos y barajamos los productos reales que trajiste de Firebase
     let productsPool = [...products].sort(() => Math.random() - 0.5);
 
     const specialIndices = new Set();
@@ -32,19 +31,17 @@ const generateRandomMasterCard = (products) => {
                 value: specialIcons.pop() 
             });
         } else {
-            // Si tenemos más celdas que productos, los repetimos cíclicamente de forma segura
             const prod = productsPool[productIndex % productsPool.length];
             flatCard.push({ 
                 type: 'product', 
-                id: prod.id,          // El código de tu base de datos (ej. "02", "18")
-                name: prod.name,      // El nombre del producto
+                id: prod.id,           
+                name: prod.name,      
                 firebaseId: prod.firebaseId 
             });
             productIndex++;
         }
     }
 
-    // Dividir en 4 filas de 5 elementos cada una
     const card = [];
     for (let i = 0; i < 4; i++) {
         card.push(flatCard.slice(i * 5, (i + 1) * 5));
@@ -287,19 +284,36 @@ useEffect(() => {
     return () => unsubscribe();
 }, []);
 
-    useEffect(() => {
-        if (currentBall !== null && scrollContainerRef.current && productsData.length > 0) {
-            const container = scrollContainerRef.current;
-            const productIndex = productsData.findIndex(p => Number(p.id) === currentBall);
+const scrollTimerRef = useRef(null);
 
-            if (productIndex !== -1) {
-                const productElement = container.querySelectorAll('.product-item')[productIndex];
-                if (productElement) {
-                    const targetScrollTop = productElement.offsetTop - (container.clientHeight / 2) + (productElement.offsetHeight / 2);
-                    container.scrollTo({ top: Math.max(0, targetScrollTop), behavior: 'smooth' });
-                }
-            }
+    useEffect(() => {
+        if (currentBall === null || !scrollContainerRef.current || productsData.length === 0) return;
+
+        const container = scrollContainerRef.current;
+        const productIndex = productsData.findIndex(p => Number(p.id) === currentBall);
+
+        if (productIndex === -1) return;
+
+        const productElement = container.querySelectorAll('.product-item')[productIndex];
+        if (!productElement) return;
+
+        // Limpiamos cualquier temporizador anterior activo
+        if (scrollTimerRef.current) {
+            clearTimeout(scrollTimerRef.current);
         }
+
+        // Programamos el scroll a 5 segundos
+        scrollTimerRef.current = setTimeout(() => {
+            const targetScrollTop = productElement.offsetTop - (container.clientHeight / 2) + (productElement.offsetHeight / 2);
+            container.scrollTo({ 
+                top: Math.max(0, targetScrollTop), 
+                behavior: 'smooth' 
+            });
+        }, 3000);
+
+        return () => {
+            // Solo lo limpiamos si el componente se desmonta por completo
+        };
     }, [currentBall, productsData]);
 
     const allPossibleNumbers = useMemo(() => {

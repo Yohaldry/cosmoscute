@@ -177,6 +177,7 @@ const handleAddInventario = async (e) => {
       costo: costoNum,
       precio: precioFinalParaGuardar,
       porcentajeGanancia: porcentajeGanancia,
+      descuento: Number(porcentajeDescuento),
       estado: estado,
       fentrada: new Date().toLocaleDateString(),
       fsalida: "--",
@@ -251,6 +252,10 @@ const handleUpdateInventario = async (e) => {
       String(editingItemData.estado).toLowerCase() === "true" || 
       editingItemData.estado === 1;
 
+    // Calculamos el precio con descuento para guardarlo directamente en el campo "descuento"
+    const descPorcentaje = Number(editingItemData.porcentajeDescuento || 0);
+    const precioConDescuentoCalculado = Math.round(precioFinalParaGuardar * (1 - descPorcentaje / 100));
+
     // Objeto limpio con los datos que se enviarán a Firebase Firestore
     const datosActualizados = {
       nombre: editingItemData.nombre,
@@ -259,6 +264,10 @@ const handleUpdateInventario = async (e) => {
       udisponibles: Number(editingItemData.udisponibles) || 0,
       descripcion: editingItemData.descripcion || "",
       costo: costoNum,
+      
+      // 🎯 AQUÍ ESTÁ EL AJUSTE: Guarda el valor monetario del precio con descuento en "descuento"
+      descuento: precioConDescuentoCalculado, 
+
       porcentajeGanancia: costoNum === 0 ? 0 : Number(editingItemData.porcentajeGanancia),
       precio: precioFinalParaGuardar,
       estado: estadoBooleano, // <--- Guardado limpiamente como true o false
