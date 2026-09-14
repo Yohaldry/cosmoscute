@@ -629,7 +629,7 @@ const closeIntro = () => {
             <div className="w-full max-w-7xl h-full max-h-[96vh] bg-slate-950 rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-slate-800 gap-2 p-3 sm:p-5">
                 
                 {/* Columna 1: Lista completa de Productos */}
-                <div className="w-full lg:w-1/4 bg-slate-900/80 rounded-2xl border border-slate-800 p-3 flex flex-col h-1/3 lg:h-full overflow-hidden">
+          <div className="w-full lg:w-1/4 bg-slate-900/80 rounded-2xl border border-slate-800 p-3 flex flex-col h-1/3 lg:h-full overflow-hidden">
     <div className="flex items-center justify-between mb-2">
         <h2 className="text-xs font-black uppercase tracking-wider text-purple-400">TODOS LOS PRODUCTOS</h2>
     </div>
@@ -641,35 +641,37 @@ const closeIntro = () => {
         {productsData.length === 0 ? (
             <p className="text-xs text-slate-500 text-center py-4">No hay productos registrados.</p>
         ) : (
-            productsData.map((product, index) => {
-                const prodId = product.id ?? index;
-                const isCurrentWinner = currentBall === Number(prodId);
-                const isAlreadyDrawn = Array.isArray(drawnBalls) && drawnBalls.includes(Number(prodId));
-                const isThisProductBlinking = blinkingProductId === Number(prodId);
-                
-                return (
-                    <div 
-                        key={product.firebaseId || `${prodId}-${index}`} 
-                        className={`product-item flex items-center justify-between p-2 rounded-xl text-xs transition-all border ${
-                            isCurrentWinner 
-                                ? 'bg-purple-600/40 border-purple-400 scale-[1.02]' 
-                                : isAlreadyDrawn 
-                                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-500 opacity-60 line-through' 
-                                    : 'bg-slate-800/80 border-slate-700 text-white hover:bg-slate-800'
-                        }`}
-                    style={isThisProductBlinking ? {
-    animation: 'pulse 0.5s ease-in-out 20',
-    boxShadow: '0 0 30px rgba(168,85,247,1)',
-    borderColor: '#c084fc',
-    backgroundColor: 'rgba(147, 51, 234, 0.6)'
-} : {}}
-                    >
-                        <span className="font-mono font-bold text-purple-300 w-8">{String(prodId).padStart(2, '0')}</span>
-                        <span className="flex-1 truncate px-2 font-medium">{product.name}</span>
-                        <span className="text-sm">🛍️</span>
-                    </div>
-                );
-            })
+            [...productsData]
+                .sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))
+                .map((product, index) => {
+                    const prodId = product.id ?? index;
+                    const isCurrentWinner = currentBall === Number(prodId);
+                    const isAlreadyDrawn = Array.isArray(drawnBalls) && drawnBalls.includes(Number(prodId));
+                    const isThisProductBlinking = blinkingProductId === Number(prodId);
+                    
+                    return (
+                        <div 
+                            key={product.firebaseId || `${prodId}-${index}`} 
+                            className={`product-item flex items-center justify-between p-2 rounded-xl text-xs transition-all border ${
+                                isCurrentWinner 
+                                    ? 'bg-purple-600/40 border-purple-400 scale-[1.02]' 
+                                    : isAlreadyDrawn 
+                                        ? 'bg-slate-800/40 border-slate-700/50 text-slate-500 opacity-60 line-through' 
+                                        : 'bg-slate-800/80 border-slate-700 text-white hover:bg-slate-800'
+                            }`}
+                            style={isThisProductBlinking ? {
+                                animation: 'pulse 0.5s ease-in-out 20',
+                                boxShadow: '0 0 30px rgba(168,85,247,1)',
+                                borderColor: '#c084fc',
+                                backgroundColor: 'rgba(147, 51, 234, 0.6)'
+                            } : {}}
+                        >
+                            <span className="font-mono font-bold text-purple-300 w-8">{String(prodId).padStart(2, '0')}</span>
+                            <span className="flex-1 truncate px-2 font-medium">{product.name}</span>
+                            <span className="text-sm">🛍️</span>
+                        </div>
+                    );
+                })
         )}
     </div>
 </div>
