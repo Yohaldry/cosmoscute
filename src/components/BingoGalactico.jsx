@@ -291,13 +291,8 @@ useEffect(() => {
         if (currentBall === null || !scrollContainerRef.current || productsData.length === 0) return;
 
         const container = scrollContainerRef.current;
-        const productIndex = productsData.findIndex(p => Number(p.id) === currentBall);
 
-        if (productIndex === -1) return;
-
-        const productElement = container.querySelectorAll('.product-item')[productIndex];
-        if (!productElement) return;
-
+        // Limpiamos timers
         if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
         if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
 
@@ -306,7 +301,22 @@ useEffect(() => {
 
         // AQUí OCURRE TODO A LOS 3 SEGUNDOS EXACTOS
         scrollTimerRef.current = setTimeout(() => {
+            
+            // 1. Buscamos el índice basándonos en el MISMO orden en el que dibujas el HTML
+            const sortedProducts = [...productsData].sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0));
+            const productIndex = sortedProducts.findIndex(p => Number(p.id) === currentBall);
+
+            if (productIndex === -1) return;
+
+            // 2. Buscamos el elemento en el DOM JUSTO AHORA, para asegurarnos de que no sea viejo
+            const productElements = container.querySelectorAll('.product-item');
+            const productElement = productElements[productIndex];
+            
+            if (!productElement) return;
+
+            // 3. Calculamos la posición y hacemos scroll
             const targetScrollTop = productElement.offsetTop - (container.clientHeight / 2) + (productElement.offsetHeight / 2);
+            
             container.scrollTo({ 
                 top: Math.max(0, targetScrollTop), 
                 behavior: 'smooth' 
@@ -406,16 +416,11 @@ const drawNextBall = () => {
         verificarLineaBingo(updatedDrawnBalls);
 
         if (nuevoTotal === 0) {
-            // Ya no disparamos el modal automáticamente aquí, 
-            // solo marcamos el fin o dejamos que el botón active el resultado.
             setGameOver(true);
         }
 
         setIsDrawing(false);
-        setCurrentBall(newBall);
-        setTimeout(() => {
-            setCurrentBall(null);
-        }, 1000);
+        setCurrentBall(newBall); // <-- Se queda fija aquí y ya no se borra a los 1 segundo
 
     }, 2000);
 };
@@ -677,120 +682,132 @@ const closeIntro = () => {
 </div>
 
                 {/* Columna 2: Tómbola y Sorteo */}
-                <div className="w-full lg:w-2/5 bg-slate-900/80 rounded-2xl border border-slate-800 p-4 flex flex-col items-center justify-between h-1/3 lg:h-full overflow-y-auto">
-                    <div className="text-center">
-                        <h1 className="text-base sm:text-lg font-black text-white tracking-widest">BINGO GALÁCTICO</h1>
-                        <span className="text-[10px] font-extrabold uppercase tracking-widest text-purple-400 bg-purple-950/60 px-3 py-0.5 rounded-full border border-purple-800/50">
-                            SORTEO GENERAL
-                        </span>
-                    </div>
-
-                    <div className={`relative w-40 h-40 sm:w-48 sm:h-48 rounded-full border-4 border-purple-500/50 bg-gradient-to-br from-purple-950 via-slate-900 to-black flex items-center justify-center shadow-2xl overflow-hidden my-2 transition-all duration-500 ${globeEffect}`}>
-                        <div className="absolute inset-0 bg-gradient-to-t from-transparent via-white/5 to-white/20 pointer-events-none rounded-full"></div>
-                        
-                        <div className="z-10 flex items-center justify-center">
-                            {isDrawing ? (
-                                <div className="text-3xl animate-spin">🌀</div>
-                            ) : currentBall !== null ? (
-                                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-pink-500 to-purple-600 text-white flex items-center justify-center font-mono font-black text-2xl sm:text-3xl shadow-[0_0_20px_rgba(236,72,153,0.8)] border-2 border-white/40 animate-pulse">
-                                    {String(currentBall).padStart(2, '0')}
-                                </div>
-                            ) : (
-                                <div className="text-xs font-black tracking-widest text-purple-300 bg-purple-900/50 px-4 py-1.5 rounded-full border border-purple-500/30">
-                                    {totalBalotas === 0 ? 'FINALIZADO' : 'LISTO'}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className="absolute inset-0 pointer-events-none overflow-hidden">
-                            {availableNumbers.slice(0, 15).map((num, index) => {
-                                const randomDelay = (index * 0.15) % 1.5;
-                                const randomDuration = 0.8 + ((index * 0.2) % 1.2);
-                                return (
-                                    <div 
-                                        key={index}
-                                        className="absolute ball-floating w-6 h-6 rounded-full bg-purple-900/60 border border-purple-500/40 text-[9px] font-mono text-purple-200 flex items-center justify-center"
-                                        style={{
-                                            top: `${(index * 25) % 80}%`,
-                                            left: `${(index * 35) % 80}%`,
-                                            '--random-delay': `${randomDelay}s`,
-                                            '--random-duration': `${randomDuration}s`
-                                        }}
-                                    >
-                                        {String(num).padStart(2, '0')}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    <div className="w-full bg-slate-950/80 rounded-xl p-2 border border-slate-800 flex items-center justify-center gap-1.5 overflow-x-auto">
-                        {drawnBalls.slice(0, 6).map((ball, index) => (
-                            <div key={index} className="w-8 h-8 rounded-full bg-gradient-to-tr from-purple-600 to-indigo-600 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-white/20 shadow-md">
-                                {String(ball).padStart(2, '0')}
-                            </div>
-                        ))}
-                    </div>
-
-                   {/* 1. Botón original de Girar/Sortear (Se deshabilita cuando totalBalotas === 0) */}
-<button
-    onClick={drawNextBall}
-    disabled={isDrawing || totalBalotas === 0}
-    className={`relative group overflow-hidden w-full text-white font-black text-xs sm:text-sm py-4 px-5 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.8),inset_0_2px_4px_rgba(255,255,255,0.1)] transition-all transform active:scale-95 uppercase tracking-wider flex items-center justify-between border-2 ${
-        totalBalotas === 0 
-            ? 'bg-gradient-to-b from-slate-800 via-slate-900 to-purple-950 border-purple-500/40 opacity-50 cursor-not-allowed filter grayscale' 
-            : isDrawing 
-                ? 'bg-gradient-to-r from-pink-500 via-purple-500 via-indigo-500 via-amber-400 to-pink-500 bg-[length:400%_400%] animate-[gradient_2s_linear_infinite] border-white shadow-[0_0_30px_rgba(236,72,153,0.8)] cursor-wait' 
-                : 'bg-gradient-to-b from-slate-800 via-slate-900 to-purple-950 border-purple-500/40 hover:border-pink-500 hover:shadow-[0_0_25px_rgba(236,72,153,0.5)] cursor-pointer'
-    }`}
->
-    {/* Patrones de destellos estelares (estrellitas flotantes al girar) */}
-    {isDrawing && (
-        <div className="absolute inset-0 flex items-center justify-around opacity-75 pointer-events-none overflow-hidden">
-            <span className="animate-ping text-xs">✨</span>
-            <span className="animate-bounce text-xs">💖</span>
-            <span className="animate-pulse text-xs">⭐</span>
-            <span className="animate-ping text-xs">🌟</span>
-        </div>
-    )}
-
-    {/* Texto y Estado */}
-    <div className="flex items-center gap-3 relative z-10">
-        <div className={`w-9 h-9 rounded-xl bg-purple-900/60 border border-purple-500/50 flex items-center justify-center shadow-inner ${isDrawing ? 'animate-spin' : ''}`}>
-            <span className="text-base">{totalBalotas === 0 ? '🚀' : isDrawing ? '✨' : '🎰'}</span>
-        </div>
-        <div className="flex flex-col text-left">
-            <span className="text-[9px] text-pink-300 font-bold tracking-widest uppercase">
-                {isDrawing ? '✨ Mágico & Galáctico ✨' : 'Palanca Galáctica'}
-            </span>
-            <span className="text-xs sm:text-sm text-white drop-shadow-md">
-                {isDrawing ? '¡Girando Balota...' : totalBalotas === 0 ? 'Misión Finalizada' : 'Accionar Tómbola'}
-            </span>
-        </div>
+               <div className="w-full lg:w-2/5 bg-slate-950/90 rounded-3xl border border-indigo-500/30 p-5 flex flex-col items-center justify-between h-1/3 lg:h-full overflow-y-auto shadow-[0_0_60px_rgba(99,102,241,0.15)] backdrop-blur-2xl">
+    <div className="text-center">
+        <h1 className="text-base sm:text-lg font-black text-white tracking-widest drop-shadow-md">BINGO GALÁCTICO</h1>
+        <span className="text-[10px] font-extrabold uppercase tracking-widest text-indigo-300 bg-indigo-950/60 px-3.5 py-1 rounded-full border border-indigo-500/40 shadow-inner">
+            SORTEO GENERAL
+        </span>
     </div>
 
-    {/* Simulación visual de la perilla de la palanca arcade */}
-    <div className="relative flex items-center z-10">
-        <div className="w-8 h-2 bg-gradient-to-r from-slate-600 to-slate-400 rounded-l-full border-y border-slate-300"></div>
-        <div className={`w-7 h-7 rounded-full bg-gradient-to-tr from-pink-600 via-purple-500 to-amber-400 border-2 border-white shadow-[0_0_12px_rgba(236,72,153,0.9)] flex items-center justify-center transform group-hover:translate-x-1 transition-transform ${isDrawing ? 'animate-bounce' : ''}`}>
-            <span className="w-2 h-2 rounded-full bg-white/80"></span>
-        </div>
-    </div>
-</button>
+    {/* Núcleo de Plasma con Órbita Circular Unificada */}
+    <div className={`relative w-48 h-48 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-slate-950 via-indigo-950 to-black flex items-center justify-center shadow-[0_0_50px_rgba(79,70,229,0.25),inset_0_0_30px_rgba(99,102,241,0.3)] overflow-hidden my-3 border border-indigo-500/40 transition-all duration-700 ${globeEffect}`}>
+        
+        {/* Anillos orbitales giratorios */}
+        <div className={`absolute inset-3 rounded-full border border-dashed border-indigo-400/20 pointer-events-none ${isDrawing ? 'animate-[spin_4s_linear_infinite]' : ''}`}></div>
+        <div className={`absolute inset-8 rounded-full border border-purple-500/20 pointer-events-none ${isDrawing ? 'animate-[spin_3s_linear_infinite]' : ''}`}></div>
 
-{/* 2. Nuevo Botón que aparece únicamente cuando las balotas llegan a 0 */}
-{totalBalotas === 0 && (
-    <button
-        onClick={() => {
-            setGameOver(true);
-            setShowBingoAlert(true);
-        }}
-        className="w-full mt-3 bg-gradient-to-r from-amber-500 via-pink-500 to-purple-600 hover:brightness-110 text-white font-black text-xs sm:text-sm py-3.5 rounded-2xl shadow-[0_0_25px_rgba(251,191,36,0.6)] transition-all transform active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2 animate-bounce cursor-pointer"
-    >
-        <span>🏆</span> Ver Resultado Final
-    </button>
-)}
+        {/* Brillo de cristal */}
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-indigo-500/10 to-white/10 pointer-events-none rounded-full z-20"></div>
+
+        {/* Visor Central */}
+        <div className="z-30 flex items-center justify-center">
+            {isDrawing ? (
+                <div className="relative flex items-center justify-center">
+                    <div className="absolute w-24 h-24 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin"></div>
+                    <div className="text-3xl animate-pulse">⚡</div>
                 </div>
+            ) : currentBall !== null ? (
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-white flex items-center justify-center font-mono font-black text-3xl sm:text-4xl shadow-[0_0_40px_rgba(99,102,241,0.9),inset_0_2px_6px_rgba(255,255,255,0.6)] border-2 border-white/70 animate-bounce">
+                    {String(currentBall).padStart(2, '0')}
+                </div>
+            ) : (
+                <div className="text-xs font-black tracking-widest text-indigo-200 bg-indigo-950/80 px-5 py-2 rounded-full border border-indigo-500/50 shadow-lg backdrop-blur-md">
+                    {totalBalotas === 0 ? 'FINALIZADO' : 'LISTO'}
+                </div>
+            )}
+        </div>
+
+        {/* Contenedor general que rota en círculo hacia la derecha cuando isDrawing es true */}
+        <div className={`absolute inset-0 pointer-events-none overflow-hidden z-10 transition-all duration-500 ${
+            isDrawing ? 'animate-[spin_3s_linear_infinite]' : ''
+        }`}>
+            {availableNumbers.slice(0, 16).map((num, index) => {
+                const angle = (index / 16) * 360;
+                const distance = 45 + (index % 3) * 12; // Radio de dispersión interna
+                
+                return (
+                    <div 
+                        key={index}
+                        className="absolute w-7 h-7 rounded-full bg-gradient-to-tr from-slate-900 to-indigo-950 border border-indigo-400/50 text-[10px] font-mono text-indigo-200 flex items-center justify-center shadow-[0_0_12px_rgba(99,102,241,0.4)]"
+                        style={{
+                            top: `calc(50% + ${Math.sin((angle * Math.PI) / 180) * distance}px - 14px)`,
+                            left: `calc(50% + ${Math.cos((angle * Math.PI) / 180) * distance}px - 14px)`,
+                            // Opcional: contrarrestamos la rotación en las balotas individuales para que el número siempre se lea derecho mientras giran en órbita
+                            transform: isDrawing ? 'rotate(-360deg)' : 'none',
+                            transition: 'transform 3s linear'
+                        }}
+                    >
+                        {String(num).padStart(2, '0')}
+                    </div>
+                );
+            })}
+        </div>
+    </div>
+
+    {/* Historial reciente */}
+    <div className="w-full bg-slate-900/90 rounded-2xl p-2.5 border border-indigo-950 flex items-center justify-center gap-2 overflow-x-auto shadow-inner">
+        {drawnBalls.slice(0, 6).map((ball, index) => (
+            <div key={index} className="w-8 h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-mono font-bold text-xs flex items-center justify-center shrink-0 border border-white/30 shadow-[0_0_12px_rgba(99,102,241,0.5)]">
+                {String(ball).padStart(2, '0')}
+            </div>
+        ))}
+    </div>
+
+    {/* Botón de Sorteo */}
+    <button
+        onClick={drawNextBall}
+        disabled={isDrawing || totalBalotas === 0}
+        className={`relative group overflow-hidden w-full text-white font-black text-xs sm:text-sm py-4 px-5 rounded-2xl shadow-[0_8px_25px_rgba(0,0,0,0.9),inset_0_2px_4px_rgba(255,255,255,0.2)] transition-all transform active:scale-95 uppercase tracking-wider flex items-center justify-between border-2 ${
+            totalBalotas === 0 
+                ? 'bg-gradient-to-b from-slate-900 via-slate-950 to-indigo-950 border-indigo-500/30 opacity-50 cursor-not-allowed filter grayscale' 
+                : isDrawing 
+                    ? 'bg-gradient-to-r from-indigo-600 via-purple-600 via-pink-600 to-indigo-600 bg-[length:400%_400%] animate-[gradient_2s_linear_infinite] border-white shadow-[0_0_35px_rgba(99,102,241,0.9)] cursor-wait' 
+                    : 'bg-gradient-to-b from-indigo-950/80 via-slate-900 to-slate-950 border-indigo-500/40 hover:border-indigo-400 hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] cursor-pointer'
+        }`}
+    >
+        {isDrawing && (
+            <div className="absolute inset-0 flex items-center justify-around opacity-90 pointer-events-none overflow-hidden">
+                <span className="animate-ping text-xs">⚡</span>
+                <span className="animate-bounce text-xs">✨</span>
+                <span className="animate-pulse text-xs">🪐</span>
+            </div>
+        )}
+
+        <div className="flex items-center gap-3 relative z-10">
+            <div className={`w-10 h-10 rounded-xl bg-indigo-950 border border-indigo-500/50 flex items-center justify-center shadow-md ${isDrawing ? 'animate-spin' : ''}`}>
+                <span className="text-base">{totalBalotas === 0 ? '🚀' : isDrawing ? '⚡' : '🔮'}</span>
+            </div>
+            <div className="flex flex-col text-left">
+                <span className="text-[9px] text-indigo-300 font-extrabold tracking-widest uppercase drop-shadow">
+                    {isDrawing ? '⚡ Sorteo Cuántico ⚡' : 'Núcleo Central'}
+                </span>
+                <span className="text-xs sm:text-sm text-white drop-shadow-md">
+                    {isDrawing ? 'Activando Plasma...' : totalBalotas === 0 ? 'Misión Finalizada' : 'Sortear Balota'}
+                </span>
+            </div>
+        </div>
+
+        <div className="relative flex items-center z-10">
+            <div className="w-8 h-2 bg-gradient-to-r from-slate-600 to-slate-400 rounded-l-full border-y border-slate-300"></div>
+            <div className={`w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-500 to-pink-500 border-2 border-white shadow-[0_0_15px_rgba(99,102,241,1)] flex items-center justify-center transform group-hover:translate-x-1 transition-transform ${isDrawing ? 'animate-bounce' : ''}`}>
+                <span className="w-2 h-2 rounded-full bg-white"></span>
+            </div>
+        </div>
+    </button>
+
+    {totalBalotas === 0 && (
+        <button
+            onClick={() => {
+                setGameOver(true);
+                setShowBingoAlert(true);
+            }}
+            className="w-full mt-3 bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 hover:brightness-110 text-white font-black text-xs sm:text-sm py-3.5 rounded-2xl shadow-[0_0_30px_rgba(251,191,36,0.7)] transition-all transform active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2 animate-bounce cursor-pointer"
+        >
+            <span>🏆</span> Ver Resultado Final
+        </button>
+    )}
+</div>
 
                 {/* Columna 3: Tarjetón */}
 <div className={`w-full lg:w-2/5 rounded-2xl border p-4 flex flex-col h-1/3 lg:h-full transition-all duration-500 ${
