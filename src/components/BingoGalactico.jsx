@@ -69,14 +69,13 @@ const { winningBoxNumber, participantName, participantLastName, participantCateg
     const [gameOver, setGameOver] = useState(false);
     const [showBingoAlert, setShowBingoAlert] = useState(false);
     const [hasWonBingo, setHasWonBingo] = useState(false);
-
     const [lineGlowEffect, setLineGlowEffect] = useState(false);
     
     const [showIntro, setShowIntro] = useState(true); 
     const [animateOut, setAnimateOut] = useState(false);
 
     const [showNameErrorModal, setShowNameErrorModal] = useState(false);
-
+const [isBlinking, setIsBlinking] = useState(false);
     const [globeEffect, setGlobeEffect] = useState('');
     const [wonProducts, setWonProducts] = useState([]);
 
@@ -284,9 +283,11 @@ useEffect(() => {
     return () => unsubscribe();
 }, []);
 
+const [blinkingProductId, setBlinkingProductId] = useState(null);
 const scrollTimerRef = useRef(null);
+const blinkTimerRef = useRef(null);
 
-    useEffect(() => {
+useEffect(() => {
         if (currentBall === null || !scrollContainerRef.current || productsData.length === 0) return;
 
         const container = scrollContainerRef.current;
@@ -297,23 +298,30 @@ const scrollTimerRef = useRef(null);
         const productElement = container.querySelectorAll('.product-item')[productIndex];
         if (!productElement) return;
 
-        // Limpiamos cualquier temporizador anterior activo
-        if (scrollTimerRef.current) {
-            clearTimeout(scrollTimerRef.current);
-        }
+        if (scrollTimerRef.current) clearTimeout(scrollTimerRef.current);
+        if (blinkTimerRef.current) clearTimeout(blinkTimerRef.current);
 
-        // Programamos el scroll a 5 segundos
+        // Apagamos cualquier destello previo al cambiar de balota
+        setBlinkingProductId(null);
+
+        // AQUí OCURRE TODO A LOS 3 SEGUNDOS EXACTOS
         scrollTimerRef.current = setTimeout(() => {
             const targetScrollTop = productElement.offsetTop - (container.clientHeight / 2) + (productElement.offsetHeight / 2);
             container.scrollTo({ 
                 top: Math.max(0, targetScrollTop), 
                 behavior: 'smooth' 
             });
+
+            // Activamos el destello SOLO para este ID al cumplirse los 3 segundos
+            setBlinkingProductId(Number(currentBall));
+
+            // Y lo apagamos 10 segundos después
+            blinkTimerRef.current = setTimeout(() => {
+                setBlinkingProductId(null);
+            }, 10000);
+
         }, 3000);
 
-        return () => {
-            // Solo lo limpiamos si el componente se desmonta por completo
-        };
     }, [currentBall, productsData]);
 
     const allPossibleNumbers = useMemo(() => {
@@ -622,42 +630,49 @@ const closeIntro = () => {
                 
                 {/* Columna 1: Lista completa de Productos */}
                 <div className="w-full lg:w-1/4 bg-slate-900/80 rounded-2xl border border-slate-800 p-3 flex flex-col h-1/3 lg:h-full overflow-hidden">
-                    <div className="flex items-center justify-between mb-2">
-                        <h2 className="text-xs font-black uppercase tracking-wider text-purple-400">TODOS LOS PRODUCTOS</h2>
+    <div className="flex items-center justify-between mb-2">
+        <h2 className="text-xs font-black uppercase tracking-wider text-purple-400">TODOS LOS PRODUCTOS</h2>
+    </div>
+    <div className="grid grid-cols-2 text-[10px] font-bold text-slate-400 pb-1 border-b border-slate-800 uppercase px-1">
+        <span>ID</span>
+        <span>PRODUCTO</span>
+    </div>
+    <div className="flex-1 overflow-y-auto max-h-full space-y-2 pt-2 pr-1" ref={scrollContainerRef}>
+        {productsData.length === 0 ? (
+            <p className="text-xs text-slate-500 text-center py-4">No hay productos registrados.</p>
+        ) : (
+            productsData.map((product, index) => {
+                const prodId = product.id ?? index;
+                const isCurrentWinner = currentBall === Number(prodId);
+                const isAlreadyDrawn = Array.isArray(drawnBalls) && drawnBalls.includes(Number(prodId));
+                const isThisProductBlinking = blinkingProductId === Number(prodId);
+                
+                return (
+                    <div 
+                        key={product.firebaseId || `${prodId}-${index}`} 
+                        className={`product-item flex items-center justify-between p-2 rounded-xl text-xs transition-all border ${
+                            isCurrentWinner 
+                                ? 'bg-purple-600/40 border-purple-400 scale-[1.02]' 
+                                : isAlreadyDrawn 
+                                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-500 opacity-60 line-through' 
+                                    : 'bg-slate-800/80 border-slate-700 text-white hover:bg-slate-800'
+                        }`}
+                    style={isThisProductBlinking ? {
+    animation: 'pulse 0.5s ease-in-out 20',
+    boxShadow: '0 0 30px rgba(168,85,247,1)',
+    borderColor: '#c084fc',
+    backgroundColor: 'rgba(147, 51, 234, 0.6)'
+} : {}}
+                    >
+                        <span className="font-mono font-bold text-purple-300 w-8">{String(prodId).padStart(2, '0')}</span>
+                        <span className="flex-1 truncate px-2 font-medium">{product.name}</span>
+                        <span className="text-sm">🛍️</span>
                     </div>
-                    <div className="grid grid-cols-2 text-[10px] font-bold text-slate-400 pb-1 border-b border-slate-800 uppercase px-1">
-                        <span>ID</span>
-                        <span>PRODUCTO</span>
-                    </div>
-                    <div className="flex-1 overflow-y-auto max-h-full space-y-2 pt-2 pr-1" ref={scrollContainerRef}>
-                        {productsData.length === 0 ? (
-                            <p className="text-xs text-slate-500 text-center py-4">No hay productos registrados.</p>
-                        ) : (
-                            productsData.map((product, index) => {
-                                const prodId = product.id ?? index;
-                                const isCurrentWinner = currentBall === Number(prodId);
-                                const isAlreadyDrawn = Array.isArray(drawnBalls) && drawnBalls.includes(Number(prodId));
-                                
-                                return (
-                                    <div 
-                                        key={product.firebaseId || `${prodId}-${index}`} 
-                                        className={`product-item flex items-center justify-between p-2 rounded-xl text-xs transition-all border ${
-                                            isCurrentWinner 
-                                                ? 'bg-purple-600/40 border-purple-400 shadow-[0_0_15px_rgba(168,85,247,0.5)] scale-[1.02]' 
-                                                : isAlreadyDrawn 
-                                                    ? 'bg-slate-800/40 border-slate-700/50 text-slate-500 opacity-60 line-through' 
-                                                    : 'bg-slate-800/80 border-slate-700 text-white hover:bg-slate-800'
-                                        }`}
-                                    >
-                                        <span className="font-mono font-bold text-purple-300 w-8">{String(prodId).padStart(2, '0')}</span>
-                                        <span className="flex-1 truncate px-2 font-medium">{product.name}</span>
-                                        <span className="text-sm">🛍️</span>
-                                    </div>
-                                );
-                            })
-                        )}
-                    </div>
-                </div>
+                );
+            })
+        )}
+    </div>
+</div>
 
                 {/* Columna 2: Tómbola y Sorteo */}
                 <div className="w-full lg:w-2/5 bg-slate-900/80 rounded-2xl border border-slate-800 p-4 flex flex-col items-center justify-between h-1/3 lg:h-full overflow-y-auto">
