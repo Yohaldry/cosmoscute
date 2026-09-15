@@ -69,13 +69,13 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
     setIsModalDetallesOpen(true);
   };
 
-  // Filtrado de pedidos según los estados exactos solicitados
+  // Filtrado de pedidos por estado y búsqueda general (incluyendo ID de Firebase y ID personalizado)
   const pedidosFiltrados = pedidos.filter(p => {
     const estadoDoc = (p.estado || "recibido").toLowerCase().trim();
     const coincideEstado = estadoDoc === filtroEstado.toLowerCase().trim();
     
-    const nombreCompleto = `${p.nombre || ""} ${p.apellido || ""} ${p.correo || ""} ${p.telefono || ""} ${p.barrio || ""}`.toLowerCase();
-    const coincideBusqueda = nombreCompleto.includes(busqueda.toLowerCase());
+    const textoBusqueda = `${p.firebaseId || ""} ${p.id || ""} ${p.nombre || ""} ${p.apellido || ""} ${p.correo || ""} ${p.telefono || ""} ${p.barrio || ""}`.toLowerCase();
+    const coincideBusqueda = textoBusqueda.includes(busqueda.toLowerCase().trim());
 
     return coincideEstado && coincideBusqueda;
   });
@@ -107,7 +107,7 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
             type="text"
             value={busqueda}
             onChange={(e) => setBusqueda(e.target.value)}
-            placeholder="Buscar por nombre, correo, barrio..."
+            placeholder="Buscar por ID, nombre, correo, barrio..."
             className="w-full md:w-64 bg-white border border-rose-200 rounded-xl pl-8 pr-3 py-1.5 text-[9px] font-bold text-[#2D3142] shadow-inner focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-[#7C69EF]/20 transition-all"
           />
         </div>
@@ -142,22 +142,19 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
         {pedidosFiltrados.length === 0 ? (
           <div className="h-full flex flex-col items-center justify-center p-8 text-center text-[#9EA2B3] border-2 border-dashed border-rose-200 rounded-3xl bg-white/50 shadow-inner gap-2">
             <span className="text-2xl animate-bounce">🛍️</span>
-            <p className="text-[10px] font-bold text-rose-400">No hay pedidos en esta categoría.</p>
+            <p className="text-[10px] font-bold text-rose-400">No hay pedidos que coincidan con la búsqueda en esta categoría.</p>
           </div>
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3.5">
             {pedidosFiltrados.map((pedido) => {
               const pestañaActual = pestañas.find(t => t.id === filtroEstado);
 
-              // Verificación si este pedido en la pestaña "pagado" está listo para enviar (no tiene BINGO GALACTICO pendiente)
               const esAptoParaEnviar = filtroEstado === "pagado" && !(
                 pedido.productos && pedido.productos.some(
                   prod => String(prod).trim().toUpperCase() === "BINGO GALACTICO"
                 )
               );
 
-              // Para la pestaña pendientes o generales, definimos si cumple condición de tarjeta verde
-              // (En este ejemplo, si está en 'pagado' y es apto, o si tú deseas que en pendientes también aplique alguna condición verde, aquí se evalúa)
               const esTarjetaVerde = esAptoParaEnviar; 
 
               return (
@@ -178,7 +175,8 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
 
                   {/* Info principal de la tarjeta */}
                   <div className="space-y-2">
-                    <div className="flex items-start justify-between gap-1">
+                    {/* Badge de Categoría + ID del pedido visible */}
+                    <div className="flex items-center justify-between gap-1">
                       <span className={`text-[7px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full shadow-2xs ${
                         esTarjetaVerde 
                           ? 'text-emerald-700 bg-emerald-100/80 border border-emerald-200' 
@@ -186,21 +184,26 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                       }`}>
                         {pedido.categoria || "General"} {esTarjetaVerde && "✨ Listo"}
                       </span>
-                      <span className={`text-[9px] font-black text-white px-2.5 py-1 rounded-xl shadow-xs ${
+                      
+                      {/* ID VISIBLE EN TODAS LAS TARJETAS */}
+                      <span className="text-[7px] font-mono font-bold bg-indigo-50 text-[#7C69EF] px-2 py-0.5 rounded-md border border-indigo-100 shadow-2xs" title="ID del Pedido">
+                        ID: {pedido.id || pedido.firebaseId}
+                      </span>
+                    </div>
+
+                    <div className="flex items-start justify-between gap-1">
+                      <h3 className={`text-[10px] font-black transition-colors line-clamp-1 ${
+                        esTarjetaVerde ? 'text-emerald-900 group-hover:text-emerald-600' : 'text-[#2D3142] group-hover:text-[#7C69EF]'
+                      }`}>
+                        {pedido.nombre} {pedido.apellido}
+                      </h3>
+                      <span className={`text-[9px] font-black text-white px-2 py-0.5 rounded-xl shadow-xs shrink-0 ${
                         esTarjetaVerde 
                           ? 'bg-gradient-to-r from-emerald-500 to-teal-600 shadow-emerald-500/20' 
                           : 'bg-gradient-to-r from-rose-500 to-pink-500'
                       }`}>
                         ${Number(pedido.precio || 0).toLocaleString()}
                       </span>
-                    </div>
-
-                    <div>
-                      <h3 className={`text-[10px] font-black transition-colors line-clamp-1 ${
-                        esTarjetaVerde ? 'text-emerald-900 group-hover:text-emerald-600' : 'text-[#2D3142] group-hover:text-[#7C69EF]'
-                      }`}>
-                        {pedido.nombre} {pedido.apellido}
-                      </h3>
                     </div>
 
                     <div className={`space-y-1 text-[9px] p-2.5 rounded-2xl ${
@@ -218,46 +221,69 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                     </div>
                   </div>
 
-                  {/* Botones de acción en la tarjeta cuadrada */}
+                  {/* Botones de acción en la tarjeta */}
                   <div className={`pt-2 border-t flex flex-wrap items-center justify-between gap-1.5 ${esTarjetaVerde ? 'border-emerald-100' : 'border-rose-50'}`}>
-                    {/* BOTÓN VER MÁS */}
-                    <button
-                      onClick={() => abrirDetallesPedido(pedido)}
-                      className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-extrabold px-2 py-1.5 rounded-xl text-[8px] transition-all flex items-center justify-center gap-1 shadow-xs border border-indigo-100"
-                      title="Ver todos los detalles del pedido"
-                    >
-                      <span>👁️</span> Ver más
-                    </button>
+                    
+                    {/* CASO 1: Pestaña "Pagado" */}
+                    {filtroEstado === "pagado" ? (
+                      <>
+                        <button
+                          onClick={() => abrirDetallesPedido(pedido)}
+                          className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-extrabold px-2 py-1.5 rounded-xl text-[8px] transition-all flex items-center justify-center gap-1 shadow-xs border border-indigo-100"
+                          title="Ver todos los detalles del pedido"
+                        >
+                          <span>👁️</span> Ver más
+                        </button>
 
-                    {/* BOTÓN JUGAR BINGO (Visible SOLO SI LA TARJETA NO ES VERDE) */}
-                    {!esTarjetaVerde && (
-                      <button
-                        onClick={() => {
-                          const participantData = {
-                            participantId: pedido.id || pedido.firebaseId || pedido.uid || 'ID-GENERICO',
-                            participantName: pedido.nombre || pedido.nombres || pedido.name || 'Invitado',
-                            participantLastName: pedido.apellido || pedido.apellidos || pedido.lastName || ''
-                          };
+                        {!esTarjetaVerde && (
+                          <button
+                            onClick={() => {
+                              const participantData = {
+                                participantId: pedido.id || pedido.firebaseId || pedido.uid || 'ID-GENERICO',
+                                participantName: pedido.nombre || pedido.nombres || pedido.name || 'Invitado',
+                                participantLastName: pedido.apellido || pedido.apellidos || pedido.lastName || ''
+                              };
+                              localStorage.setItem('cosmos_participant', JSON.stringify(participantData));
+                              navigate('/boxgame', { state: participantData });
+                            }}
+                            className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-extrabold px-2 py-1.5 rounded-xl text-[8px] transition-all flex items-center justify-center gap-1 shadow-xs border border-emerald-100"
+                            title="Jugar Bingo con los datos de este cliente"
+                          >
+                            <span>🎮</span> Bingo
+                          </button>
+                        )}
 
-                          localStorage.setItem('cosmos_participant', JSON.stringify(participantData));
-                          navigate('/boxgame', { state: participantData });
-                        }}
-                        className="flex-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-600 font-extrabold px-2 py-1.5 rounded-xl text-[8px] transition-all flex items-center justify-center gap-1 shadow-xs border border-emerald-100"
-                        title="Jugar Bingo con los datos de este cliente"
-                      >
-                        <span>🎮</span> Bingo
-                      </button>
+                        {esTarjetaVerde && pestañaActual && pestañaActual.siguienteEstado && (
+                          <button
+                            onClick={() => manejarCambioEstado(pedido, pestañaActual.siguienteEstado)}
+                            className="w-full font-black py-1.5 px-2 rounded-xl text-[8px] transition-all text-center shadow-2xs border bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-500/20 border-emerald-400"
+                          >
+                            {pestañaActual.textoBoton}
+                          </button>
+                        )}
+                      </>
+                    ) : (
+                      /* CASO 2: Pestañas "Recibido" y "Pendiente de pago" */
+                      <>
+                        <button
+                          onClick={() => abrirDetallesPedido(pedido)}
+                          className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-extrabold px-2 py-1.5 rounded-xl text-[8px] transition-all flex items-center justify-center gap-1 shadow-xs border border-indigo-100"
+                          title="Ver todos los detalles del pedido"
+                        >
+                          <span>👁️</span> Ver más
+                        </button>
+
+                        {pestañaActual && pestañaActual.siguienteEstado && (
+                          <button
+                            onClick={() => manejarCambioEstado(pedido, pestañaActual.siguienteEstado)}
+                            className="flex-1 bg-gradient-to-r from-rose-500 to-[#7C69EF] hover:opacity-90 text-white font-black py-1.5 px-2 rounded-xl text-[8px] transition-all text-center shadow-xs"
+                          >
+                            {pestañaActual.textoBoton}
+                          </button>
+                        )}
+                      </>
                     )}
 
-                    {/* BOTÓN DE CAMBIO DE ESTADO (SOLO SE MUESTRA SI LA TARJETA ES VERDE) */}
-                    {esTarjetaVerde && pestañaActual && pestañaActual.siguienteEstado && (
-                      <button
-                        onClick={() => manejarCambioEstado(pedido, pestañaActual.siguienteEstado)}
-                        className="w-full font-black py-1.5 px-2 rounded-xl text-[8px] transition-all text-center shadow-2xs border bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-600 hover:to-teal-700 text-white shadow-emerald-500/20 border-emerald-400"
-                      >
-                        {pestañaActual.textoBoton}
-                      </button>
-                    )}
                   </div>
 
                 </div>
@@ -276,7 +302,7 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
             <div className="flex items-center justify-between border-b border-rose-100 pb-2.5">
               <div className="flex items-center gap-2">
                 <span className="text-xs p-1.5 rounded-xl bg-rose-100 text-rose-600 shadow-xs">📋</span>
-                <h3 className="text-xs font-black text-[#2D3142]">Detalles del Pedido #{pedidoSeleccionado.id || ""}</h3>
+                <h3 className="text-xs font-black text-[#2D3142]">Detalles del Pedido</h3>
               </div>
               <button 
                 onClick={() => setIsModalDetallesOpen(false)} 
@@ -293,6 +319,10 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
               <div className="bg-[#FAF8FF] p-3.5 rounded-2xl border border-[#7C69EF]/15 shadow-inner space-y-2">
                 <p className="text-[8px] font-black uppercase text-[#7C69EF] tracking-wider">Información del Cliente</p>
                 <div className="grid grid-cols-2 gap-2 text-[9px]">
+                  <div className="col-span-2">
+                    <span className="text-[#9EA2B3] block">ID del Pedido:</span>
+                    <span className="font-mono font-bold text-[#7C69EF] bg-indigo-50 px-2 py-0.5 rounded-md inline-block">{pedidoSeleccionado.id || pedidoSeleccionado.firebaseId}</span>
+                  </div>
                   <div>
                     <span className="text-[#9EA2B3] block">Nombre completo:</span>
                     <span className="font-bold text-[#2D3142]">{pedidoSeleccionado.nombre} {pedidoSeleccionado.apellido}</span>
