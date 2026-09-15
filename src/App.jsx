@@ -13,6 +13,7 @@ import MundoCute from './components/MundoCute';
 import Footer from './components/Footer';
 import useContadorVisitas from './pages/estadisticas_web/useContadorVisitas';
 import WhatsAppButton from './components/WhatsApp';
+import { CartProvider } from './components/cartcontent/CartContext';
 
 function HomeView() {
   return (
@@ -48,6 +49,7 @@ function RedirectWithUniqueId({ baseRoute }) {
 export default function App() {
   return (
     <BrowserRouter>
+    <CartProvider>
       <Routes>
         <Route path="/" element={<HomeView />} />
         <Route path="/admin" element={<AdminPanel />} />
@@ -63,6 +65,7 @@ export default function App() {
 
       {/* Botón de WhatsApp condicional (se oculta automáticamente en /admin) */}
       <ConditionalWhatsApp />
+      </CartProvider>
     </BrowserRouter>
   );
 }

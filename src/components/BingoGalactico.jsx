@@ -1,10 +1,16 @@
 import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { collection, onSnapshot } from "firebase/firestore";
+import { query, where, getDocs } from "firebase/firestore";
 import { db } from "../firebase";
+import { doc, updateDoc } from "firebase/firestore";
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Trophy, ArrowRight, Sparkles, Star, Rocket, Gift, User } from 'lucide-react';
 
-const tarjetonColumns = ['I', 'R', 'S', 'M', 'L'];
+const tarjetonColumns = ['B', 'I', 'N', 'G', 'O'];
+
+
+    // Extraes los datos enviados desde la vista anterior (con un respaldo por si entra directo por URL)
+
 
 const generateRandomMasterCard = (products) => {
     if (!products || !Array.isArray(products) || products.length === 0) {
@@ -51,12 +57,99 @@ const generateRandomMasterCard = (products) => {
 };
 
 export default function BingoGalactico() {
-    const location = useLocation();
+   
     const useNavigateHook = useNavigate();
+const navigate = useNavigate();
+    const location = useLocation();
+const savedData = JSON.parse(localStorage.getItem('cosmos_participant') || '{}');
+const locationState = location.state || {};
 
-const { winningBoxNumber, participantName, participantLastName, participantCategory } = location.state || {};
-
+// Unificamos las variables para tenerlas listas
+const participantName = locationState.participantName || savedData.participantName || 'Invitado';
+const participantLastName = locationState.participantLastName || savedData.participantLastName || '';
+const participantCategory = locationState.participantCategory || savedData.participantCategory || 'NIÑO';
+const winningBoxNumber = locationState.winningBoxNumber || savedData.winningBoxNumber || 'N/A';
+const [alertaModal, setAlertaModal] = useState({ visible: false, tipo: 'success', mensaje: '' });
     const initialBoxesNumber = location.state?.winningBoxNumber ?? 15;
+
+
+const handleFinalizarYReclamarMision = async () => {
+    try {
+        const savedData = JSON.parse(localStorage.getItem('cosmos_participant') || '{}');
+        const activeId = savedData.participantId;
+
+        if (!activeId || activeId === 'SIN-ID') {
+            setAlertaModal({
+                visible: true,
+                tipo: 'error',
+                mensaje: '❌ Error: No se encontró un ID válido en la sesión.'
+            });
+            setTimeout(() => {
+                setAlertaModal({ visible: false, tipo: 'error', mensaje: '' });
+                localStorage.removeItem('cosmos_participant');
+                navigate('/');
+            }, 3000);
+            return;
+        }
+
+        const nuevosProductos = productsData.map(prod => prod.name || prod.nombre || prod.codigo || "Producto Bingo");
+
+        let pedidoRef = null;
+
+        const q = query(collection(db, "pedidos"), where("id", "==", String(activeId)));
+        const querySnapshot = await getDocs(q);
+
+        if (!querySnapshot.empty) {
+            const docFound = querySnapshot.docs[0];
+            pedidoRef = doc(db, "pedidos", docFound.id);
+        } else {
+            const q2 = query(collection(db, "pedidos"), where("participantId", "==", String(activeId)));
+            const querySnapshot2 = await getDocs(q2);
+            
+            if (!querySnapshot2.empty) {
+                const docFound2 = querySnapshot2.docs[0];
+                pedidoRef = doc(db, "pedidos", docFound2.id);
+            }
+        }
+
+        if (!pedidoRef) {
+            throw new Error("El pedido no existe en la base de datos con ese ID.");
+        }
+
+        await updateDoc(pedidoRef, {
+            productos: nuevosProductos,
+            estadoMision: "Completada",
+            ganoBingo: hasWonBingo
+        });
+
+        // 🌟 1. Mostramos la alerta visual inmediatamente
+        setAlertaModal({
+            visible: true,
+            tipo: 'success',
+            mensaje: '✨ ¡Pedido cargado exitosamente! Misión cumplida con éxito. ✨'
+        });
+
+        // ⏳ 2. Esperamos 3.5 segundos con la alerta en pantalla antes de limpiar y navegar
+        setTimeout(() => {
+            localStorage.removeItem('cosmos_participant');
+            navigate('/');
+        }, 3500);
+
+    } catch (error) {
+        console.error("❌ Error al actualizar el pedido en Firebase:", error);
+        
+        setAlertaModal({
+            visible: true,
+            tipo: 'error',
+            mensaje: '⚠️ No se pudo actualizar el pedido en la base de datos.'
+        });
+
+        setTimeout(() => {
+            localStorage.removeItem('cosmos_participant');
+            navigate('/');
+        }, 3500);
+    }
+};
 
     const [productsData, setProductsData] = useState([]);
    const [bingoMasterCard, setBingoMasterCard] = useState(() => {
@@ -65,7 +158,7 @@ const { winningBoxNumber, participantName, participantLastName, participantCateg
     const [drawnBalls, setDrawnBalls] = useState([]);
     const [currentBall, setCurrentBall] = useState(null);
     const [isDrawing, setIsDrawing] = useState(false);
-    const [totalBalotas, setTotalBalotas] = useState(initialBoxesNumber);
+    const [totalBalotas, setTotalBalotas] = useState(winningBoxNumber);
     const [gameOver, setGameOver] = useState(false);
     const [showBingoAlert, setShowBingoAlert] = useState(false);
     const [hasWonBingo, setHasWonBingo] = useState(false);
@@ -233,6 +326,7 @@ const verificarLineaBingo = (currentDrawn) => {
         }
     };
 
+    
     const playErrorSound = () => {
         try {
             const AudioContext = window.AudioContext || window.webkitAudioContext;
@@ -256,6 +350,10 @@ const verificarLineaBingo = (currentDrawn) => {
     };
 
 useEffect(() => {
+    // 1. Obtenemos la caja ganadora
+    const savedData = JSON.parse(localStorage.getItem('cosmos_participant') || '{}');
+    const winningBox = savedData.winningBoxNumber; // Ej: 13
+
     const unsubscribe = onSnapshot(collection(db, "productosBingo"), (querySnapshot) => {
         const items = querySnapshot.docs.map((doc) => {
             const data = doc.data();
@@ -268,7 +366,6 @@ useEffect(() => {
         
         setProductsData(items);
 
-        // Alerta y bloqueo si hay menos de 20 productos
         if (items.length < 20) {
             setBingoMasterCard([]);
             return;
@@ -578,20 +675,24 @@ const closeIntro = () => {
 
         
 
-        {/* Título de Victoria con destellos */}
-        <div className="space-y-0.5 shrink-0">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/60 text-amber-300 text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-inner">
-                <Sparkles className="w-3 h-3 text-amber-300 animate-spin" /> ¡Misión Galáctica Cumplida! <Sparkles className="w-3 h-3 text-amber-300 animate-spin" />
-            </div>
-            <h3 className="text-lg sm:text-xl font-black text-white tracking-wide drop-shadow-lg uppercase leading-tight pt-1">
-                ¡Felicidades, {String(participantName, participantLastName || '')}! ✨  
-            </h3>
-            <p className="text-[10px] sm:text-[11px] font-bold text-amber-300/90 tracking-wider uppercase">
-                Categoría: {String(userGender || '')}
-            </p>
+      {/* Título de Victoria con destellos */}
+<div className="space-y-0.5 shrink-0">
+    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/60 text-amber-300 text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-inner">
+        <Sparkles className="w-3 h-3 text-amber-300 animate-spin" /> ¡Misión Galáctica Cumplida! <Sparkles className="w-3 h-3 text-amber-300 animate-spin" />
+    </div>
+    
+    <h3 className="text-lg sm:text-xl font-black text-white tracking-wide drop-shadow-lg uppercase leading-tight pt-1">
+        ¡Felicidades, {String(participantName || '')} {String(participantLastName || '')}! ✨  
+    </h3>
+    
+    <p className="text-[10px] sm:text-[11px] font-bold text-amber-300/90 tracking-wider uppercase">
+        Categoría: {String(userGender || '')}
+    </p>
 
-            <p className="text-[11px] sm:text-xm text-purple-500/90 max-w-xs leading-relaxed shrink-0">{hasWonBingo ? '🎉 ¡GANó BINGO (LÍNEA)! 🎉' : '❌ NO COMPLETÓ BINGO LÍNEA'}</p>
-        </div>
+    <p className="text-[11px] sm:text-xs text-purple-400 font-bold max-w-xs leading-relaxed shrink-0 pt-1">
+        {hasWonBingo ? '🎉 ¡GANÓ BINGO (LÍNEA)! 🎉' : '❌ NO COMPLETÓ BINGO LÍNEA'}
+    </p>
+</div>
 
         <p className="text-[11px] sm:text-xs text-purple-200/90 max-w-xs leading-relaxed shrink-0">
             Has completado todas las balotas de la sesión estelar. Estos son los tesoros obtenidos:
@@ -621,7 +722,7 @@ const closeIntro = () => {
 
         {/* Botón de acción con animación y brillo intenso */}
         <button
-            onClick={handleFinalizarJuego}
+            onClick={handleFinalizarYReclamarMision}
             className="w-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 hover:brightness-110 text-white font-black text-xs sm:text-sm py-3 rounded-2xl shadow-[0_0_25px_rgba(251,191,36,0.6)] transition-all transform active:scale-95 flex items-center justify-center gap-2 cursor-pointer border-2 border-white/65 shrink-0 mt-1"
         >
             <span className="tracking-wider uppercase">Finalizar y Reclamar Misión</span>
@@ -816,23 +917,31 @@ const closeIntro = () => {
                     : 'border-slate-800 bg-slate-900/80 text-white'
             }`}>
    <div>
-     <div className="flex justify-between items-center mb-3">
-                        <div className="flex items-center gap-2">
-                            <h2 className={`text-xs font-black uppercase tracking-wider ${lineGlowEffect ? 'text-amber-900' : 'text-purple-400'}`}>TARJETÓN ESTELAR</h2>
-                            {lineGlowEffect && (
-                                <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-bounce">
-                                    ¡BINGO! 🎉
-                                </span>
-                            )}
-                        </div>
-                        <span className={`text-[10px] font-bold px-2 py-0.5 rounded border ${
-                            lineGlowEffect 
-                                ? 'text-amber-900 bg-amber-200 border-amber-400' 
-                                : 'text-purple-300 bg-purple-950 border-purple-800'
-                        }`}>
-                            {participantName ? `${participantName} ${participantLastName || ''}` : 'Participante'}
-                        </span>
-                    </div>
+    <div className="flex justify-between items-center bg-purple-950/60 border border-purple-800/60 px-3 py-2 rounded-lg mb-3">
+    <div className="flex items-center gap-2">
+        <h2 className={`text-xs font-black uppercase tracking-wider ${lineGlowEffect ? 'text-amber-300' : 'text-purple-400'}`}>
+            TARJETÓN ESTELAR
+        </h2>
+        {lineGlowEffect && (
+            <span className="bg-amber-400 text-slate-950 font-black text-[10px] px-2 py-0.5 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-bounce">
+                ¡BINGO! 🎉
+            </span>
+        )}
+    </div>
+
+    <div className="flex items-center gap-2">
+        <span className="text-[11px] font-bold text-purple-200">
+            {participantName ? `${participantName} ${participantLastName || ''}` : 'Participante'}
+        </span>
+        {participantCategory && (
+            <span className={`text-[9px] font-black px-2 py-0.5 rounded uppercase tracking-wider shadow-sm ${
+                participantCategory === 'NIÑO' ? 'bg-blue-600 text-white' : 'bg-pink-600 text-white'
+            }`}>
+                {participantCategory}
+            </span>
+        )}
+    </div>
+</div>
         
         {/* PARRILLA DE CELDAS DINÁMICA */}
         <div className="grid grid-cols-5 gap-1.5">

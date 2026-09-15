@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
-import { X, Sparkles, Trophy, RotateCcw, Star, Clock, ArrowRight, Play, Lock, ShieldCheck, CheckCircle, User, Users } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { X, Sparkles, Trophy, RotateCcw, Star, Clock, ArrowRight, Play, Users } from 'lucide-react';
+import { useNavigate, useLocation } from 'react-router-dom';
 
 const boxesConfig = [
   { id: 1, number: 12, description: 'Caja Estelar', color: 'amarillo', bg: 'from-amber-200 via-yellow-200 to-amber-300', text: 'text-amber-900', ribbon: 'bg-rose-400', glow: 'shadow-[0_0_20px_rgba(252,211,77,0.4)]' },
@@ -121,21 +121,26 @@ const soundFX = new NativeSoundFX();
 
 export default function BoxGame() {
   const navigate = useNavigate();
+  const location = useLocation();
+
+const savedData = JSON.parse(localStorage.getItem('cosmos_participant') || '{}');
+const locationState = location.state || {};
+
+// Unificamos para que tome los datos reales sin fallar
+const currentParticipant = {
+    participantId: locationState.participantId || savedData.participantId || 'SIN-ID',
+    participantName: locationState.participantName || savedData.participantName || 'Invitado',
+    participantLastName: locationState.participantLastName || savedData.participantLastName || ''
+};
+
+console.log ("datos listos", currentParticipant )
+
   const [isLoading, setIsLoading] = useState(true);
   const [gameState, setGameState] = useState('idle');
   const [countdown, setCountdown] = useState(5);
   const [winningBox, setWinningBox] = useState(null);
   const [attempts, setAttempts] = useState(0);
-
-  // Estados de seguridad y datos del participante
-  const [isAuthorized, setIsAuthorized] = useState(false);
-  const [participantName, setParticipantName] = useState('');
-  const [participantLastName, setParticipantLastName] = useState('');
   const [participantCategory, setParticipantCategory] = useState('NIÑO');
-  const [securityCode, setSecurityCode] = useState('');
-  const [errorAlert, setErrorAlert] = useState(false);
-  const [errorMessage, setErrorMessage] = useState('');
-  const [successAlert, setSuccessAlert] = useState(false);
 
   const containerRef = useRef(null);
   const winningBoxRef = useRef(null);
@@ -143,6 +148,7 @@ export default function BoxGame() {
   const winAnimRef = useRef(null);
   const physicsRef = useRef([]);
   const timeoutRef = useRef(null);
+  const intervalRef = useRef(null);
 
   useEffect(() => {
     setIsLoading(true);
@@ -161,32 +167,16 @@ export default function BoxGame() {
     };
   }, []);
 
-  const handleVerifyCode = (e) => {
-    e.preventDefault();
-    
-    if (!participantName.trim() || !participantLastName.trim()) {
-      setErrorAlert(true);
-      setErrorMessage('Por favor ingresa el nombre y apellido.');
-      setTimeout(() => setErrorAlert(false), 3000);
-      return;
-    }
+  const resetGame = () => {
+    soundFX.stopCasinoMusic();
+    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
+    if (winAnimRef.current) cancelAnimationFrame(winAnimRef.current);
+    if (timeoutRef.current) clearTimeout(timeoutRef.current);
+    if (intervalRef.current) clearInterval(intervalRef.current);
 
-    if (securityCode === '270523') {
-      setErrorAlert(false);
-      setSuccessAlert(true);
-      soundFX.initContext();
-      
-      // Tras 1.5 segundos se concede la autorización total y se oculta el modal
-      setTimeout(() => {
-        setIsAuthorized(true);
-        setSuccessAlert(false);
-      }, 1500);
-
-    } else {
-      setErrorAlert(true);
-      setErrorMessage('¡Código incorrecto! Intenta nuevamente.');
-      setTimeout(() => setErrorAlert(false), 3000);
-    }
+    setGameState('idle');
+    setWinningBox(null);
+    setCountdown(5);
   };
 
   const startChaosGame = () => {
@@ -215,25 +205,31 @@ export default function BoxGame() {
       vRotY: (Math.random() - 0.5) * 10,
       vRotZ: (Math.random() - 0.5) * 10
     }));
+
+    if (intervalRef.current) clearInterval(intervalRef.current);
+    
+    intervalRef.current = setInterval(() => {
+      setCountdown((prev) => {
+        if (prev > 1) {
+          return prev - 1;
+        } else {
+          clearInterval(intervalRef.current);
+          return 0;
+        }
+      });
+    }, 1000);
   };
 
   useEffect(() => {
-    if (gameState !== 'chaotic') return;
-
-    if (countdown > 0) {
-      timeoutRef.current = setTimeout(() => {
-        setCountdown((prev) => prev - 1);
-      }, 1000);
-    } else {
+    if (gameState === 'chaotic' && countdown === 0) {
       if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-      
       soundFX.stopCasinoMusic();
 
       if (containerRef.current) {
         const containerH = containerRef.current.clientHeight;
         const maxY = (containerH / 2) - 45;
-        
         const children = containerRef.current.children;
+        
         physicsRef.current.forEach((p, i) => {
           if (children[i]) {
             p.y = maxY;
@@ -255,7 +251,6 @@ export default function BoxGame() {
         const selectedBox = boxesConfig[randomIndex];
         setWinningBox(selectedBox);
         setGameState('won');
-
         soundFX.playVictoryFanfare();
       }, 400);
     }
@@ -263,7 +258,7 @@ export default function BoxGame() {
     return () => {
       if (timeoutRef.current) clearTimeout(timeoutRef.current);
     };
-  }, [gameState, countdown]);
+  }, [countdown, gameState]);
 
   useEffect(() => {
     if (gameState !== 'chaotic') {
@@ -361,30 +356,27 @@ export default function BoxGame() {
     };
   }, [gameState, winningBox]);
 
-  const resetGame = () => {
-    if (attempts >= 2) return;
-    if (timeoutRef.current) clearTimeout(timeoutRef.current);
-    if (animFrameRef.current) cancelAnimationFrame(animFrameRef.current);
-    if (winAnimRef.current) cancelAnimationFrame(winAnimRef.current);
-    
-    soundFX.stopCasinoMusic();
-    setGameState('idle');
-    setWinningBox(null);
-    setCountdown(5);
-  };
-
-  const handleGoToBingo = () => {
+const handleGoToBingo = () => {
     if (!winningBox) return;
-    navigate('/bingo', { 
-      state: { 
-        winningBoxNumber: winningBox.number,
-        participantName,
-        participantLastName,
-        participantCategory
-      } 
-    });
-  };
 
+    // Obtenemos los datos actuales del participante
+    const baseData = JSON.parse(localStorage.getItem('cosmos_participant') || '{}');
+
+    // Armamos el objeto final completo para el Bingo
+    const finalData = {
+        participantId: baseData.participantId || 'SIN-ID',
+        participantName: baseData.participantName || 'Invitado',
+        participantLastName: baseData.participantLastName || '',
+        participantCategory: typeof participantCategory !== 'undefined' ? participantCategory : 'NIÑO', // O la variable de estado de tus botones NIÑO/NIÑA
+        winningBoxNumber: winningBox.number
+    };
+
+    // Actualizamos el storage para que Bingo lo lea sin problemas
+    localStorage.setItem('cosmos_participant', JSON.stringify(finalData));
+console.log("🚀 DATOS EXACTOS ENVIADOS AL BINGO:", finalData);
+    // Navegamos hacia el bingo enviando el state completo
+    navigate('/bingo', { state: finalData });
+};
   return (
     <div className="min-h-screen w-full bg-[#2d1b4e] flex flex-col items-center justify-between p-3 md:p-6 text-purple-950 transition-all duration-500 overflow-x-hidden relative">
       
@@ -404,139 +396,6 @@ export default function BoxGame() {
           </div>
         </div>
       ) : null}
-
-      {/* Modal de Registro de Participante y Validación de Código de Seguridad */}
-      {!isAuthorized && (
-        <div className="absolute inset-0 z-40 bg-black/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn overflow-y-auto">
-          <div className="bg-gradient-to-br from-[#1f0b36] via-[#2d1b4e] to-[#140522] border-2 border-purple-500/50 rounded-3xl w-full max-w-md p-6 md:p-8 text-white shadow-[0_0_50px_rgba(168,85,247,0.4)] text-center relative my-auto">
-            
-            {!successAlert ? (
-              <>
-                <div className="w-16 h-16 bg-purple-900/60 border-2 border-purple-400/50 rounded-2xl flex items-center justify-center mx-auto mb-4 shadow-[0_0_20px_rgba(168,85,247,0.5)] animate-pulse">
-                  <Lock className="w-8 h-8 text-pink-400" />
-                </div>
-
-                <h3 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-fuchsia-400 mb-2">
-                  REGISTRO DE PARTICIPANTE
-                </h3>
-                <p className="text-xs md:text-sm text-purple-200/80 mb-6 font-medium">
-                  Ingresa tus datos y el código de seguridad para acceder al juego.
-                </p>
-
-                <form onSubmit={handleVerifyCode} className="space-y-4 text-left">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-purple-300 ml-1 flex items-center gap-1">
-                      <User className="w-3.5 h-3.5" /> Nombre
-                    </label>
-                    <input 
-                      type="text"
-                      value={participantName}
-                      onChange={(e) => setParticipantName(e.target.value)}
-                      placeholder="Ej. Sofía"
-                      className="w-full bg-purple-950/80 border-2 border-purple-500/40 rounded-2xl px-4 py-2.5 text-sm font-bold text-pink-300 placeholder:text-purple-700 focus:outline-none focus:border-pink-400 shadow-inner"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-purple-300 ml-1 flex items-center gap-1">
-                      <User className="w-3.5 h-3.5" /> Apellido
-                    </label>
-                    <input 
-                      type="text"
-                      value={participantLastName}
-                      onChange={(e) => setParticipantLastName(e.target.value)}
-                      placeholder="Ej. Gómez"
-                      className="w-full bg-purple-950/80 border-2 border-purple-500/40 rounded-2xl px-4 py-2.5 text-sm font-bold text-pink-300 placeholder:text-purple-700 focus:outline-none focus:border-pink-400 shadow-inner"
-                      required
-                    />
-                  </div>
-
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-purple-300 ml-1 flex items-center gap-1">
-                      <Users className="w-3.5 h-3.5" /> Categoría
-                    </label>
-                    <div className="grid grid-cols-2 gap-3">
-                      <button
-                        type="button"
-                        onClick={() => setParticipantCategory('NIÑO')}
-                        className={`py-2.5 rounded-2xl font-black text-xs border-2 transition-all cursor-pointer ${
-                          participantCategory === 'NIÑO' 
-                            ? 'bg-sky-500/30 border-sky-400 text-sky-200 shadow-[0_0_15px_rgba(56,189,248,0.4)]' 
-                            : 'bg-purple-950/50 border-purple-500/30 text-purple-400 hover:border-purple-500/60'
-                        }`}
-                      >
-                        👦 NIÑO
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setParticipantCategory('NIÑA')}
-                        className={`py-2.5 rounded-2xl font-black text-xs border-2 transition-all cursor-pointer ${
-                          participantCategory === 'NIÑA' 
-                            ? 'bg-pink-500/30 border-pink-400 text-pink-200 shadow-[0_0_15px_rgba(244,114,182,0.4)]' 
-                            : 'bg-purple-950/50 border-purple-500/30 text-purple-400 hover:border-purple-500/60'
-                        }`}
-                      >
-                        👧 NIÑA
-                      </button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-1 pt-2">
-                    <label className="text-xs font-bold text-purple-300 ml-1 flex items-center gap-1">
-                      <Lock className="w-3.5 h-3.5" /> Código de Seguridad (6 dígitos)
-                    </label>
-                    <input 
-                      type="password"
-                      maxLength={6}
-                      value={securityCode}
-                      onChange={(e) => setSecurityCode(e.target.value)}
-                      placeholder="••••••"
-                      className="w-full bg-purple-950/80 border-2 border-purple-500/40 rounded-2xl px-4 py-3 text-center text-2xl font-black tracking-widest text-pink-300 placeholder:text-purple-700 focus:outline-none focus:border-pink-400 shadow-inner"
-                    />
-                  </div>
-
-                  {errorAlert && (
-                    <div className="bg-rose-500/25 border border-rose-500/50 text-rose-200 text-xs font-bold py-2 px-3 rounded-xl animate-shake text-center">
-                      ❌ {errorMessage}
-                    </div>
-                  )}
-
-                  <button
-                    type="submit"
-                    className="w-full bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 hover:from-amber-300 hover:to-purple-500 text-white font-black text-sm py-3 rounded-2xl shadow-[0_0_25px_rgba(236,72,153,0.6)] transition-all transform hover:scale-[1.02] cursor-pointer border border-white/40 flex items-center justify-center gap-2 mt-2"
-                  >
-                    <ShieldCheck className="w-5 h-5 text-amber-200" />
-                    <span>DESBLOQUEAR JUEGO</span>
-                  </button>
-                </form>
-
-                <div className="mt-4">
-                  <button 
-                    onClick={() => navigate('/')}
-                    className="text-xs font-bold text-purple-400 hover:text-purple-200 transition-colors cursor-pointer"
-                  >
-                    Volver al inicio
-                  </button>
-                </div>
-              </>
-            ) : (
-              <div className="py-8 space-y-4 animate-scaleUp">
-                <div className="w-20 h-20 bg-emerald-500/20 border-2 border-emerald-400 rounded-full flex items-center justify-center mx-auto shadow-[0_0_30px_rgba(52,211,153,0.6)] animate-bounce">
-                  <CheckCircle className="w-10 h-10 text-emerald-300" />
-                </div>
-                <h3 className="text-xl md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-emerald-300 to-teal-200">
-                  ¡Registro exitoso!
-                </h3>
-                <p className="text-sm font-bold text-emerald-100 tracking-wider">
-                  ¡Bienvenido {participantName} ({participantCategory}) al sistema cósmico! ✨
-                </p>
-              </div>
-            )}
-
-          </div>
-        </div>
-      )}
 
       <div className="w-full max-w-4xl flex items-center justify-between bg-gradient-to-r from-purple-200/90 via-fuchsia-100/90 to-purple-300/90 px-4 md:px-6 py-3 rounded-2xl border-2 border-purple-300 shadow-[0_0_25px_rgba(216,180,254,0.5)]">
         <div className="flex items-center gap-2">
@@ -575,9 +434,7 @@ export default function BoxGame() {
            </div>
          )}
 
-         <div className="absolute top-3 right-4 text-[10px] md:text-[11px] font-black text-purple-300 z-10 flex items-center gap-1.5 bg-purple-950/70 px-2.5 md:px-3 py-1 rounded-full border border-purple-500/30 shadow-sm backdrop-blur-md">
-           🎰 MÚSICA DE CASINO ACTIVA
-         </div>
+       
 
          <div className="absolute bottom-0 inset-x-0 h-10 bg-gradient-to-t from-purple-500/20 to-transparent flex justify-around items-end pb-1 pointer-events-none opacity-80">
            <div className="w-12 h-2 bg-purple-400/60 rounded-full animate-pulse shadow-[0_0_10px_rgba(192,132,252,0.8)]"></div>
@@ -587,16 +444,51 @@ export default function BoxGame() {
          </div>
 
          {gameState === 'idle' && (
-           <div className="text-center z-10 px-4 space-y-3">
+           <div className="text-center z-10 px-4 space-y-4">
              <div className="w-16 h-16 bg-purple-900/50 backdrop-blur-md rounded-full flex items-center justify-center mx-auto border-2 border-purple-500/40 shadow-[0_0_20px_rgba(168,85,247,0.3)] animate-pulse">
                <Sparkles className="w-8 h-8 text-purple-300" />
              </div>
-             <p className="text-xs md:text-sm text-purple-200 font-bold tracking-wide drop-shadow-md">
-               {attempts === 0 ? `Participante: ${participantName} ${participantLastName} (${participantCategory})` : 'Tienes 1 intento más disponible'}
-             </p>
+             
+             <div className="space-y-1">
+               <p className="text-xs text-purple-300 font-bold uppercase tracking-wider">Participante:</p>
+               <p className="text-sm md:text-base text-pink-300 font-black drop-shadow-md">
+                <span>PARTICIPANTE: {savedData.participantName || participantName}</span>
+               </p>
+             </div>
+
+             <div className="w-full max-w-xs mx-auto space-y-1">
+               <label className="text-[11px] font-bold text-purple-300 flex items-center justify-center gap-1">
+                 <Users className="w-3.5 h-3.5" /> Selecciona categoría:
+               </label>
+               <div className="grid grid-cols-2 gap-2">
+                 <button
+                   type="button"
+                   onClick={() => setParticipantCategory('NIÑO')}
+                   className={`py-2 rounded-xl font-black text-xs border-2 transition-all cursor-pointer ${
+                     participantCategory === 'NIÑO' 
+                       ? 'bg-sky-500/30 border-sky-400 text-sky-200 shadow-[0_0_15px_rgba(56,189,248,0.4)]' 
+                       : 'bg-purple-950/50 border-purple-500/30 text-purple-400 hover:border-purple-500/60'
+                   }`}
+                 >
+                   👦 NIÑO
+                 </button>
+                 <button
+                   type="button"
+                   onClick={() => setParticipantCategory('NIÑA')}
+                   className={`py-2 rounded-xl font-black text-xs border-2 transition-all cursor-pointer ${
+                     participantCategory === 'NIÑA' 
+                       ? 'bg-pink-500/30 border-pink-400 text-pink-200 shadow-[0_0_15px_rgba(244,114,182,0.4)]' 
+                       : 'bg-purple-950/50 border-purple-500/30 text-purple-400 hover:border-purple-500/60'
+                   }`}
+                 >
+                   👧 NIÑA
+                 </button>
+               </div>
+             </div>
+
              <button
                onClick={startChaosGame}
-               className="bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-xs md:text-sm px-6 py-3 rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.5)] cursor-pointer transition-all transform hover:scale-105 border-2 border-white/20 flex items-center gap-2 mx-auto"
+               className="bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-xs md:text-sm px-6 py-3 rounded-2xl shadow-[0_0_20px_rgba(168,85,247,0.5)] cursor-pointer transition-all transform hover:scale-105 border-2 border-white/20 flex items-center gap-2 mx-auto mt-2"
              >
                <Play className="w-5 h-5 fill-current" /> {attempts === 0 ? 'INICIAR JUEGO DE CAJAS' : '1 TIRO MÁS'}
              </button>
@@ -680,88 +572,90 @@ export default function BoxGame() {
                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${winningBox.bg} border-4 border-white ${winningBox.glow} flex flex-col items-center justify-center font-black shadow-[0_15px_40px_rgba(0,0,0,0.6)] [transform:translateZ(54px)]`}>
                  <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 ${winningBox.ribbon} shadow-sm`}></div>
                  <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 ${winningBox.ribbon} shadow-sm`}></div>
-                 <div className="absolute -top-3.5 w-6 h-6 rounded-full bg-white border-2 border-purple-300 flex items-center justify-center shadow-lg">
-                   <Star className="w-3.5 h-3.5 text-purple-600 fill-purple-400" />
+                 <div className="absolute -top-3 w-6 h-6 rounded-full bg-white border-2 border-purple-300 flex items-center justify-center shadow-lg">
+                   <Trophy className="w-3.5 h-3.5 text-amber-500" />
                  </div>
-                 <span className={`relative z-10 ${winningBox.text} text-lg md:text-xl font-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]`}>
+                 <span className={`relative z-10 ${winningBox.text} text-base md:text-xl font-black drop-shadow-[0_2px_4px_rgba(255,255,255,0.9)]`}>
                    #{winningBox.number}
+                 </span>
+                 <span className={`relative z-10 ${winningBox.text} text-[10px] uppercase font-extrabold tracking-wider mt-0.5`}>
+                   {winningBox.description}
                  </span>
                </div>
 
                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${winningBox.bg} border-4 border-white/80 flex flex-col items-center justify-center font-black [transform:rotateY(180deg)_translateZ(54px)]`}>
                  <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 ${winningBox.ribbon} shadow-sm`}></div>
                  <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 ${winningBox.ribbon} shadow-sm`}></div>
-                 <span className={`relative z-10 ${winningBox.text} text-lg md:text-xl font-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]`}>
-                   #{winningBox.number}
-                 </span>
+                 <span className={`relative z-10 ${winningBox.text} text-base md:text-xl font-black`}>#{winningBox.number}</span>
                </div>
 
                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${winningBox.bg} border-4 border-white/80 flex flex-col items-center justify-center font-black [transform:rotateY(-90deg)_translateZ(54px)]`}>
                  <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 ${winningBox.ribbon} shadow-sm`}></div>
                  <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 ${winningBox.ribbon} shadow-sm`}></div>
-                 <span className={`relative z-10 ${winningBox.text} text-lg md:text-xl font-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]`}>
-                   #{winningBox.number}
-                 </span>
+                 <span className={`relative z-10 ${winningBox.text} text-base md:text-xl font-black`}>#{winningBox.number}</span>
                </div>
 
                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${winningBox.bg} border-4 border-white/80 flex flex-col items-center justify-center font-black [transform:rotateY(90deg)_translateZ(54px)]`}>
                  <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 ${winningBox.ribbon} shadow-sm`}></div>
                  <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 ${winningBox.ribbon} shadow-sm`}></div>
-                 <span className={`relative z-10 ${winningBox.text} text-lg md:text-xl font-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]`}>
-                   #{winningBox.number}
-                 </span>
+                 <span className={`relative z-10 ${winningBox.text} text-base md:text-xl font-black`}>#{winningBox.number}</span>
                </div>
 
                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${winningBox.bg} border-4 border-white/80 flex flex-col items-center justify-center font-black [transform:rotateX(90deg)_translateZ(54px)]`}>
                  <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 ${winningBox.ribbon} shadow-sm`}></div>
                  <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 ${winningBox.ribbon} shadow-sm`}></div>
-                 <span className={`relative z-10 ${winningBox.text} text-lg md:text-xl font-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]`}>
-                   #{winningBox.number}
-                 </span>
+                 <span className={`relative z-10 ${winningBox.text} text-base md:text-xl font-black`}>#{winningBox.number}</span>
                </div>
 
                <div className={`absolute inset-0 rounded-3xl bg-gradient-to-br ${winningBox.bg} border-4 border-white/80 flex flex-col items-center justify-center font-black [transform:rotateX(-90deg)_translateZ(54px)]`}>
                  <div className={`absolute inset-x-0 top-1/2 -translate-y-1/2 h-4 ${winningBox.ribbon} shadow-sm`}></div>
                  <div className={`absolute inset-y-0 left-1/2 -translate-x-1/2 w-4 ${winningBox.ribbon} shadow-sm`}></div>
-                 <span className={`relative z-10 ${winningBox.text} text-lg md:text-xl font-black drop-shadow-[0_1px_2px_rgba(255,255,255,0.8)]`}>
-                   #{winningBox.number}
-                 </span>
+                 <span className={`relative z-10 ${winningBox.text} text-base md:text-xl font-black`}>#{winningBox.number}</span>
                </div>
              </div>
 
-             <div className="flex items-center gap-2 bg-purple-950/95 backdrop-blur-md px-4 md:px-5 py-2 rounded-2xl border-2 border-purple-500/50 shadow-[0_0_25px_rgba(168,85,247,0.6)] animate-bounce">
-               <Trophy className="w-5 h-5 text-amber-300" />
-               <span className="text-xs md:text-sm font-black text-amber-200">
-                 ¡{winningBox.description} (#{winningBox.number}) para {participantName}!
-               </span>
+             <div className="text-center space-y-1">
+               <h3 className="text-lg md:text-2xl font-black text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-fuchsia-300 animate-pulse">
+                 ¡CAJA GANADORA: #{winningBox.number}!
+               </h3>
+          <p className="text-xs text-purple-200 font-bold">
+  {winningBox.description} - ¡Felicidades {JSON.parse(localStorage.getItem('cosmos_participant') || '{}').participantName || 'Invitado'}! 🎉
+</p>
+             </div>
+
+             <div className="flex items-center gap-3 pt-2">
+               {attempts < 2 && (
+                 <button
+                   onClick={resetGame}
+                   className="bg-purple-900/80 hover:bg-purple-800 text-purple-200 border border-purple-500/40 text-xs font-bold px-4 py-2.5 rounded-xl cursor-pointer transition-all flex items-center gap-1.5 shadow-md"
+                 >
+                   <RotateCcw className="w-4 h-4" />
+                   <span>Intentar de nuevo</span>
+                 </button>
+               )}
+               <button
+                 onClick={handleGoToBingo}
+                 className="bg-gradient-to-r from-pink-500 via-fuchsia-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-black text-xs px-5 py-2.5 rounded-xl shadow-[0_0_20px_rgba(236,72,153,0.5)] cursor-pointer transition-all transform hover:scale-105 flex items-center gap-2 border border-white/40 animate-bounce"
+               >
+                 <span>Ir al Bingo</span>
+                 <ArrowRight className="w-4 h-4" />
+               </button>
              </div>
            </div>
          )}
 
        </div>
 
-       {gameState === 'won' && (
-         <div className="flex items-center gap-3 w-full">
-           {attempts < 2 && (
-             <button
-               onClick={resetGame}
-               className="flex-1 bg-purple-200 hover:bg-purple-300 text-purple-950 font-black text-xs md:text-sm py-3 rounded-2xl shadow-md transition-all cursor-pointer border border-purple-300 flex items-center justify-center gap-2"
-             >
-               <RotateCcw className="w-4 h-4" />
-               <span>Intentar de nuevo</span>
-             </button>
-           )}
-           <button
-             onClick={handleGoToBingo}
-             className="flex-1 bg-gradient-to-r from-amber-400 via-pink-500 to-purple-600 hover:from-amber-300 hover:to-purple-500 text-white font-black text-xs md:text-sm py-3 rounded-2xl shadow-[0_0_20px_rgba(236,72,153,0.5)] transition-all cursor-pointer border border-white/40 flex items-center justify-center gap-2"
-           >
-             <span>Ir al Bingo</span>
-             <ArrowRight className="w-4 h-4" />
-           </button>
-         </div>
-       )}
+       <div className="w-full flex items-center justify-between text-xs text-purple-800 font-bold px-2">
+         <span className="flex items-center gap-1">
+           <Trophy className="w-3.5 h-3.5 text-purple-600" />
+           Intento {attempts} de 2
+         </span>
+         <span>Cosmos Cute Sistema 🚀</span>
+       </div>
 
-      </div>
+     </div>
+
     </div>
   );
 }

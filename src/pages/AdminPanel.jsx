@@ -5,7 +5,7 @@ import ProductosBingo from "./bingoinfo/ProductosBingo";
 import InventarioGeneral from "../pages/InventarioGeneral";
 import Visitas from "./estadisticas_web/View"; 
 import BannersPromociones from './bannerspromociones/BannersPromociones';
-
+import PanelDePedidos from "./Pedidos/PanelDePedidos";
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -312,9 +312,9 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
 
   return (
     <div className="flex flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
-      
-      {/* SIDEBAR ESCRITORIO */}
-      <aside className={`hidden md:flex ${isSidebarCollapsed ? "w-16" : "w-48"} bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs justify-between transition-all duration-300 ease-in-out relative`}>
+     
+     {/* SIDEBAR ESCRITORIO */}
+     <aside className={`hidden md:flex ${isSidebarCollapsed ? "w-16" : "w-48"} bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs justify-between transition-all duration-300 ease-in-out relative`}>
         <div>
           <div className="p-3 border-b border-[#E4E8F0] flex items-center justify-between gap-2 overflow-hidden">
             <div className="flex items-center gap-2 truncate">
@@ -388,6 +388,20 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
             >
               <span className="text-sm shrink-0">🖼️</span>
               <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Banners y Promociones</span>
+            </button>
+
+            {/* SECCIÓN PEDIDOS (PanelDePedidos.jsx) */}
+            <button
+              onClick={() => setActiveTab("pedidos")}
+              title="Pedidos"
+              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
+                activeTab === "pedidos"
+                  ? 'bg-[#7C69EF] text-white shadow-2xs'
+                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
+              }`}
+            >
+              <span className="text-sm shrink-0">🛍️</span>
+              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Pedidos</span>
             </button>
 
           </div>
@@ -471,6 +485,17 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
                 <span>🖼️</span>
                 <span>Banners y Promociones</span>
               </button>
+
+              {/* SECCIÓN PEDIDOS EN MÓVIL (PanelDePedidos.jsx) */}
+              <button
+                onClick={() => { setActiveTab("pedidos"); setIsMobileMenuOpen(false); }}
+                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
+                  activeTab === "pedidos" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
+                }`}
+              >
+                <span>🛍️</span>
+                <span>Pedidos</span>
+              </button>
             </div>
           </div>
 
@@ -514,6 +539,8 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
               {activeTab === "bingo-productos" && "Bingo Productos"}
               {activeTab === "inventario-general" && "Inventario General"}
               {activeTab === "estadisticas" && "Estadísticas y Visitas"}
+              {activeTab === "banners-promociones" && "Banners y Promociones"}
+              {activeTab === "pedidos" && "Pedidos"}
             </h2>
           </div>
           {activeTab === "inventario-general" && (
@@ -564,6 +591,16 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
           {activeTab === "banners-promociones" && (
             <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
               <BannersPromociones 
+                triggerSuccessAlert={triggerSuccessAlert}
+                triggerErrorAlert={triggerErrorAlert}
+              />
+            </div>
+          )}
+
+          {/* VISTA DE PEDIDOS (PanelDePedidos.jsx) */}
+          {activeTab === "pedidos" && (
+            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
+              <PanelDePedidos 
                 triggerSuccessAlert={triggerSuccessAlert}
                 triggerErrorAlert={triggerErrorAlert}
               />
