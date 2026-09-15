@@ -55,13 +55,7 @@ export default function Header() {
 
           {/* Iconos de la derecha y botón de jugar */}
           <div className="flex items-center gap-2 text-purple-200">
-            <button
-              onClick={() => setIsModalOpen(true)}
-              className="bg-gradient-to-r from-purple-600 via-fuchsia-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-black text-[10px] px-2.5 py-1 rounded-full shadow-[0_0_12px_rgba(216,180,254,0.5)] cursor-pointer transition-all transform hover:scale-105 border border-white/30 flex items-center gap-1 animate-pulse"
-            >
-              <Sparkles className="w-3 h-3 text-amber-300" />
-              <span>Jugar ahora</span>
-            </button>
+         
 
             <button className="p-1.5 rounded-full transition-all duration-200 hover:bg-purple-900/40 hover:backdrop-blur-sm">
               <Search className="w-4 h-4 cursor-pointer" />

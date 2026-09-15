@@ -48,15 +48,6 @@ export default function Hero() {
                   <span>COMPRAR PARTIDA 🚀</span>
                 </button>
 
-                <a 
-                  href="https://www.tiktok.com/@tiendacosmoscute?_r=1&_t=ZS-99UdE0A9tih"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="bg-white/10 hover:bg-white/20 text-white font-bold text-[11px] md:text-xs px-3.5 md:px-5 py-2 rounded-full backdrop-blur-md transition-all border border-white/20 flex items-center gap-1 cursor-pointer shadow-md"
-                >
-                  <Play className="w-3 h-3 text-pink-400 fill-pink-400" />
-                  <span>Ver Juego</span>
-                </a>
               </div>
 
               {/* Micro-badges informativos */}

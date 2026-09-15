@@ -195,13 +195,7 @@ const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
         )}
 
         <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-2 z-10">
-          <a
-            href="/boxgame"
-            title="Ir al juego (/boxgame)"
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E3F2FD] hover:bg-[#BBDEFB] text-[#1E88E5] font-bold flex items-center justify-center transition-all shadow-sm cursor-pointer text-xs sm:text-sm"
-          >
-            ▶
-          </a>
+ 
 
           <button 
             type="button"
