@@ -314,201 +314,219 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
     <div className="flex flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
      
      {/* SIDEBAR ESCRITORIO */}
-     <aside className={`hidden md:flex ${isSidebarCollapsed ? "w-16" : "w-48"} bg-white border-r border-[#E4E8F0] flex-col shrink-0 shadow-2xs justify-between transition-all duration-300 ease-in-out relative`}>
-        <div>
-          <div className="p-3 border-b border-[#E4E8F0] flex items-center justify-between gap-2 overflow-hidden">
-            <div className="flex items-center gap-2 truncate">
-              <div className="w-6 h-6 shrink-0 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
-                CT
-              </div>
-              <div className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100"}`}>
-                <h1 className="text-[10px] font-extrabold text-[#2D3142] tracking-tight truncate">Carolina Torres</h1>
-                <p className="text-[7px] text-[#9EA2B3]">Admin</p>
-              </div>
-            </div>
-            
-            {/* Botón cosmoccute para contraer/expandir */}
-            <button
-              onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
-              className="w-6 h-6 flex items-center justify-center bg-[#F4F5FB] hover:bg-[#7C69EF]/10 text-[#9EA2B3] hover:text-[#7C69EF] rounded-lg border border-[#E4E8F0] hover:border-[#7C69EF]/30 transition-all shadow-2xs shrink-0 text-[8px]"
-              title={isSidebarCollapsed ? "Expandir barra" : "Colapsar barra"}
-            >
-              {isSidebarCollapsed ? "→" : "←"}
-            </button>
-          </div>
-
-          <div className="p-2 flex flex-col gap-1">
-            <button
-              onClick={() => setActiveTab("bingo-productos")}
-              title="Bingo Productos"
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-                activeTab === "bingo-productos"
-                  ? 'bg-[#7C69EF] text-white shadow-2xs'
-                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
-              }`}
-            >
-              <span className="text-sm shrink-0">📦</span>
-              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Bingo Productos</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("inventario-general")}
-              title="Inventario General"
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-                activeTab === "inventario-general"
-                  ? 'bg-[#7C69EF] text-white shadow-2xs'
-                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
-              }`}
-            >
-              <span className="text-sm shrink-0">📋</span>
-              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Inventario General</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("estadisticas")}
-              title="Estadísticas"
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-                activeTab === "estadisticas"
-                  ? 'bg-[#7C69EF] text-white shadow-2xs'
-                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
-              }`}
-            >
-              <span className="text-sm shrink-0">📊</span>
-              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Estadísticas</span>
-            </button>
-
-            <button
-              onClick={() => setActiveTab("banners-promociones")}
-              title="Banners y Promociones"
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-                activeTab === "banners-promociones"
-                  ? 'bg-[#7C69EF] text-white shadow-2xs'
-                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
-              }`}
-            >
-              <span className="text-sm shrink-0">🖼️</span>
-              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Banners y Promociones</span>
-            </button>
-
-            {/* SECCIÓN PEDIDOS (PanelDePedidos.jsx) */}
-            <button
-              onClick={() => setActiveTab("pedidos")}
-              title="Pedidos"
-              className={`flex items-center gap-2 px-2.5 py-1.5 rounded-md text-[10px] font-bold transition-all ${
-                activeTab === "pedidos"
-                  ? 'bg-[#7C69EF] text-white shadow-2xs'
-                  : 'text-[#6E7387] hover:bg-[#F4F5FB]'
-              }`}
-            >
-              <span className="text-sm shrink-0">🛍️</span>
-              <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Pedidos</span>
-            </button>
-
-          </div>
+     <aside className={`hidden md:flex ${isSidebarCollapsed ? "w-20" : "w-60"} bg-white/90 backdrop-blur-md border-r border-purple-100/60 flex-col shrink-0 shadow-lg justify-between transition-all duration-300 ease-in-out relative z-10`}>
+  <div>
+    <div className="p-4 border-b border-purple-50 flex items-center justify-between gap-2 overflow-hidden">
+      <div className="flex items-center gap-3 truncate">
+        <div className="w-8 h-8 shrink-0 rounded-2xl bg-gradient-to-tr from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] flex items-center justify-center text-white font-black text-sm shadow-md shadow-purple-500/20">
+          ✨
         </div>
-
-        <div className="p-3 border-t border-[#E4E8F0]">
-          <button
-            onClick={handleLock}
-            title="Bloquear Panel"
-            className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-1.5 px-2 rounded-md text-[9px] transition-all flex items-center justify-center gap-1"
-          >
-            <span className="shrink-0">🔒</span> <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Bloquear Panel</span>
-          </button>
-        </div>
-      </aside>
-
-      {/* MENÚ HAMBURGUESA MÓVIL */}
-     <div 
-        className={`fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex md:hidden transition-opacity duration-300 ease-in-out ${
-          isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
-        }`}
-        onClick={() => setIsMobileMenuOpen(false)}
-      >
-        <div 
-          className={`w-60 bg-white h-full shadow-xl flex flex-col p-3 justify-between transform transition-transform duration-300 ease-in-out ${
-            isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
-          }`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <div>
-            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2.5">
-              <div className="flex items-center gap-2">
-                <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
-                  CT
-                </div>
-                <div>
-                  <h1 className="text-[10px] font-extrabold text-[#2D3142]">Carolina Torres</h1>
-                  <p className="text-[7px] text-[#9EA2B3]">Admin</p>
-                </div>
-              </div>
-              <button onClick={() => setIsMobileMenuOpen(false)} className="text-[#9EA2B3] text-xs font-bold p-1">✕</button>
-            </div>
-
-            <div className="flex flex-col gap-1.5 pt-2">
-              <button
-                onClick={() => { setActiveTab("bingo-productos"); setIsMobileMenuOpen(false); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                    activeTab === "bingo-productos" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
-                }`}
-              >
-                  <span>📦</span>
-                  <span>Bingo Productos</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTab("inventario-general"); setIsMobileMenuOpen(false); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                    activeTab === "inventario-general" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
-                }`}
-              >
-                  <span>📋</span>
-                  <span>Inventario General</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTab("estadisticas"); setIsMobileMenuOpen(false); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                    activeTab === "estadisticas" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
-                }`}
-              >
-                  <span>📊</span>
-                  <span>Estadísticas</span>
-              </button>
-
-              <button
-                onClick={() => { setActiveTab("banners-promociones"); setIsMobileMenuOpen(false); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                  activeTab === "banners-promociones" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
-                }`}
-              >
-                <span>🖼️</span>
-                <span>Banners y Promociones</span>
-              </button>
-
-              {/* SECCIÓN PEDIDOS EN MÓVIL (PanelDePedidos.jsx) */}
-              <button
-                onClick={() => { setActiveTab("pedidos"); setIsMobileMenuOpen(false); }}
-                className={`flex items-center gap-2 px-3 py-2 rounded-md text-[10px] font-bold transition-all ${
-                  activeTab === "pedidos" ? 'bg-[#7C69EF] text-white' : 'text-[#6E7387] bg-[#F4F5FB]'
-                }`}
-              >
-                <span>🛍️</span>
-                <span>Pedidos</span>
-              </button>
-            </div>
-          </div>
-
-          <div className="pt-2 border-t border-[#E4E8F0]">
-            <button
-              onClick={handleLock}
-              className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold py-2 px-2 rounded-md text-[9px] transition-all flex items-center justify-center gap-1"
-            >
-              <span>🔒</span> <span>Bloquear Panel</span>
-            </button>
-          </div>
+        <div className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "opacity-0 w-0 hidden" : "opacity-100"}`}>
+          <h1 className="text-[11px] font-black bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent tracking-tight truncate">Carolina Torres</h1>
+          <p className="text-[8px] font-bold text-pink-400">Cosmos Admin 🌸</p>
         </div>
       </div>
+      
+      {/* Botón contraer/expandir */}
+      <button
+        onClick={() => setIsSidebarCollapsed(!isSidebarCollapsed)}
+        className="w-7 h-7 flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-xl border border-purple-100 transition-all shadow-2xs shrink-0 text-[10px] font-bold"
+        title={isSidebarCollapsed ? "Expandir barra" : "Colapsar barra"}
+      >
+        {isSidebarCollapsed ? "→" : "←"}
+      </button>
+    </div>
+
+    <div className="p-3 flex flex-col gap-2">
+      <button
+        onClick={() => setActiveTab("bingo-productos")}
+        title="Bingo Productos"
+        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
+          activeTab === "bingo-productos"
+            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
+            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
+        }`}
+      >
+        <span className="text-base shrink-0">📦</span>
+        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Bingo Productos</span>
+      </button>
+
+      <button
+        onClick={() => setActiveTab("inventario-general")}
+        title="Inventario General"
+        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
+          activeTab === "inventario-general"
+            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
+            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
+        }`}
+      >
+        <span className="text-base shrink-0">📋</span>
+        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Inventario General</span>
+      </button>
+
+      <button
+        onClick={() => setActiveTab("estadisticas")}
+        title="Estadísticas"
+        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
+          activeTab === "estadisticas"
+            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
+            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
+        }`}
+      >
+        <span className="text-base shrink-0">📊</span>
+        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Estadísticas</span>
+      </button>
+
+      <button
+        onClick={() => setActiveTab("banners-promociones")}
+        title="Banners y Promociones"
+        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
+          activeTab === "banners-promociones"
+            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
+            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
+        }`}
+      >
+        <span className="text-base shrink-0">🖼️</span>
+        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Banners y Promociones</span>
+      </button>
+
+      {/* SECCIÓN PEDIDOS (PanelDePedidos.jsx) */}
+      <button
+        onClick={() => setActiveTab("pedidos")}
+        title="Pedidos"
+        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
+          activeTab === "pedidos"
+            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
+            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
+        }`}
+      >
+        <span className="text-base shrink-0">🛍️</span>
+        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Pedidos</span>
+      </button>
+
+    </div>
+  </div>
+
+  <div className="p-3.5 border-t border-purple-50">
+    <button
+      onClick={handleLock}
+      title="Bloquear Panel"
+      className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold py-2.5 px-3 rounded-2xl text-[10px] transition-all flex items-center justify-center gap-2 shadow-xs"
+    >
+      <span className="text-sm shrink-0">🔒</span> <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Bloquear Panel</span>
+    </button>
+  </div>
+</aside>
+
+      {/* MENÚ HAMBURGUESA MÓVIL */}
+   <div 
+  className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex md:hidden transition-opacity duration-300 ease-in-out ${
+    isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
+  }`}
+  onClick={() => setIsMobileMenuOpen(false)}
+>
+  <div 
+    className={`w-72 bg-white/95 backdrop-blur-md h-full shadow-2xl flex flex-col p-4 justify-between transform transition-transform duration-300 ease-out border-r border-purple-100 ${
+      isMobileMenuOpen ? "translate-x-0" : "-translate-x-full"
+    }`}
+    onClick={(e) => e.stopPropagation()}
+  >
+    <div>
+      {/* Cabecera estilo Rappi / Perfil */}
+      <div className="flex items-center justify-between border-b border-purple-100/60 pb-3.5 mb-3">
+        <div className="flex items-center gap-3">
+          <div className="w-9 h-9 rounded-2xl bg-gradient-to-tr from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] flex items-center justify-center text-white font-black text-xs shadow-md shadow-purple-500/25">
+            ✨
+          </div>
+          <div>
+            <h1 className="text-xs font-black bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent tracking-tight">Carolina Torres</h1>
+            <p className="text-[9px] font-bold text-pink-400">Cosmos Admin 🌸</p>
+          </div>
+        </div>
+        <button 
+          onClick={() => setIsMobileMenuOpen(false)} 
+          className="w-7 h-7 flex items-center justify-center bg-purple-50 hover:bg-purple-100 text-purple-600 rounded-full font-bold transition-all text-xs"
+        >
+          ✕
+        </button>
+      </div>
+
+      {/* Opciones de Navegación más grandes y vistosas */}
+      <div className="flex flex-col gap-2 pt-1">
+        <button
+          onClick={() => { setActiveTab("bingo-productos"); setIsMobileMenuOpen(false); }}
+          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
+            activeTab === "bingo-productos" 
+              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
+              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
+          }`}
+        >
+          <span className="text-base shrink-0">📦</span>
+          <span>Bingo Productos</span>
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("inventario-general"); setIsMobileMenuOpen(false); }}
+          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
+            activeTab === "inventario-general" 
+              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
+              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
+          }`}
+        >
+          <span className="text-base shrink-0">📋</span>
+          <span>Inventario General</span>
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("estadisticas"); setIsMobileMenuOpen(false); }}
+          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
+            activeTab === "estadisticas" 
+              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
+              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
+          }`}
+        >
+          <span className="text-base shrink-0">📊</span>
+          <span>Estadísticas</span>
+        </button>
+
+        <button
+          onClick={() => { setActiveTab("banners-promociones"); setIsMobileMenuOpen(false); }}
+          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
+            activeTab === "banners-promociones" 
+              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
+              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
+          }`}
+        >
+          <span className="text-base shrink-0">🖼️</span>
+          <span>Banners y Promociones</span>
+        </button>
+
+        {/* SECCIÓN PEDIDOS EN MÓVIL */}
+        <button
+          onClick={() => { setActiveTab("pedidos"); setIsMobileMenuOpen(false); }}
+          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
+            activeTab === "pedidos" 
+              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
+              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
+          }`}
+        >
+          <span className="text-base shrink-0">🛍️</span>
+          <span>Pedidos</span>
+        </button>
+      </div>
+    </div>
+
+    {/* Botón de bloqueo inferior */}
+    <div className="pt-3 border-t border-purple-100/60">
+      <button
+        onClick={handleLock}
+        className="w-full bg-rose-50 hover:bg-rose-100 text-rose-600 font-extrabold py-3 px-3 rounded-2xl text-xs transition-all flex items-center justify-center gap-2 shadow-xs"
+      >
+        <span className="text-sm shrink-0">🔒</span> <span>Bloquear Panel</span>
+      </button>
+    </div>
+  </div>
+</div>
 
       {/* CONTENIDO CENTRAL */}
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">

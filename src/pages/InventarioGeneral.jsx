@@ -435,282 +435,292 @@ const handleUpdateInventario = async (e) => {
 )}
 
       {/* TABLA PRINCIPAL */}
-     <div className="flex-1 overflow-y-auto overflow-x-auto">
-        <table className="w-full text-left border-collapse text-[10px] sm:text-[11px] relative whitespace-nowrap sm:whitespace-normal">
-          <thead className="sticky top-0 z-10 bg-[#F4F5FB]">
-            <tr className="border-b border-[#E4E8F0] text-[#9EA2B3] uppercase text-[8px] sm:text-[9px] font-black tracking-wider">
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2 bg-[#F4F5FB] w-6 sm:w-8 text-center">
+     <div className="flex-1 overflow-y-auto overflow-x-auto p-2 md:p-4 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30">
+  <table className="w-full text-left border-collapse text-xs relative whitespace-nowrap">
+    <thead className="sticky top-0 z-10 bg-purple-50/90 backdrop-blur-md">
+      <tr className="border-b border-purple-100 text-purple-700 uppercase text-[10px] font-black tracking-wider">
+        <th className="py-3 px-2 w-10 text-center">
+          <input 
+            type="checkbox"
+            onChange={handleSelectAll}
+            checked={filteredInventario.length > 0 && selectedIds.length === filteredInventario.length}
+            className="rounded accent-[#7C69EF] cursor-pointer w-4 h-4 shadow-xs"
+          />
+        </th>
+        <th className="py-3 px-3">ID Único</th>
+        <th className="py-3 px-3">Producto</th>
+        <th className="py-3 px-3">Categoría</th>
+        <th className="py-3 px-3">Costo</th>
+        <th className="py-3 px-3">Precio</th>
+        <th className="py-3 px-3">Stock (Disp)</th>
+        <th className="py-3 px-3">Ingresadas</th>
+        <th className="py-3 px-3">Vendidas</th>
+        <th className="py-3 px-3 text-center">Estado</th>
+        <th className="py-3 px-3 text-center">Acciones</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-purple-50">
+      {filteredInventario.length === 0 ? (
+        <tr>
+          <td colSpan="11" className="text-center py-16 text-slate-400 font-semibold text-xs">
+            <div className="text-3xl mb-2">📦</div>
+            No se encontraron productos coincidentes en el inventario.
+          </td>
+        </tr>
+      ) : (
+        filteredInventario.map((item) => {
+          const itemName = item.nombre || item.productos || "";
+          const isSelected = selectedIds.includes(item.id);
+          const isEditing = editingId === item.id;
+
+          const isActivo = item.estado === true || item.activo === true || String(item.estado || "").toLowerCase() === "activo" || String(item.estado || "").toLowerCase() === "true" || item.estado === 1 || item.activo === 1;
+          
+          const rowStyle = isActivo 
+            ? 'bg-emerald-50/60 hover:bg-emerald-50/90 border-l-4 border-l-emerald-500 shadow-2xs' 
+            : 'bg-white/80 hover:bg-purple-50/30 border-l-4 border-l-slate-300';
+
+          const editCostoNum = Number(editForm.costo) || 0;
+          const editPrecioCalculado = editCostoNum / 0.50;
+
+          return (
+            <tr key={item.id} className={`transition-all ${rowStyle}`}>
+              
+              <td className="py-3 px-2 text-center">
                 <input 
                   type="checkbox"
-                  onChange={handleSelectAll}
-                  checked={filteredInventario.length > 0 && selectedIds.length === filteredInventario.length}
-                  className="rounded accent-[#7C69EF] cursor-pointer w-3 h-3 sm:w-3.5 sm:h-3.5"
+                  checked={isSelected}
+                  onChange={() => handleSelectOne(item.id)}
+                  className="rounded accent-[#7C69EF] cursor-pointer w-4 h-4 shadow-xs"
                 />
-              </th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">ID Único</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Producto</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Categoría</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Costo</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Precio</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Stock (Disp)</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Ingresadas</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB]">Vendidas</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB] text-center">Estado</th>
-              <th className="py-2 px-1.5 sm:py-2.5 sm:px-2.5 bg-[#F4F5FB] text-center">Acciones / Sincronización</th>
+              </td>
+
+              <td className="py-3 px-3 font-mono text-[11px] text-slate-400 font-semibold" title={item.id}>
+                <span className="bg-purple-50 px-2 py-1 rounded-xl border border-purple-100/60">
+                  {item.id ? `${item.id.substring(0, 6)}...` : 'N/A'}
+                </span>
+              </td>
+
+              <td className="py-3 px-3 font-extrabold text-slate-800 text-xs">
+                {isEditing ? (
+                  <input 
+                    type="text"
+                    value={editForm.nombre}
+                    onChange={(e) => setEditForm({...editForm, nombre: e.target.value})}
+                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-full font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-inner"
+                  />
+                ) : (
+                  itemName
+                )}
+              </td>
+
+              <td className="py-3 px-3">
+                {isEditing ? (
+                  <select 
+                    value={editForm.categoria}
+                    onChange={(e) => setEditForm({...editForm, categoria: e.target.value})}
+                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-inner focus:outline-none"
+                  >
+                    <option value="General">General</option>
+                    {categorias.map(cat => (
+                      <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="bg-purple-100/70 text-purple-700 px-2.5 py-1 rounded-xl font-extrabold text-[10px] border border-purple-200/50 shadow-2xs">
+                    {item.categoria || "General"}
+                  </span>
+                )}
+              </td>
+
+              <td className="py-3 px-3 font-extrabold text-slate-700">
+                {isEditing ? (
+                  <input 
+                    type="number"
+                    value={editForm.costo}
+                    onChange={(e) => setEditForm({...editForm, costo: e.target.value})}
+                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-24 font-bold text-slate-700 shadow-inner focus:outline-none"
+                  />
+                ) : (
+                  `$${Number(item.costo || 0).toLocaleString()}`
+                )}
+              </td>
+
+              <td className="py-3 px-3 font-black text-[#7C69EF]">
+                {isEditing ? (
+                  <span className="bg-purple-50 border border-purple-200 px-2.5 py-1.5 rounded-xl text-purple-600 text-xs font-black inline-block shadow-inner" title="Calculado automáticamente: Costo / 0.50">
+                    ${editPrecioCalculado.toLocaleString()}
+                  </span>
+                ) : (
+                  `$${Number(item.precio || 0).toLocaleString()}`
+                )}
+              </td>
+
+              <td className="py-3 px-3 font-extrabold text-slate-700">
+                {isEditing ? (
+                  <input 
+                    type="number"
+                    value={editForm.stockactual}
+                    onChange={(e) => setEditForm({...editForm, stockactual: e.target.value})}
+                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-20 font-bold text-slate-700 shadow-inner focus:outline-none"
+                  />
+                ) : (
+                  <span className="font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-xl text-xs font-black">
+                    {item.udisponibles ?? item.stockactual ?? 0}
+                  </span>
+                )}
+              </td>
+
+              <td className="py-3 px-3 font-bold text-slate-600">
+                <span className="font-mono text-xs">{item.uingresadas ?? "0"}</span>
+              </td>
+
+              <td className="py-3 px-3 font-bold text-slate-600">
+                <span className="font-mono text-xs">{item.uvendidas ?? "0"}</span>
+              </td>
+
+              <td className="py-3 px-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => handleToggleEstadoDirecto(item)}
+                  title="Haz clic para cambiar estado"
+                  className="transition-transform active:scale-95 focus:outline-none"
+                >
+                  {isActivo ? (
+                    <span className="inline-flex items-center gap-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-black tracking-wide shadow-2xl cursor-pointer transition-colors border border-emerald-200">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Activo ✨
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 px-3 py-1 rounded-full text-[10px] font-black tracking-wide shadow-2xl cursor-pointer transition-colors border border-rose-200">
+                      <span className="w-2 h-2 rounded-full bg-rose-500"></span> Inactivo 🌙
+                    </span>
+                  )}
+                </button>
+              </td>
+
+              <td className="py-3 px-3">
+                <div className="flex items-center justify-center gap-1.5">
+                  {isEditing ? (
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        onClick={() => saveEditing(item.id)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-1.5 rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-all"
+                      >
+                        OK ✓
+                      </button>
+                      <button 
+                        onClick={() => setEditingId(null)}
+                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition-all"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setDetailModal({ isOpen: true, item })}
+                        className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-sky-500 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
+                        title="Ver detalles completos"
+                      >
+                        👁️
+                      </button>
+
+                      <button 
+                        onClick={() => startEditing(item)}
+                        className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-amber-500 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
+                        title="Editar"
+                      >
+                        ✏️
+                      </button>
+
+                      <button 
+                        onClick={() => confirmDelete(item.id, false)}
+                        className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
+                        title="Eliminar"
+                      >
+                        🗑️
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </td>
+
             </tr>
-          </thead>
-          <tbody className="divide-y divide-[#F0F2F5]">
-            {filteredInventario.length === 0 ? (
-              <tr>
-                <td colSpan="11" className="text-center py-12 text-[#9EA2B3] text-[11px]">
-                  No se encontraron productos coincidentes en el inventario.
-                </td>
-              </tr>
-            ) : (
-              filteredInventario.map((item) => {
-                const itemName = item.nombre || item.productos || "";
-                
-             
-
-                const isSelected = selectedIds.includes(item.id);
-                const isEditing = editingId === item.id;
-
-                // Verificamos si el estado en el item es explícitamente "Activo" o equivalente, o si deseas usar la propiedad real del objeto item (ej. item.estado)
-const isActivo = item.estado === true || item.activo === true || String(item.estado || "").toLowerCase() === "activo" || String(item.estado || "").toLowerCase() === "true" || item.estado === 1 || item.activo === 1;
-                const rowStyle = isActivo 
-                  ? 'bg-emerald-50/70 hover:bg-emerald-50 border-l-3 border-l-emerald-500 shadow-2xs' 
-                  : 'bg-white hover:bg-[#FAFBFC] border-l-3 border-l-transparent';
-
-                const editCostoNum = Number(editForm.costo) || 0;
-                const editPrecioCalculado = editCostoNum / 0.50;
-
-                return (
-                  <tr key={item.id} className={`transition-all ${rowStyle}`}>
-                    
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2 text-center">
-                      <input 
-                        type="checkbox"
-                        checked={isSelected}
-                        onChange={() => handleSelectOne(item.id)}
-                        className="rounded accent-[#7C69EF] cursor-pointer w-3 h-3 sm:w-3.5 sm:h-3.5"
-                      />
-                    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-mono text-[8px] sm:text-[9px] text-[#9EA2B3]" title={item.id}>
-                      {item.id ? `${item.id.substring(0, 6)}...` : 'N/A'}
-                    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-[#2D3142]">
-                      {isEditing ? (
-                        <input 
-                          type="text"
-                          value={editForm.nombre}
-                          onChange={(e) => setEditForm({...editForm, nombre: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-1.5 py-0.5 text-[10px] sm:text-[11px] w-full font-bold text-[#2D3142] focus:outline-none"
-                        />
-                      ) : (
-                        itemName
-                      )}
-                    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
-                      {isEditing ? (
-                        <select 
-                          value={editForm.categoria}
-                          onChange={(e) => setEditForm({...editForm, categoria: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-1 py-0.5 text-[9px] sm:text-[10px] font-bold"
-                        >
-                          <option value="General">General</option>
-                          {categorias.map(cat => (
-                            <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
-                          ))}
-                        </select>
-                      ) : (
-                        <span className="bg-[#F4F5FB] px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded-md text-[#6E7387] font-semibold text-[9px] sm:text-[10px]">
-                          {item.categoria || "General"}
-                        </span>
-                      )}
-                    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-[#2D3142]">
-                      {isEditing ? (
-                        <input 
-                          type="number"
-                          value={editForm.costo}
-                          onChange={(e) => setEditForm({...editForm, costo: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-1 py-0.5 text-[10px] sm:text-[11px] w-16 sm:w-20 font-bold"
-                        />
-                      ) : (
-                        `$${Number(item.costo || 0).toLocaleString()}`
-                      )}
-                    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-extrabold text-[#7C69EF]">
-                      {isEditing ? (
-                        <span className="bg-slate-100 border border-slate-200 px-1.5 py-0.5 rounded text-slate-600 text-[10px] sm:text-[11px] font-bold inline-block" title="Calculado automáticamente: Costo / 0.50">
-                          ${editPrecioCalculado.toLocaleString()}
-                        </span>
-                      ) : (
-                        `$${Number(item.precio || 0).toLocaleString()}`
-                      )}
-                    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-bold text-[#6E7387]">
-                      {isEditing ? (
-                        <input 
-                          type="number"
-                          value={editForm.stockactual}
-                          onChange={(e) => setEditForm({...editForm, stockactual: e.target.value})}
-                          className="bg-white border border-[#7C69EF] rounded-md px-1 py-0.5 text-[10px] sm:text-[11px] w-12 sm:w-14 font-bold"
-                        />
-                      ) : (
-                        item.udisponibles ?? item.stockactual ?? 0
-                      )}
-                    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-medium text-slate-600">
-                      {item.uingresadas ?? "0"}
-                    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 font-medium text-slate-600">
-                      {item.uvendidas ?? "0"}
-                    </td>
-
-               <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5 text-center">
-      <button
-        type="button"
-        onClick={() => handleToggleEstadoDirecto(item)}
-        title="Haz clic para cambiar estado"
-        className="transition-transform active:scale-95 focus:outline-none"
-      >
-        {isActivo ? (
-          <span className="inline-flex items-center gap-1 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-wide shadow-2xs cursor-pointer transition-colors">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Activo 🔄
-          </span>
-        ) : (
-          <span className="inline-flex items-center gap-1 bg-rose-100 hover:bg-rose-200 text-rose-800 px-2.5 py-0.5 rounded-full text-[9px] sm:text-[10px] font-black tracking-wide shadow-2xs cursor-pointer transition-colors">
-            <span className="w-2 h-2 rounded-full bg-rose-500"></span> Inactivo 🔄
-          </span>
-        )}
-      </button>
-    </td>
-
-                    <td className="py-1.5 px-1.5 sm:py-2 sm:px-2.5">
-                      <div className="flex items-center justify-center gap-0.5 sm:gap-1">
-                        {isEditing ? (
-                          <div className="flex items-center gap-1">
-                            <button 
-                              onClick={() => saveEditing(item.id)}
-                              className="bg-emerald-600 hover:bg-emerald-700 text-white font-bold px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-[9px] sm:text-[10px] shadow-2xs"
-                            >
-                              OK
-                            </button>
-                            <button 
-                              onClick={() => setEditingId(null)}
-                              className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-1.5 py-0.5 sm:px-2 sm:py-0.5 rounded text-[9px] sm:text-[10px]"
-                            >
-                              ✕
-                            </button>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-1">
-                            <button
-                              onClick={() => setDetailModal({ isOpen: true, item })}
-                              className="p-1 rounded-md bg-sky-50 hover:bg-sky-500 text-sky-600 hover:text-white transition-all shadow-2xs"
-                              title="Ver detalles completos"
-                            >
-                              👁️
-                            </button>
-
-                     
-                            <button 
-                              onClick={() => startEditing(item)}
-                              className="p-1 rounded-md bg-amber-50 hover:bg-amber-500 text-amber-600 hover:text-white transition-all shadow-2xs"
-                              title="Editar"
-                            >
-                              ✏️
-                            </button>
-
-                            <button 
-                              onClick={() => confirmDelete(item.id, false)}
-                              className="p-1 rounded-md bg-rose-50 hover:bg-rose-600 text-rose-500 hover:text-white transition-all shadow-2xs"
-                              title="Eliminar"
-                            >
-                              🗑️
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                    </td>
-
-                  </tr>
-                );
-              })
-            )}
-          </tbody>
-        </table>
-      </div>
+          );
+        })
+      )}
+    </tbody>
+  </table>
+</div>
 
       {/* MODAL PARA AGREGAR NUEVO PRODUCTO */}
  {isAddModalOpen && (
-   <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
- <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 my-auto transition-all duration-300 ease-out transform scale-100 opacity-100">  <div className="flex items-center justify-between border-b pb-3">
-     <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
-       <span>📦</span> Registrar Nuevo Producto en Inventario
-     </h3>
-     <button
-       type="button"
-       onClick={() => setIsAddModalOpen(false)}
-       className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
-     >
-       ✕
-     </button>
+  <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto transition-all animate-fade-in">
+  <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-7 max-w-lg w-full shadow-2xl shadow-purple-900/20 border border-purple-100 space-y-5 my-auto transition-all duration-300 ease-out transform scale-100 opacity-100">
+    
+    {/* Cabecera */}
+    <div className="flex items-center justify-between border-b border-purple-100 pb-4">
+      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2.5">
+        <span className="flex items-center justify-center w-8 h-8 rounded-2xl bg-purple-100 text-purple-600 shadow-inner text-base">📦</span> 
+        Registrar Nuevo Producto
+      </h3>
+      <button
+        type="button"
+        onClick={() => setIsAddModalOpen(false)}
+        className="w-8 h-8 rounded-2xl bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-600 font-bold text-xs flex items-center justify-center transition-all"
+      >
+        ✕
+      </button>
     </div>
 
-    <form onSubmit={handleAddInventario} className="space-y-3 text-xs">
+    {/* Formulario */}
+    <form onSubmit={handleAddInventario} className="space-y-4 text-xs">
+      
+      {/* Nombre del producto */}
       <div>
-        <label className="block font-bold text-slate-600 mb-1">Nombre del producto *</label>
+        <label className="block font-extrabold text-slate-700 mb-1.5">Nombre del producto *</label>
         <input
           type="text"
           placeholder="Ej. Cartón de Bingo Premium"
           value={nombre}
           onChange={(e) => setNombre(e.target.value)}
-          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
           required
         />
       </div>
 
+      {/* Proveedor */}
       <div>
-        <label className="block font-bold text-slate-600 mb-1">Proveedor *</label>
+        <label className="block font-extrabold text-slate-700 mb-1.5">Proveedor *</label>
         <input
           type="text"
           placeholder="Ej. Proveedor Principal S.A.S."
           value={proveedor}
           onChange={(e) => setProveedor(e.target.value)}
-          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
           required
         />
       </div>
 
       {/* Descripción */}
       <div>
-        <label className="block font-bold text-slate-600 mb-1">Descripción</label>
+        <label className="block font-extrabold text-slate-700 mb-1.5">Descripción</label>
         <input
           type="text"
-          placeholder="Ej. bueno producto"
+          placeholder="Ej. buen producto"
           value={descripcion}
           onChange={(e) => setDescripcion(e.target.value)}
-          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
         />
       </div>
 
+      {/* Categoría y Stock */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block font-bold text-slate-600 mb-1">Categoría</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Categoría</label>
           <select
             value={categoria}
             onChange={(e) => setCategoria(e.target.value)}
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
           >
             <option value="General">General</option>
             {categorias.map(cat => (
@@ -719,40 +729,41 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           </select>
         </div>
         <div>
-          <label className="block font-bold text-slate-600 mb-1">Stock Inicial *</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Stock Inicial *</label>
           <input
             type="number"
             placeholder="Ej. 50"
             value={stock}
             onChange={(e) => setStock(e.target.value)}
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
             required
           />
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2">
+      {/* Costo, Margen y Precio Final */}
+      <div className="grid grid-cols-3 gap-2.5">
         <div>
-          <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Costo ($) *</label>
           <input
             type="number"
             placeholder="Ej. 10000"
             value={costo}
             onChange={(e) => setCosto(e.target.value)}
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
             required
           />
         </div>
         <div>
-          <label className="block font-bold text-slate-600 mb-1">% Margen Venta</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">% Margen</label>
           <select
             value={porcentajeGanancia}
             onChange={(e) => setPorcentajeGanancia(Number(e.target.value))}
             disabled={Number(costo) === 0}
-            className={`w-full rounded-xl px-2 py-2 text-xs font-bold focus:outline-none focus:border-[#7C69EF] ${
+            className={`w-full rounded-2xl px-2 py-2.5 text-xs font-bold focus:outline-none transition-all ${
               Number(costo) === 0 
-                ? "bg-slate-100 border border-[#E4E8F0] text-slate-400 cursor-not-allowed" 
-                : "bg-white border border-[#E4E8F0] text-[#2D3142]"
+                ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed" 
+                : "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
             }`}
           >
             {Array.from({ length: 19 }, (_, i) => (i + 1) * 5).map((p) => (
@@ -761,7 +772,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           </select>
         </div>
         <div>
-          <label className="block font-bold text-slate-600 mb-1" title="Precio final del producto">Precio Final *</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5" title="Precio final del producto">Precio Final *</label>
           <input
             type={Number(costo) === 0 ? "number" : "text"}
             placeholder={Number(costo) === 0 ? "Ej. 15000" : undefined}
@@ -776,24 +787,24 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
                 setPrecioManual(e.target.value);
               }
             }}
-            className={`w-full rounded-xl px-3 py-2 text-xs font-bold ${
+            className={`w-full rounded-2xl px-3 py-2.5 text-xs font-bold ${
               Number(costo) === 0 
-                ? "bg-white border border-[#E4E8F0] text-[#2D3142] focus:outline-none focus:border-[#7C69EF]" 
-                : "bg-slate-100 border border-[#E4E8F0] text-slate-500 cursor-not-allowed"
+                ? "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner" 
+                : "bg-purple-100/40 border border-purple-200 text-purple-700 cursor-not-allowed shadow-inner"
             }`}
             required={Number(costo) === 0}
           />
         </div>
       </div>
 
-      {/* Campo % Descuento y visualización del precio con descuento */}
-      <div className="grid grid-cols-2 gap-3 bg-purple-50/50 p-2.5 rounded-xl border border-purple-100 items-center">
+      {/* Descuento y Precio con Descuento */}
+      <div className="grid grid-cols-2 gap-3 bg-gradient-to-r from-purple-50/80 to-pink-50/50 p-3.5 rounded-2xl border border-purple-100 items-center shadow-xs">
         <div>
-          <label className="block font-bold text-slate-700 mb-1">% Descuento aplicable</label>
+          <label className="block font-extrabold text-purple-900 mb-1.5">% Descuento aplicable</label>
           <select
             value={porcentajeDescuento}
             onChange={(e) => setPorcentajeDescuento(Number(e.target.value))}
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] shadow-2xs"
           >
             {Array.from({ length: 21 }, (_, i) => i * 5).map((p) => (
               <option key={p} value={p}>{p}% {p === 0 ? "(Sin desc.)" : ""}</option>
@@ -801,8 +812,8 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           </select>
         </div>
         <div>
-          <label className="block font-bold text-purple-900 mb-1">Precio con Descuento</label>
-          <div className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-black text-purple-700 flex items-center">
+          <label className="block font-extrabold text-purple-900 mb-1.5">Precio con Descuento</label>
+          <div className="w-full bg-white border border-purple-200/80 rounded-xl px-3 py-2 text-xs font-black text-[#7C69EF] flex items-center shadow-2xs">
             {(() => {
               const precioBase = Number(costo) === 0 ? (Number(precioManual) || 0) : (calculatedNewPrecio || 0);
               const desc = Number(porcentajeDescuento) || 0;
@@ -814,173 +825,185 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       </div>
 
       {/* Estado y Fecha */}
-      <div className="grid grid-cols-2 gap-3 items-center bg-slate-50 p-2.5 rounded-xl border border-slate-200">
+      <div className="grid grid-cols-2 gap-3 items-center bg-purple-50/20 p-3.5 rounded-2xl border border-purple-100">
         <div>
-          <label className="block font-bold text-slate-700 text-[11px] mb-1">Estado del Producto</label>
+          <label className="block font-extrabold text-slate-700 text-[11px] mb-1.5">Estado del Producto</label>
           <button
             type="button"
             onClick={() => setEstado(!estado)}
-            className={`px-3 py-1.5 rounded-lg font-bold text-[10px] transition-all flex items-center gap-1.5 ${
+            className={`px-3.5 py-2 rounded-xl font-extrabold text-[10px] transition-all flex items-center gap-2 shadow-sm ${
               estado 
-                ? "bg-emerald-500 text-white shadow-sm" 
-                : "bg-rose-500 text-white shadow-sm"
+                ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20" 
+                : "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20"
             }`}
           >
-            <span className={`w-2 h-2 rounded-full ${estado ? "bg-white animate-pulse" : "bg-white/60"}`}></span>
+            <span className={`w-2.5 h-2.5 rounded-full ${estado ? "bg-white animate-pulse" : "bg-white/70"}`}></span>
             {estado ? "🟢 Activo (Encendido)" : "🔴 Inactivo (Apagado)"}
           </button>
         </div>
         <div>
-          <label className="block font-bold text-slate-700 text-[11px] mb-1">Fecha de Entrada (Automática)</label>
+          <label className="block font-extrabold text-slate-700 text-[11px] mb-1.5">Fecha de Entrada</label>
           <input
             type="text"
             disabled
             value={new Date().toLocaleDateString()}
-            className="w-full bg-slate-200/70 border border-slate-300 rounded-lg px-2 py-1 text-[11px] font-bold text-slate-600 cursor-not-allowed"
+            className="w-full bg-purple-100/50 border border-purple-200/60 rounded-xl px-3 py-2 text-[11px] font-bold text-slate-600 cursor-not-allowed shadow-inner"
           />
         </div>
       </div>
 
-     <div className="grid grid-cols-2 gap-3 pt-1">
- <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
-    <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img) *</label>
-    <input 
-      type="file" 
-      accept="image/*"
-      onChange={(e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target.result;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX = 500;
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
-            else { if (h > MAX) { w *= MAX / h; h = MAX; } }
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            setFileImg(canvas.toDataURL('image/jpeg', 0.5));
-          };
-        };
-        reader.readAsDataURL(file);
-      }}
-      className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
-      required
-    />
- </div>
- <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
-    <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
-    <input 
-      type="file" 
-      accept="image/*"
-      onChange={(e) => {
-        const file = e.target.files[0];
-        if (!file) return;
-        const reader = new FileReader();
-        reader.onload = (event) => {
-          const img = new Image();
-          img.src = event.target.result;
-          img.onload = () => {
-            const canvas = document.createElement('canvas');
-            const MAX = 500;
-            let w = img.width, h = img.height;
-            if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
-            else { if (h > MAX) { w *= MAX / h; h = MAX; } }
-            canvas.width = w; canvas.height = h;
-            const ctx = canvas.getContext('2d');
-            ctx.drawImage(img, 0, 0, w, h);
-            setFileImg1(canvas.toDataURL('image/jpeg', 0.5));
-          };
-        };
-        reader.readAsDataURL(file);
-      }}
-      className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-xl file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
-    />
- </div>
-</div>
+      {/* Carga de Fotos */}
+      <div className="grid grid-cols-2 gap-3 pt-1">
+        <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
+          <label className="block font-extrabold text-slate-700 text-[11px]">Foto Principal (img) *</label>
+          <input 
+            type="file" 
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const MAX = 500;
+                  let w = img.width, h = img.height;
+                  if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+                  else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                  canvas.width = w; canvas.height = h;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, w, h);
+                  setFileImg(canvas.toDataURL('image/jpeg', 0.5));
+                };
+              };
+              reader.readAsDataURL(file);
+            }}
+            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
+            required
+          />
+        </div>
+        <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
+          <label className="block font-extrabold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
+          <input 
+            type="file" 
+            accept="image/*"
+            onChange={(e) => {
+              const file = e.target.files[0];
+              if (!file) return;
+              const reader = new FileReader();
+              reader.onload = (event) => {
+                const img = new Image();
+                img.src = event.target.result;
+                img.onload = () => {
+                  const canvas = document.createElement('canvas');
+                  const MAX = 500;
+                  let w = img.width, h = img.height;
+                  if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+                  else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                  canvas.width = w; canvas.height = h;
+                  const ctx = canvas.getContext('2d');
+                  ctx.drawImage(img, 0, 0, w, h);
+                  setFileImg1(canvas.toDataURL('image/jpeg', 0.5));
+                };
+              };
+              reader.readAsDataURL(file);
+            }}
+            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
+          />
+        </div>
+      </div>
 
-      <div className="flex items-center justify-end gap-2 pt-3 border-t">
+      {/* Botones de Acción */}
+      <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-purple-100">
         <button
           type="button"
           onClick={() => setIsAddModalOpen(false)}
-          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all"
+          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-2xs"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isUploading}
-          className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-[#7C69EF]/20 transition-all disabled:opacity-50"
+          className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-black px-6 py-2.5 rounded-2xl text-xs shadow-lg shadow-[#7C69EF]/30 transition-all disabled:opacity-50 active:scale-95"
         >
-          {isUploading ? "Subiendo fotos y guardando..." : "Guardar Producto"}
+          {isUploading ? "Subiendo fotos y guardando..." : "Guardar Producto ✨"}
         </button>
       </div>
+
     </form>
- </div>
+  </div>
 </div>
 )}
 
       {/* MODAL PARA EDITAR PRODUCTO */}
     {isEditModalOpen && editingItemData && (
-  <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
-  <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn max-h-[90vh] overflow-y-auto">
-    <div className="flex items-center justify-between border-b pb-3">
-      <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
-        <span>✏️</span> Editar Producto en Inventario
+ <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-all animate-fade-in">
+  <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-7 max-w-lg w-full shadow-2xl shadow-purple-900/20 border border-purple-100 space-y-5 my-auto max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform scale-100 opacity-100">
+    
+    {/* Cabecera */}
+    <div className="flex items-center justify-between border-b border-purple-100 pb-4">
+      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2.5">
+        <span className="flex items-center justify-center w-8 h-8 rounded-2xl bg-purple-100 text-purple-600 shadow-inner text-base">✏️</span> 
+        Editar Producto en Inventario
       </h3>
       <button
         type="button"
         onClick={() => setIsEditModalOpen(false)}
-        className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
+        className="w-8 h-8 rounded-2xl bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-600 font-bold text-xs flex items-center justify-center transition-all"
       >
         ✕
       </button>
     </div>
 
-    <form onSubmit={handleUpdateInventario} className="space-y-3 text-xs">
+    {/* Formulario */}
+    <form onSubmit={handleUpdateInventario} className="space-y-4 text-xs">
+      
+      {/* Nombre del producto */}
       <div>
-        <label className="block font-bold text-slate-600 mb-1">Nombre del producto *</label>
+        <label className="block font-extrabold text-slate-700 mb-1.5">Nombre del producto *</label>
         <input
           type="text"
           value={editingItemData.nombre || ""}
           onChange={(e) => setEditingItemData({...editingItemData, nombre: e.target.value})}
-          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
           required
         />
       </div>
 
+      {/* Proveedor */}
       <div>
-        <label className="block font-bold text-slate-600 mb-1">Proveedor *</label>
+        <label className="block font-extrabold text-slate-700 mb-1.5">Proveedor *</label>
         <input
           type="text"
           value={editingItemData.proveedor || ""}
           onChange={(e) => setEditingItemData({...editingItemData, proveedor: e.target.value})}
-          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
           required
         />
       </div>
 
+      {/* Descripción */}
       <div>
-        <label className="block font-bold text-slate-600 mb-1">Descripción</label>
+        <label className="block font-extrabold text-slate-700 mb-1.5">Descripción</label>
         <textarea
           value={editingItemData.descripcion || ""}
           onChange={(e) => setEditingItemData({...editingItemData, descripcion: e.target.value})}
-          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all resize-none"
           rows="2"
         />
       </div>
 
+      {/* Categoría y Stock */}
       <div className="grid grid-cols-2 gap-3">
         <div>
-          <label className="block font-bold text-slate-600 mb-1">Categoría</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Categoría</label>
           <select
             value={editingItemData.categoria || "General"}
             onChange={(e) => setEditingItemData({...editingItemData, categoria: e.target.value})}
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
           >
             <option value="General">General</option>
             {categorias.map(cat => (
@@ -989,20 +1012,20 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           </select>
         </div>
         <div>
-          <label className="block font-bold text-slate-400 mb-1">Stock Disponible (No editable)</label>
+          <label className="block font-extrabold text-slate-400 mb-1.5">Stock Disponible (No editable)</label>
           <input
             type="number"
             value={editingItemData.udisponibles ?? ""}
             disabled
-            className="w-full bg-slate-100 border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-slate-400 cursor-not-allowed"
+            className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-400 cursor-not-allowed shadow-inner"
           />
         </div>
       </div>
 
       {/* Selector de Costo, Margen de Porcentaje y Precio Final */}
-      <div className="grid grid-cols-3 gap-2">
+      <div className="grid grid-cols-3 gap-2.5">
         <div>
-          <label className="block font-bold text-slate-600 mb-1">Costo ($) *</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Costo ($) *</label>
           <input
             type="number"
             value={editingItemData.costo ?? ""}
@@ -1014,20 +1037,20 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
                 precio: Number(nuevoCosto) === 0 ? (editingItemData.precio || "") : editingItemData.precio
               });
             }}
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
             required
           />
         </div>
         <div>
-          <label className="block font-bold text-slate-600 mb-1">% Margen Venta</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">% Margen</label>
           <select
             value={editingItemData.porcentajeGanancia || 50}
             onChange={(e) => setEditingItemData({...editingItemData, porcentajeGanancia: Number(e.target.value)})}
             disabled={Number(editingItemData.costo) === 0}
-            className={`w-full rounded-xl px-2 py-2 text-xs font-bold focus:outline-none focus:border-[#7C69EF] ${
+            className={`w-full rounded-2xl px-2 py-2.5 text-xs font-bold focus:outline-none transition-all ${
               Number(editingItemData.costo) === 0 
-                ? "bg-slate-100 border border-[#E4E8F0] text-slate-400 cursor-not-allowed" 
-                : "bg-white border border-[#E4E8F0] text-[#2D3142]"
+                ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed" 
+                : "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
             }`}
           >
             {Array.from({ length: 19 }, (_, i) => (i + 1) * 5).map((p) => (
@@ -1036,7 +1059,7 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           </select>
         </div>
         <div>
-          <label className="block font-bold text-slate-600 mb-1">Precio Final *</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Precio Final *</label>
           <input
             type={Number(editingItemData.costo) === 0 ? "number" : "text"}
             value={
@@ -1056,10 +1079,10 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
                 setEditingItemData({ ...editingItemData, precio: e.target.value });
               }
             }}
-            className={`w-full rounded-xl px-3 py-2 text-xs font-bold ${
+            className={`w-full rounded-2xl px-3.5 py-2.5 text-xs font-bold ${
               Number(editingItemData.costo) === 0 
-                ? "bg-white border border-[#E4E8F0] text-[#2D3142] focus:outline-none focus:border-[#7C69EF]" 
-                : "bg-slate-100 border border-[#E4E8F0] text-slate-500 cursor-not-allowed"
+                ? "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner" 
+                : "bg-purple-100/40 border border-purple-200 text-purple-700 cursor-not-allowed shadow-inner"
             }`}
             required={Number(editingItemData.costo) === 0}
           />
@@ -1067,13 +1090,13 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       </div>
 
       {/* Campo % Descuento y visualización del precio con descuento */}
-      <div className="grid grid-cols-2 gap-3 bg-purple-50/50 p-2.5 rounded-xl border border-purple-100 items-center">
+      <div className="grid grid-cols-2 gap-3 bg-gradient-to-r from-purple-50/80 to-pink-50/50 p-3.5 rounded-2xl border border-purple-100 items-center shadow-xs">
         <div>
-          <label className="block font-bold text-slate-700 mb-1">% Descuento aplicable</label>
+          <label className="block font-extrabold text-purple-900 mb-1.5">% Descuento aplicable</label>
           <select
             value={editingItemData.porcentajeDescuento || 0}
             onChange={(e) => setEditingItemData({...editingItemData, porcentajeDescuento: Number(e.target.value)})}
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] shadow-2xs"
           >
             {Array.from({ length: 21 }, (_, i) => i * 5).map((p) => (
               <option key={p} value={p}>{p}% {p === 0 ? "(Sin desc.)" : ""}</option>
@@ -1081,8 +1104,8 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
           </select>
         </div>
         <div>
-          <label className="block font-bold text-purple-900 mb-1">Precio con Descuento</label>
-          <div className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-black text-purple-700 flex items-center">
+          <label className="block font-extrabold text-purple-900 mb-1.5">Precio con Descuento</label>
+          <div className="w-full bg-white border border-purple-200/80 rounded-xl px-3 py-2 text-xs font-black text-[#7C69EF] flex items-center shadow-2xs">
             {(() => {
               const precioBase = Number(editingItemData.costo) === 0 
                 ? (Number(editingItemData.precio) || 0) 
@@ -1101,26 +1124,26 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
       </div>
 
       {/* Botón Switch de Estado (Encendido / Apagado) */}
-      <div>
-        <label className="block font-bold text-slate-600 mb-1">Estado del Producto</label>
+      <div className="bg-purple-50/20 p-3.5 rounded-2xl border border-purple-100 space-y-1.5">
+        <label className="block font-extrabold text-slate-700 text-[11px]">Estado del Producto</label>
         <button
           type="button"
           onClick={() => {
             setEditingItemData({ ...editingItemData, estado: !editingItemData.estado });
           }}
-          className={`w-full flex items-center justify-between px-3 py-2 rounded-xl border text-xs font-bold transition-all ${
+          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-extrabold transition-all shadow-sm ${
             editingItemData.estado 
-              ? "bg-emerald-50 border-emerald-200 text-emerald-700"
-              : "bg-rose-50 border-rose-200 text-rose-700"
+              ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 text-white shadow-emerald-500/20"
+              : "bg-rose-500 hover:bg-rose-600 border-rose-600 text-white shadow-rose-500/20"
           }`}
         >
           <span className="flex items-center gap-2">
             <span className={`w-2.5 h-2.5 rounded-full ${
-              editingItemData.estado ? "bg-emerald-500 animate-pulse" : "bg-rose-500"
+              editingItemData.estado ? "bg-white animate-pulse" : "bg-white/70"
             }`}></span>
-            {editingItemData.estado ? "Activo" : "Inactivo"}
+            {editingItemData.estado ? "🟢 Activo (Encendido)" : "🔴 Inactivo (Apagado)"}
           </span>
-          <span className="bg-white px-2 py-1 rounded-lg border shadow-xs text-[10px] text-slate-600">
+          <span className="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-[10px] text-white transition-all">
             Click para cambiar 🔄
           </span>
         </button>
@@ -1128,9 +1151,9 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
 
       {/* Imágenes */}
       <div className="grid grid-cols-2 gap-3 pt-1">
-        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
-          <label className="block font-bold text-slate-700 text-[11px]">Foto Principal (img)</label>
-          {editingItemData.img && <img src={editingItemData.img} alt="Actual" className="w-10 h-10 object-cover rounded-md mb-1 border" />}
+        <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
+          <label className="block font-extrabold text-slate-700 text-[11px]">Foto Principal (img)</label>
+          {editingItemData.img && <img src={editingItemData.img} alt="Actual" className="w-12 h-12 object-cover rounded-xl mb-1.5 border border-purple-200 shadow-xs" />}
           <input 
             type="file" 
             accept="image/*"
@@ -1155,12 +1178,12 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
               };
               reader.readAsDataURL(file);
             }}
-            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
           />
         </div>
-        <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 space-y-1">
-          <label className="block font-bold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
-          {editingItemData.img1 && <img src={editingItemData.img1} alt="Actual 1" className="w-10 h-10 object-cover rounded-md mb-1 border" />}
+        <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
+          <label className="block font-extrabold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
+          {editingItemData.img1 && <img src={editingItemData.img1} alt="Actual 1" className="w-12 h-12 object-cover rounded-xl mb-1.5 border border-purple-200 shadow-xs" />}
           <input 
             type="file" 
             accept="image/*"
@@ -1185,27 +1208,29 @@ const isActivo = item.estado === true || item.activo === true || String(item.est
               };
               reader.readAsDataURL(file);
             }}
-            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1 file:px-2 file:rounded-lg file:border-0 file:text-[10px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF]"
+            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
           />
         </div>
       </div>
 
-      <div className="flex items-center justify-end gap-2 pt-3 border-t">
+      {/* Botones de Acción */}
+      <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-purple-100">
         <button
           type="button"
           onClick={() => setIsEditModalOpen(false)}
-          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all"
+          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-2xs"
         >
           Cancelar
         </button>
         <button
           type="submit"
           disabled={isUploading}
-          className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md shadow-[#7C69EF]/20 transition-all disabled:opacity-50"
+          className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-black px-6 py-2.5 rounded-2xl text-xs shadow-lg shadow-[#7C69EF]/30 transition-all disabled:opacity-50 active:scale-95"
         >
-          {isUploading ? "Actualizando..." : "Guardar Cambios"}
+          {isUploading ? "Actualizando..." : "Guardar Cambios ✨"}
         </button>
       </div>
+
     </form>
   </div>
 </div>

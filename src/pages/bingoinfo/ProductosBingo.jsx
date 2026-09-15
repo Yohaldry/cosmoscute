@@ -118,69 +118,74 @@ export default function ProductosBingoContainer({ triggerSuccessAlert }) {
     };
 
     return (
-        <div className="flex flex-col h-full overflow-hidden p-4">
-            {/* BARRA DE ACCIÓN */}
-            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center bg-[#7C69EF] text-white p-3 rounded-2xl shadow-md gap-3 mb-4 shrink-0">
-                <div className="relative flex-1 max-w-xs">
-                    <span className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none text-white/70 text-xs">🔍</span>
+        <div className="flex flex-col h-full overflow-hidden p-3 md:p-6 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30">
+            {/* BARRA DE ACCIÓN SUPERIOR (Estilo Cosmos Cute) */}
+            <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white p-4 rounded-3xl shadow-xl shadow-purple-500/15 gap-3.5 mb-5 shrink-0 border border-purple-200/40">
+                <div className="relative flex-1 max-w-sm">
+                    <span className="absolute inset-y-0 left-0 flex items-center pl-3.5 pointer-events-none text-white/80 text-xs">🔍</span>
                     <input 
                         type="text" 
-                        placeholder="Buscar en el bingo por código o nombre..." 
+                        placeholder="Buscar por código o nombre..." 
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="w-full bg-white/15 text-white placeholder-white/70 text-xs rounded-xl pl-8 pr-3 py-1.5 border border-white/20 focus:outline-none focus:bg-white/25 transition-all font-medium"
+                        className="w-full bg-white/20 text-white placeholder-white/80 text-xs rounded-2xl pl-9 pr-4 py-2.5 border border-white/30 focus:outline-none focus:bg-white/30 focus:ring-2 focus:ring-white/50 transition-all font-semibold shadow-inner"
                     />
                 </div>
 
-                <div className="flex items-center gap-3">
-                    <div className="text-xs font-semibold bg-white/15 px-3 py-1.5 rounded-xl border border-white/20 text-center">
-                        🎯 Total en Bingo: <span className="font-bold">{filteredProductos.length}</span> / 100
+                <div className="flex flex-wrap items-center justify-between md:justify-end gap-3">
+                    <div className="text-xs font-black bg-white/20 px-3.5 py-2.5 rounded-2xl border border-white/30 text-center backdrop-blur-xs shadow-xs">
+                        🎯 Total en Bingo: <span className="font-black text-white">{filteredProductos.length}</span> / 100
                     </div>
                     <button
                         type="button"
                         onClick={handleOpenCreate}
-                        className="bg-white text-[#7C69EF] hover:bg-slate-100 font-bold px-4 py-1.5 rounded-xl text-xs shadow transition-all flex items-center gap-1.5"
+                        className="bg-white text-[#7C69EF] hover:bg-purple-50 font-black px-5 py-2.5 rounded-2xl text-xs shadow-md hover:shadow-lg transition-all flex items-center gap-2 transform hover:scale-[1.02] active:scale-95"
                     >
-                        <span>➕</span> Nuevo en Bingo
+                        <span className="text-sm">✨</span> Nuevo en Bingo
                     </button>
                 </div>
             </div>
 
-            {/* TABLA DE PRODUCTOS */}
-            <div className="bg-white border border-[#E4E8F0] rounded-2xl shadow-sm flex-1 overflow-hidden flex flex-col">
-                <div className="overflow-y-auto flex-1 max-h-full">
-                    <table className="w-full text-left border-collapse text-xs relative">
-                        <thead className="sticky top-0 z-10 bg-[#F4F5FB]">
-                            <tr className="border-b border-[#E4E8F0] text-[#9EA2B3] uppercase text-[10px] font-black tracking-wider">
-                                <th className="py-3 px-4 bg-[#F4F5FB]">Código</th>
-                                <th className="py-3 px-4 bg-[#F4F5FB]">Nombre</th>
-                                <th className="py-3 px-4 bg-[#F4F5FB] text-right">Acciones</th>
+            {/* CONTENEDOR PRINCIPAL DE DATOS */}
+            <div className="bg-white/90 backdrop-blur-md border border-purple-100 rounded-3xl shadow-xl shadow-purple-500/5 flex-1 overflow-hidden flex flex-col">
+                <div className="overflow-y-auto flex-1 max-h-full p-2 md:p-0">
+                    
+                    {/* VISTA DE ESCRITORIO (TABLA ELEGANTE) */}
+                    <table className="w-full text-left border-collapse text-xs relative hidden md:table">
+                        <thead className="sticky top-0 z-10 bg-purple-50/80 backdrop-blur-md">
+                            <tr className="border-b border-purple-100 text-purple-700 uppercase text-[11px] font-black tracking-wider">
+                                <th className="py-4 px-6">Código / Puesto</th>
+                                <th className="py-4 px-6">Nombre del Producto</th>
+                                <th className="py-4 px-6 text-right">Acciones</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-[#F0F2F5]">
+                        <tbody className="divide-y divide-purple-50">
                             {filteredProductos.length === 0 ? (
                                 <tr>
-                                    <td colSpan="3" className="text-center py-12 text-[#9EA2B3]">
+                                    <td colSpan="3" className="text-center py-16 text-slate-400 font-semibold text-xs">
+                                        <div className="text-3xl mb-2">🛍️</div>
                                         No hay productos independientes agregados al bingo todavía.
                                     </td>
                                 </tr>
                             ) : (
                                 filteredProductos.map((prod) => (
-                                    <tr key={prod.id} className="transition-colors hover:bg-[#FAFBFC]">
-                                        <td className="py-3 px-4 font-mono font-bold text-[#7C69EF] w-32">
-                                            {String(prod.codigo ?? "--").padStart(2, '0')}
+                                    <tr key={prod.id} className="transition-all hover:bg-purple-50/40 group">
+                                        <td className="py-4 px-6 font-mono font-black text-[#7C69EF] w-40">
+                                            <span className="inline-flex items-center justify-center bg-purple-100/80 text-purple-700 px-3 py-1 rounded-xl text-xs shadow-2xs border border-purple-200/50">
+                                                #{String(prod.codigo ?? "--").padStart(2, '0')}
+                                            </span>
                                         </td>
 
-                                        <td className="py-3 px-4 font-bold text-[#2D3142]">
+                                        <td className="py-4 px-6 font-extrabold text-slate-700 text-sm">
                                             {prod.nombre ?? "--"}
                                         </td>
 
-                                        <td className="py-3 px-4 text-right w-32">
-                                            <div className="flex items-center justify-end gap-1.5">
+                                        <td className="py-4 px-6 text-right w-36">
+                                            <div className="flex items-center justify-end gap-2">
                                                 <button
                                                     type="button"
                                                     onClick={() => handleOpenEdit(prod)}
-                                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-purple-50 text-slate-600 hover:text-[#7C69EF] transition-colors"
+                                                    className="w-9 h-9 rounded-xl bg-purple-50 hover:bg-[#7C69EF] text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
                                                     title="Editar"
                                                 >
                                                     ✏️
@@ -191,7 +196,7 @@ export default function ProductosBingoContainer({ triggerSuccessAlert }) {
                                                         setProductToDelete(prod);
                                                         setIsDeleting(true);
                                                     }}
-                                                    className="p-1.5 rounded-lg bg-slate-100 hover:bg-red-50 text-slate-600 hover:text-red-600 transition-colors"
+                                                    className="w-9 h-9 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
                                                     title="Eliminar"
                                                 >
                                                     🗑️
@@ -203,33 +208,83 @@ export default function ProductosBingoContainer({ triggerSuccessAlert }) {
                             )}
                         </tbody>
                     </table>
+
+                    {/* VISTA MÓVIL (TARJETAS ESTILO RAPPI / COSMOS CUTE) */}
+                    <div className="flex flex-col gap-2.5 md:hidden p-1">
+                        {filteredProductos.length === 0 ? (
+                            <div className="text-center py-16 text-slate-400 font-semibold text-xs">
+                                <div className="text-3xl mb-2">🛍️</div>
+                                No hay productos independientes agregados al bingo todavía.
+                            </div>
+                        ) : (
+                            filteredProductos.map((prod) => (
+                                <div 
+                                    key={prod.id} 
+                                    className="bg-white border border-purple-100/80 rounded-2xl p-4 shadow-sm flex items-center justify-between gap-3 active:scale-[0.99] transition-all"
+                                >
+                                    <div className="flex items-center gap-3.5 overflow-hidden">
+                                        <div className="w-12 h-12 shrink-0 rounded-2xl bg-gradient-to-tr from-[#7C69EF] to-[#FF59B3] text-white font-black text-xs flex items-center justify-center shadow-md shadow-purple-500/20 font-mono">
+                                            #{String(prod.codigo ?? "--").padStart(2, '0')}
+                                        </div>
+                                        <div className="overflow-hidden">
+                                            <h4 className="font-extrabold text-slate-800 text-xs truncate">{prod.nombre ?? "--"}</h4>
+                                            <p className="text-[10px] font-bold text-purple-600 mt-0.5">Puesto de Bingo 🌸</p>
+                                        </div>
+                                    </div>
+
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <button
+                                            type="button"
+                                            onClick={() => handleOpenEdit(prod)}
+                                            className="w-9 h-9 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xs shadow-2xs active:scale-90 transition-all"
+                                            title="Editar"
+                                        >
+                                            ✏️
+                                        </button>
+                                        <button
+                                            type="button"
+                                            onClick={() => {
+                                                setProductToDelete(prod);
+                                                setIsDeleting(true);
+                                            }}
+                                            className="w-9 h-9 rounded-xl bg-rose-50 text-rose-500 flex items-center justify-center text-xs shadow-2xs active:scale-90 transition-all"
+                                            title="Eliminar"
+                                        >
+                                            🗑️
+                                        </button>
+                                    </div>
+                                </div>
+                            ))
+                        )}
+                    </div>
+
                 </div>
             </div>
 
             {/* MODAL PARA CREAR / EDITAR */}
             {isModalOpen && (
-                <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl p-6 max-w-md w-full shadow-2xl border border-[#E4E8F0] space-y-4 animate-fadeIn max-h-[90vh] overflow-y-auto">
-                        <div className="flex items-center justify-between border-b pb-3">
-                            <h3 className="text-xs font-black text-[#2D3142] uppercase tracking-wider flex items-center gap-2">
-                                <span>🎯</span> {editingProduct ? "Editar Producto de Bingo" : "Registrar Producto en Bingo"}
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 md:p-7 max-w-md w-full shadow-2xl border border-purple-100 space-y-5 animate-fadeIn max-h-[90vh] overflow-y-auto">
+                        <div className="flex items-center justify-between border-b border-purple-100 pb-3.5">
+                            <h3 className="text-xs md:text-sm font-black text-slate-800 uppercase tracking-wide flex items-center gap-2">
+                                <span className="text-base">🎯</span> {editingProduct ? "Editar Producto de Bingo" : "Registrar Producto en Bingo"}
                             </h3>
                             <button
                                 type="button"
                                 onClick={() => setIsModalOpen(false)}
-                                className="text-slate-400 hover:text-slate-700 font-bold text-xs px-2 py-0.5 rounded-lg bg-slate-100"
+                                className="w-8 h-8 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 font-bold text-xs flex items-center justify-center transition-all"
                             >
                                 ✕
                             </button>
                         </div>
 
-                        <form onSubmit={handleSave} className="space-y-3 text-xs">
+                        <form onSubmit={handleSave} className="space-y-4 text-xs">
                             <div>
-                                <label className="block font-bold text-slate-600 mb-1">Seleccionar Código / Puesto (00 - 99) *</label>
+                                <label className="block font-extrabold text-slate-700 mb-1.5">Seleccionar Código / Puesto (00 - 99) *</label>
                                 <select
                                     value={codigoSeleccionado}
                                     onChange={(e) => setCodigoSeleccionado(e.target.value)}
-                                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                                    className="w-full bg-purple-50/40 border border-purple-200 rounded-2xl px-4 py-3 text-xs font-bold text-slate-700 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-300/40 transition-all shadow-inner"
                                     required
                                 >
                                     {puestosDisponibles.map((p) => (
@@ -241,29 +296,29 @@ export default function ProductosBingoContainer({ triggerSuccessAlert }) {
                             </div>
 
                             <div>
-                                <label className="block font-bold text-slate-600 mb-1">Nombre del producto *</label>
+                                <label className="block font-extrabold text-slate-700 mb-1.5">Nombre del producto *</label>
                                 <input
                                     type="text"
                                     placeholder="Ej. Premio Especial Bingo"
                                     value={nombre}
                                     onChange={(e) => setNombre(e.target.value)}
-                                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-3 py-2 text-xs font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                                    className="w-full bg-purple-50/40 border border-purple-200 rounded-2xl px-4 py-3 text-xs font-extrabold text-slate-700 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-300/40 transition-all shadow-inner"
                                     required
                                 />
                             </div>
 
-                            <div className="flex items-center justify-end gap-2 pt-3 border-t">
+                            <div className="flex items-center justify-end gap-3 pt-3 border-t border-purple-100">
                                 <button
                                     type="button"
                                     onClick={() => setIsModalOpen(false)}
-                                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all"
+                                    className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2.5 rounded-2xl text-xs transition-all shadow-xs"
                                 >
                                     Cancelar
                                 </button>
                                 <button
                                     type="submit"
                                     disabled={isUploading}
-                                    className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-bold px-5 py-2 rounded-xl text-xs shadow-md transition-all disabled:opacity-50"
+                                    className="bg-gradient-to-r from-[#7C69EF] to-[#FF59B3] hover:opacity-95 text-white font-black px-6 py-2.5 rounded-2xl text-xs shadow-md shadow-purple-500/30 transition-all disabled:opacity-50"
                                 >
                                     {isUploading ? "Guardando..." : "Guardar en Bingo"}
                                 </button>
@@ -275,25 +330,27 @@ export default function ProductosBingoContainer({ triggerSuccessAlert }) {
 
             {/* MODAL DE ALERTA DE ELIMINACIÓN */}
             {isDeleting && (
-                <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
-                    <div className="bg-white rounded-3xl p-6 max-w-sm w-full shadow-2xl border border-[#E4E8F0] space-y-4 text-center">
-                        <div className="text-3xl">⚠️</div>
-                        <h4 className="font-bold text-slate-800 text-sm">¿Eliminar producto del bingo?</h4>
-                        <p className="text-xs text-slate-500">
-                            Estás a punto de eliminar el puesto <span className="font-bold text-[#7C69EF]">#{productToDelete?.codigo}</span> ({productToDelete?.nombre}). Esta acción no se puede deshacer.
+                <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4">
+                    <div className="bg-white rounded-3xl p-6 md:p-7 max-w-sm w-full shadow-2xl border border-rose-100 space-y-4 text-center">
+                        <div className="w-14 h-14 bg-rose-50 text-rose-500 rounded-2xl mx-auto flex items-center justify-center text-2xl shadow-inner">
+                            ⚠️
+                        </div>
+                        <h4 className="font-black text-slate-800 text-sm">¿Eliminar producto del bingo?</h4>
+                        <p className="text-xs text-slate-500 leading-relaxed">
+                            Estás a punto de eliminar el puesto <span className="font-black text-[#7C69EF]">#{productToDelete?.codigo}</span> ({productToDelete?.nombre}). Esta acción no se puede deshacer.
                         </p>
-                        <div className="flex items-center justify-center gap-2 pt-2">
+                        <div className="flex items-center justify-center gap-3 pt-2">
                             <button
                                 type="button"
                                 onClick={() => setIsDeleting(false)}
-                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-4 py-2 rounded-xl text-xs transition-all"
+                                className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold px-5 py-2.5 rounded-2xl text-xs transition-all shadow-xs"
                             >
                                 Cancelar
                             </button>
                             <button
                                 type="button"
                                 onClick={handleDeleteConfirm}
-                                className="bg-red-500 hover:bg-red-600 text-white font-bold px-4 py-2 rounded-xl text-xs shadow-md transition-all"
+                                className="bg-rose-500 hover:bg-rose-600 text-white font-black px-5 py-2.5 rounded-2xl text-xs shadow-md shadow-rose-500/30 transition-all"
                             >
                                 Sí, eliminar
                             </button>
