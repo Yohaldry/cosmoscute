@@ -35,6 +35,9 @@ function ConditionalWhatsApp() {
   if (location.pathname.includes('/admin')) {
     return null;
   }
+   if (location.pathname.includes('/bingo')) {
+    return null;
+  }
 
   return <WhatsAppButton />;
 }
