@@ -558,69 +558,69 @@ const closeIntro = () => {
     };
 
     return (
-       <div className="min-h-screen lg:h-screen w-full bg-slate-900 font-sans flex items-center justify-center p-2 sm:p-4 box-border select-none overflow-y-auto lg:overflow-hidden">
+      <div className="h-screen w-screen bg-slate-900 font-sans flex items-center justify-center p-1 sm:p-4 overflow-hidden box-border select-none">
             
-    <style>{`
-        button, a, [role="button"], .cursor-pointer {
-            cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 32 32'%3E%3Cdefs%3E%3Cfilter id='shadow' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='1' dy='2' stdDeviation='1' flood-color='%236b21a8' flood-opacity='0.3'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M16 27.5 C15.5 27.5 4 19 4 11 C4 7 7 4 11 4 C13.5 4 15.5 5.5 16 7 C16.5 5.5 18.5 4 21 4 C25 4 28 7 28 11 C28 19 16.5 27.5 16 27.5 Z' fill='%23f472b6' stroke='%23db2777' stroke-width='1.5' stroke-linejoin='round' filter='url(%23shadow)'/%3E%3C/svg%3E") 12 12, pointer !important;
-        }
-        
-        @keyframes floatBall {
-            0% { transform: translate(0, 0) rotate(0deg); }
-            50% { transform: translate(15px, -20px) rotate(180deg); }
-            100% { transform: translate(-10px, 15px) rotate(360deg); }
-        }
-        .ball-floating {
-            animation: floatBall var(--random-duration, 1s) ease-in-out infinite alternate;
-            animation-delay: var(--random-delay, 0s);
-        }
+            <style>{`
+                button, a, [role="button"], .cursor-pointer {
+                    cursor: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='24' height='24' viewBox='0 0 32 32'%3E%3Cdefs%3E%3Cfilter id='shadow' x='-20%25' y='-20%25' width='140%25' height='140%25'%3E%3CfeDropShadow dx='1' dy='2' stdDeviation='1' flood-color='%236b21a8' flood-opacity='0.3'/%3E%3C/filter%3E%3C/defs%3E%3Cpath d='M16 27.5 C15.5 27.5 4 19 4 11 C4 7 7 4 11 4 C13.5 4 15.5 5.5 16 7 C16.5 5.5 18.5 4 21 4 C25 4 28 7 28 11 C28 19 16.5 27.5 16 27.5 Z' fill='%23f472b6' stroke='%23db2777' stroke-width='1.5' stroke-linejoin='round' filter='url(%23shadow)'/%3E%3C/svg%3E") 12 12, pointer !important;
+                }
+                
+                @keyframes floatBall {
+                    0% { transform: translate(0, 0) rotate(0deg); }
+                    50% { transform: translate(15px, -20px) rotate(180deg); }
+                    100% { transform: translate(-10px, 15px) rotate(360deg); }
+                }
+                .ball-floating {
+                    animation: floatBall var(--random-duration, 1s) ease-in-out infinite alternate;
+                    animation-delay: var(--random-delay, 0s);
+                }
 
-        @keyframes temuBgIn { from { opacity: 0; } to { opacity: 1; } }
-        @keyframes temuBgOut { from { opacity: 1; } to { opacity: 0; } }
-        
-        @keyframes temuPanelIn { 
-            0% { transform: scale(0.3) translateY(-80px) rotate(-5deg); opacity: 0; } 
-            70% { transform: scale(1.08) translateY(10px) rotate(1.5deg); opacity: 1; } 
-            100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; } 
-        }
-        @keyframes temuPanelOut { 
-            0% { transform: scale(1) translateY(0); opacity: 1; } 
-            100% { transform: scale(0.4) translateY(100px); opacity: 0; } 
-        }
+                @keyframes temuBgIn { from { opacity: 0; } to { opacity: 1; } }
+                @keyframes temuBgOut { from { opacity: 1; } to { opacity: 0; } }
+                
+                @keyframes temuPanelIn { 
+                    0% { transform: scale(0.3) translateY(-80px) rotate(-5deg); opacity: 0; } 
+                    70% { transform: scale(1.08) translateY(10px) rotate(1.5deg); opacity: 1; } 
+                    100% { transform: scale(1) translateY(0) rotate(0deg); opacity: 1; } 
+                }
+                @keyframes temuPanelOut { 
+                    0% { transform: scale(1) translateY(0); opacity: 1; } 
+                    100% { transform: scale(0.4) translateY(100px); opacity: 0; } 
+                }
 
-        @keyframes temuPop { 
-            0% { transform: scale(0); opacity: 0; } 
-            80% { transform: scale(1.12); opacity: 1; } 
-            100% { transform: scale(1); opacity: 1; } 
-        }
+                @keyframes temuPop { 
+                    0% { transform: scale(0); opacity: 0; } 
+                    80% { transform: scale(1.12); opacity: 1; } 
+                    100% { transform: scale(1); opacity: 1; } 
+                }
 
-        @keyframes temuBounceScale {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.08); }
-        }
+                @keyframes temuBounceScale {
+                    0%, 100% { transform: scale(1); }
+                    50% { transform: scale(1.08); }
+                }
 
-        @keyframes lightRay {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
+                @keyframes lightRay {
+                    0% { transform: rotate(0deg); }
+                    100% { transform: rotate(360deg); }
+                }
 
-        .anim-bg-in { animation: temuBgIn 0.3s ease-out forwards; }
-        .anim-bg-out { animation: temuBgOut 0.3s ease-in forwards; }
-        .anim-panel-in { animation: temuPanelIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
-        .anim-panel-out { animation: temuPanelOut 0.5s ease-in forwards; }
-        .anim-pop-1 { animation: temuPop 0.4s 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
-        .anim-pop-2 { animation: temuPop 0.4s 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
-        .anim-pop-3 { animation: temuPop 0.4s 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
-        .anim-bounce-pulse { animation: temuBounceScale 2s infinite ease-in-out; }
-        .anim-ray { animation: lightRay 15s linear infinite; }
-    `}</style>
+                .anim-bg-in { animation: temuBgIn 0.3s ease-out forwards; }
+                .anim-bg-out { animation: temuBgOut 0.3s ease-in forwards; }
+                .anim-panel-in { animation: temuPanelIn 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275) forwards; }
+                .anim-panel-out { animation: temuPanelOut 0.5s ease-in forwards; }
+                .anim-pop-1 { animation: temuPop 0.4s 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
+                .anim-pop-2 { animation: temuPop 0.4s 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
+                .anim-pop-3 { animation: temuPop 0.4s 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275) backwards; }
+                .anim-bounce-pulse { animation: temuBounceScale 2s infinite ease-in-out; }
+                .anim-ray { animation: lightRay 15s linear infinite; }
+            `}</style>
+
        
 {/* Modal Cute de Alerta: Nombre Requerido */}
 {showNameErrorModal && (
   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
     <div className="relative bg-gradient-to-br from-pink-500 via-purple-600 to-indigo-900 p-1 rounded-[32px] shadow-[0_0_50px_rgba(236,72,153,0.7)] max-w-xs w-full transition-all transform animate-in fade-in zoom-in-95 duration-300">
       <div className="bg-[#120421] rounded-[30px] p-6 text-center flex flex-col items-center space-y-3 relative overflow-hidden border border-pink-500/30">
-        
         <div className="absolute -top-10 -right-10 w-24 h-24 bg-pink-500/30 rounded-full blur-xl animate-pulse"></div>
         <div className="absolute -bottom-10 -left-10 w-24 h-24 bg-purple-500/30 rounded-full blur-xl animate-pulse"></div>
 
@@ -634,7 +634,7 @@ const closeIntro = () => {
           </h3>
         </div>
 
-        <p className="text-xs text-purple-200/95 leading-relaxed font-medium relative z-10">
+        <p className="text-xs text-purple-200/90 leading-relaxed font-medium relative z-10">
           Para iniciar esta misión estelar y registrar tus premios, por favor escribe el <span className="text-pink-300 font-bold">nombre del participante</span>.
         </p>
 
@@ -648,13 +648,11 @@ const closeIntro = () => {
     </div>
   </div>
 )}
-
-{showBingoAlert && (
-    <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+            {showBingoAlert && (
+      <div className="fixed inset-0 z-50 bg-slate-950/85 backdrop-blur-xl flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
     <div className="absolute w-[500px] h-[500px] bg-gradient-to-tr from-amber-500/20 via-pink-500/10 to-transparent rounded-full blur-3xl pointer-events-none animate-pulse"></div>
     
     <div className="bg-gradient-to-b from-[#3b1d59] via-[#1c0a33] to-[#0d031b] border-4 border-amber-400/90 rounded-[30px] max-w-md w-full p-4 sm:p-6 shadow-[0_0_90px_rgba(251,191,36,0.5)] flex flex-col items-center text-center space-y-3 relative overflow-hidden my-auto max-h-[92vh] overflow-y-auto custom-scrollbar">
-        
         <div className="absolute top-0 left-0 right-0 h-16 bg-gradient-to-b from-white/15 to-transparent pointer-events-none"></div>
 
         <div className="relative mt-1 shrink-0">
@@ -664,25 +662,25 @@ const closeIntro = () => {
             </div>
         </div>
 
-        <div className="space-y-0.5 shrink-0">
-            <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/60 text-amber-300 text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-inner">
-                <Sparkles className="w-3 h-3 text-amber-300 animate-spin" /> ¡Misión Galáctica Cumplida! <Sparkles className="w-3 h-3 text-amber-300 animate-spin" />
-            </div>
-            
-            <h3 className="text-lg sm:text-xl font-black text-white tracking-wide drop-shadow-lg uppercase leading-tight pt-1">
-                ¡Felicidades, {String(participantName || '')} {String(participantLastName || '')}! ✨  
-            </h3>
-            
-            <p className="text-[10px] sm:text-[11px] font-bold text-amber-300/95 tracking-wider uppercase">
-                Categoría: {String(userGender || '')}
-            </p>
+<div className="space-y-0.5 shrink-0">
+    <div className="inline-flex items-center gap-1.5 px-3 py-0.5 rounded-full bg-amber-500/20 border border-amber-400/60 text-amber-300 text-[10px] sm:text-xs font-black uppercase tracking-widest shadow-inner">
+        <Sparkles className="w-3 h-3 text-amber-300 animate-spin" /> ¡Misión Galáctica Cumplida! <Sparkles className="w-3 h-3 text-amber-300 animate-spin" />
+    </div>
+    
+    <h3 className="text-lg sm:text-xl font-black text-white tracking-wide drop-shadow-lg uppercase leading-tight pt-1">
+        ¡Felicidades, {String(participantName || '')} {String(participantLastName || '')}! ✨  
+    </h3>
+    
+    <p className="text-[10px] sm:text-[11px] font-bold text-amber-300/90 tracking-wider uppercase">
+        Categoría: {String(userGender || '')}
+    </p>
 
-            <p className="text-[11px] sm:text-xs text-purple-400 font-bold max-w-xs leading-relaxed shrink-0 pt-1">
-                {hasWonBingo ? '🎉 ¡GANÓ BINGO (LÍNEA)! 🎉' : '❌ NO COMPLETÓ BINGO LÍNEA'}
-            </p>
-        </div>
+    <p className="text-[11px] sm:text-xs text-purple-400 font-bold max-w-xs leading-relaxed shrink-0 pt-1">
+        {hasWonBingo ? '🎉 ¡GANÓ BINGO (LÍNEA)! 🎉' : '❌ NO COMPLETÓ BINGO LÍNEA'}
+    </p>
+</div>
 
-        <p className="text-[11px] sm:text-xs text-purple-200/95 max-w-xs leading-relaxed shrink-0">
+        <p className="text-[11px] sm:text-xs text-purple-200/90 max-w-xs leading-relaxed shrink-0">
             Has completado todas las balotas de la sesión estelar. Estos son los tesoros obtenidos:
         </p>
 
@@ -716,359 +714,470 @@ const closeIntro = () => {
         </button>
     </div>
 </div>
-)}
+            )}
 
-            {/* Contenedor principal: Altura adaptativa (móvil compacto, PC tamaño original cómodo) */}
-            <div className="w-full max-w-7xl h-auto lg:h-[95vh] bg-slate-950 rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-slate-800 gap-2 p-2 sm:p-4">
+            {/* CONTENEDOR PRINCIPAL: Ajustado con h-full y max-h-[98vh] para evitar desbordes móviles */}
+            <div className="w-full max-w-7xl h-full max-h-[98vh] bg-slate-950 rounded-2xl sm:rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-slate-800 gap-1.5 sm:gap-2 p-2 sm:p-5">
                 
                 {/* Columna 1: Lista completa de Productos */}
-                <div className="w-full lg:w-1/4 bg-slate-900/80 rounded-2xl border border-slate-800 p-2.5 flex flex-col h-64 lg:h-full overflow-hidden">
-                    <div className="flex items-center justify-between mb-1.5 shrink-0">
-                        <h2 className="text-[11px] font-black uppercase tracking-wider text-purple-400">TODOS LOS PRODUCTOS</h2>
-                    </div>
-                    <div className="grid grid-cols-2 text-[10px] font-bold text-slate-400 pb-1 border-b border-slate-800 uppercase px-1 shrink-0">
-                        <span>ID</span>
-                        <span>PRODUCTO</span>
-                    </div>
+          <div className="w-full lg:w-1/4 bg-slate-900/80 rounded-xl sm:rounded-2xl border border-slate-800 p-2 sm:p-3 flex flex-col h-[28%] lg:h-full overflow-hidden">
+    <div className="flex items-center justify-between mb-1">
+        <h2 className="text-[10px] sm:text-xs font-black uppercase tracking-wider text-purple-400">TODOS LOS PRODUCTOS</h2>
+    </div>
+    <div className="grid grid-cols-2 text-[9px] sm:text-[10px] font-bold text-slate-400 pb-1 border-b border-slate-800 uppercase px-1">
+        <span>ID</span>
+        <span>PRODUCTO</span>
+    </div>
+    <div className="flex-1 overflow-y-auto max-h-full space-y-1.5 pt-1 pr-1" ref={scrollContainerRef}>
+        {productsData.length === 0 ? (
+            <p className="text-xs text-slate-500 text-center py-4">No hay productos registrados.</p>
+        ) : (
+            [...productsData]
+                .sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))
+                .map((product, index) => {
+                    const prodId = product.id ?? index;
+                    const isCurrentWinner = currentBall === Number(prodId);
+                    const isAlreadyDrawn = Array.isArray(drawnBalls) && drawnBalls.includes(Number(prodId));
+                    const isThisProductBlinking = blinkingProductId === Number(prodId);
                     
-                    <div 
-                        className="flex-1 overflow-y-auto space-y-2 pt-3 pb-3 px-1 custom-scrollbar scroll-py-12" 
-                        ref={scrollContainerRef}
-                    >
-                        {productsData.length === 0 ? (
-                            <p className="text-xs text-slate-500 text-center py-4">No hay productos registrados.</p>
-                        ) : (
-                            [...productsData]
-                                .sort((a, b) => Number(a.id ?? 0) - Number(b.id ?? 0))
-                                .map((product, index) => {
-                                    const prodId = product.id ?? index;
-                                    const isCurrentWinner = currentBall === Number(prodId);
-                                    const isAlreadyDrawn = Array.isArray(drawnBalls) && drawnBalls.includes(Number(prodId));
-                                    const isThisProductBlinking = blinkingProductId === Number(prodId);
-                                    const isHighlighted = isCurrentWinner || isThisProductBlinking;
-                                    
-                                    return (
-                                        <div 
-                                            key={product.firebaseId || `${prodId}-${index}`} 
-                                            ref={(el) => {
-                                                if (isHighlighted && el) {
-                                                    el.scrollIntoView({ behavior: 'smooth', block: 'center' });
-                                                }
-                                            }}
-                                            className={`product-item flex items-center justify-between p-2 rounded-xl text-xs transition-all duration-300 border ${
-                                                isCurrentWinner 
-                                                    ? 'bg-purple-600/60 border-purple-300 scale-[1.03] shadow-[0_0_20px_rgba(168,85,247,0.8)] font-bold text-white' 
-                                                    : isAlreadyDrawn 
-                                                        ? 'bg-slate-800/40 border-slate-700/50 text-slate-500 opacity-60 line-through' 
-                                                        : 'bg-slate-800/80 border-slate-700 text-white hover:bg-slate-800'
-                                            }`}
-                                            style={isThisProductBlinking ? {
-                                                animation: 'pulse 0.5s ease-in-out infinite',
-                                                boxShadow: '0 0 25px rgba(168,85,247,1)',
-                                                borderColor: '#e9d5ff',
-                                                backgroundColor: 'rgba(147, 51, 234, 0.8)'
-                                            } : {}}
-                                        >
-                                            <span className="font-mono font-black text-purple-300 w-8 text-xs">{String(prodId).padStart(2, '0')}</span>
-                                            <span className="flex-1 truncate px-2 font-semibold text-[11px] leading-tight">{product.name}</span>
-                                            <span className="text-xs shrink-0">{isCurrentWinner ? '✨' : '🛍️'}</span>
-                                        </div>
-                                    );
-                                })
-                        )}
-                    </div>
-                </div>
-
-                {/* Columna 2: Tómbola y Sorteo */}
-                <div className="w-full lg:w-2/5 bg-slate-950/90 rounded-3xl border border-indigo-500/30 p-3 sm:p-4 flex flex-col items-center justify-between h-auto lg:h-full overflow-y-auto shadow-[0_0_60px_rgba(99,102,241,0.15)] backdrop-blur-2xl">
-                    <div className="text-center">
-                        <h1 className="text-sm sm:text-base font-black text-white tracking-widest drop-shadow-md">BINGO GALÁCTICO</h1>
-                        <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-indigo-300 bg-indigo-950/60 px-3 py-0.5 rounded-full border border-indigo-500/40 shadow-inner">
-                            SORTEO GENERAL
-                        </span>
-                    </div>
-
-                    {/* Núcleo de Plasma (Tamaño PC original restaurado) */}
-                    <div className={`relative w-36 h-36 sm:w-48 sm:h-48 rounded-full bg-gradient-to-tr from-slate-950 via-indigo-950 to-black flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.25),inset_0_0_20px_rgba(99,102,241,0.3)] overflow-hidden my-2 border border-indigo-500/40 transition-all duration-700 ${globeEffect}`}>
-                        
-                        <div className={`absolute inset-3 rounded-full border border-dashed border-indigo-400/20 pointer-events-none ${isDrawing ? 'animate-[spin_4s_linear_infinite]' : ''}`}></div>
-                        <div className={`absolute inset-6 rounded-full border border-purple-500/20 pointer-events-none ${isDrawing ? 'animate-[spin_3s_linear_infinite]' : ''}`}></div>
-
-                        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-indigo-500/10 to-white/10 pointer-events-none rounded-full z-20"></div>
-
-                        <div className="z-30 flex items-center justify-center">
-                            {isDrawing ? (
-                                <div className="relative flex items-center justify-center">
-                                    <div className="absolute w-20 h-20 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin"></div>
-                                    <div className="text-2xl animate-pulse">⚡</div>
-                                </div>
-                            ) : currentBall !== null ? (
-                                <div className="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-white flex items-center justify-center font-mono font-black text-2xl sm:text-3xl shadow-[0_0_30px_rgba(99,102,241,0.9),inset_0_2px_6px_rgba(255,255,255,0.6)] border-2 border-white/70 animate-bounce">
-                                    {String(currentBall).padStart(2, '0')}
-                                </div>
-                            ) : (
-                                <div className="text-[10px] font-black tracking-widest text-indigo-200 bg-indigo-950/80 px-4 py-1.5 rounded-full border border-indigo-500/50 shadow-lg backdrop-blur-md">
-                                    {totalBalotas === 0 ? 'FINALIZADO' : 'LISTO'}
-                                </div>
-                            )}
-                        </div>
-
-                        <div className={`absolute inset-0 pointer-events-none overflow-hidden z-10 transition-all duration-500 ${
-                            isDrawing ? 'animate-[spin_3s_linear_infinite]' : ''
-                        }`}>
-                            {availableNumbers.slice(0, 16).map((num, index) => {
-                                const angle = (index / 16) * 360;
-                                const distance = 35 + (index % 3) * 10; 
-                                
-                                return (
-                                    <div 
-                                        key={index}
-                                        className="absolute w-6 h-6 rounded-full bg-gradient-to-tr from-slate-900 to-indigo-950 border border-indigo-400/50 text-[9px] font-mono text-indigo-200 flex items-center justify-center shadow-[0_0_8px_rgba(99,102,241,0.4)]"
-                                        style={{
-                                            top: `calc(50% + ${Math.sin((angle * Math.PI) / 180) * distance}px - 12px)`,
-                                            left: `calc(50% + ${Math.cos((angle * Math.PI) / 180) * distance}px - 12px)`,
-                                            transform: isDrawing ? 'rotate(-360deg)' : 'none',
-                                            transition: 'transform 3s linear'
-                                        }}
-                                    >
-                                        {String(num).padStart(2, '0')}
-                                    </div>
-                                );
-                            })}
-                        </div>
-                    </div>
-
-                    {/* Historial reciente */}
-                    <div className="w-full bg-slate-900/90 rounded-2xl p-2 border border-indigo-950 flex items-center justify-center gap-1.5 overflow-x-auto shadow-inner">
-                        {drawnBalls.slice(0, 6).map((ball, index) => (
-                            <div key={index} className="w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-mono font-bold text-[11px] flex items-center justify-center shrink-0 border border-white/30 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
-                                {String(ball).padStart(2, '0')}
-                            </div>
-                        ))}
-                    </div>
-
-                    {/* Botón de Sorteo */}
-                    <button
-                        onClick={drawNextBall}
-                        disabled={isDrawing || totalBalotas === 0}
-                        className={`relative group overflow-hidden w-full text-white font-black text-xs py-3 px-4 rounded-2xl shadow-[0_6px_20px_rgba(0,0,0,0.9),inset_0_2px_4px_rgba(255,255,255,0.2)] transition-all transform active:scale-95 uppercase tracking-wider flex items-center justify-between border-2 ${
-                            totalBalotas === 0 
-                                ? 'bg-gradient-to-b from-slate-900 via-slate-950 to-indigo-950 border-indigo-500/30 opacity-50 cursor-not-allowed filter grayscale' 
-                                : isDrawing 
-                                    ? 'bg-gradient-to-r from-indigo-600 via-purple-600 via-pink-600 to-indigo-600 bg-[length:400%_400%] animate-[gradient_2s_linear_infinite] border-white shadow-[0_0_35px_rgba(99,102,241,0.9)] cursor-wait' 
-                                    : 'bg-gradient-to-b from-indigo-950/80 via-slate-900 to-slate-950 border-indigo-500/40 hover:border-indigo-400 hover:shadow-[0_0_30px_rgba(99,102,241,0.5)] cursor-pointer'
-                        }`}
-                    >
-                        {isDrawing && (
-                            <div className="absolute inset-0 flex items-center justify-around opacity-90 pointer-events-none overflow-hidden">
-                                <span className="animate-ping text-xs">⚡</span>
-                                <span className="animate-bounce text-xs">✨</span>
-                                <span className="animate-pulse text-xs">🪐</span>
-                            </div>
-                        )}
-
-                        <div className="flex items-center gap-2.5 relative z-10">
-                            <div className={`w-8 h-8 rounded-xl bg-indigo-950 border border-indigo-500/50 flex items-center justify-center shadow-md ${isDrawing ? 'animate-spin' : ''}`}>
-                                <span className="text-sm">{totalBalotas === 0 ? '🚀' : isDrawing ? '⚡' : '🔮'}</span>
-                            </div>
-                            <div className="flex flex-col text-left">
-                                <span className="text-[8px] text-indigo-300 font-extrabold tracking-widest uppercase drop-shadow">
-                                    {isDrawing ? '⚡ Sorteo Cuántico ⚡' : 'Núcleo Central'}
-                                </span>
-                                <span className="text-xs text-white drop-shadow-md">
-                                    {isDrawing ? 'Activando Plasma...' : totalBalotas === 0 ? 'Misión Finalizada' : 'Sortear Balota'}
-                                </span>
-                            </div>
-                        </div>
-
-                        <div className="relative flex items-center z-10">
-                            <div className={`w-6 h-6 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-500 to-pink-500 border-2 border-white shadow-[0_0_12px_rgba(99,102,241,1)] flex items-center justify-center transform group-hover:translate-x-1 transition-transform ${isDrawing ? 'animate-bounce' : ''}`}>
-                                <span className="w-1.5 h-1.5 rounded-full bg-white"></span>
-                            </div>
-                        </div>
-                    </button>
-
-                    {totalBalotas === 0 && (
-                        <button
-                            onClick={() => {
-                                setGameOver(true);
-                                setShowBingoAlert(true);
-                            }}
-                            className="w-full mt-2 bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 hover:brightness-110 text-white font-black text-xs py-2.5 rounded-xl shadow-[0_0_25px_rgba(251,191,36,0.7)] transition-all transform active:scale-95 uppercase tracking-wider flex items-center justify-center gap-2 animate-bounce cursor-pointer"
+                    return (
+                        <div 
+                            key={product.firebaseId || `${prodId}-${index}`} 
+                            className={`product-item flex items-center justify-between p-1.5 sm:p-2 rounded-lg sm:rounded-xl text-[11px] sm:text-xs transition-all border ${
+                                isCurrentWinner 
+                                    ? 'bg-purple-600/40 border-purple-400 scale-[1.02]' 
+                                    : isAlreadyDrawn 
+                                        ? 'bg-slate-800/40 border-slate-700/50 text-slate-500 opacity-60 line-through' 
+                                        : 'bg-slate-800/80 border-slate-700 text-white hover:bg-slate-800'
+                            }`}
+                            style={isThisProductBlinking ? {
+                                animation: 'pulse 0.5s ease-in-out 20',
+                                boxShadow: '0 0 30px rgba(168,85,247,1)',
+                                borderColor: '#c084fc',
+                                backgroundColor: 'rgba(147, 51, 234, 0.6)'
+                            } : {}}
                         >
-                            <span>🏆</span> Ver Resultado Final
-                        </button>
-                    )}
-                </div>
+                            <span className="font-mono font-bold text-purple-300 w-6 sm:w-8">{String(prodId).padStart(2, '0')}</span>
+                            <span className="flex-1 truncate px-1 font-medium">{product.name}</span>
+                            <span className="text-xs sm:text-sm">🛍️</span>
+                        </div>
+                    );
+                })
+        )}
+    </div>
+</div>
 
-                {/* Columna 3: Tarjetón (Tamaño PC original restaurado) */}
-                <div className={`w-full lg:w-2/5 rounded-2xl border p-3 flex flex-col h-auto lg:h-full transition-all duration-500 ${
+      {/* Columna 2: Tómbola y Sorteo */}
+<div className="w-full lg:w-2/5 bg-slate-950/90 rounded-xl sm:rounded-3xl border border-indigo-500/30 p-2 sm:p-5 flex flex-col items-center justify-between h-[38%] lg:h-full overflow-y-auto shadow-[0_0_60px_rgba(99,102,241,0.15)] backdrop-blur-2xl">
+    <div className="text-center">
+        <h1 className="text-sm sm:text-lg font-black text-white tracking-widest drop-shadow-md">BINGO GALÁCTICO</h1>
+        <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-indigo-300 bg-indigo-950/60 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full border border-indigo-500/40 shadow-inner">
+            SORTEO GENERAL
+        </span>
+    </div>
+
+    {/* Núcleo de Plasma */}
+    <div className={`relative w-36 h-36 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-slate-950 via-indigo-950 to-black flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.25),inset_0_0_20px_rgba(99,102,241,0.3)] overflow-hidden my-1 sm:my-3 border border-indigo-500/40 transition-all duration-700 ${globeEffect}`}>
+        
+        <div className={`absolute inset-2 sm:inset-3 rounded-full border border-dashed border-indigo-400/20 pointer-events-none ${isDrawing ? 'animate-[spin_4s_linear_infinite]' : ''}`}></div>
+        <div className={`absolute inset-6 sm:inset-8 rounded-full border border-purple-500/20 pointer-events-none ${isDrawing ? 'animate-[spin_3s_linear_infinite]' : ''}`}></div>
+
+        <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-indigo-500/10 to-white/10 pointer-events-none rounded-full z-20"></div>
+
+        <div className="z-30 flex items-center justify-center">
+            {isDrawing ? (
+                <div className="relative flex items-center justify-center">
+                    <div className="absolute w-20 h-20 sm:w-24 sm:h-24 rounded-full border-2 border-indigo-400 border-t-transparent animate-spin"></div>
+                    <div className="text-2xl sm:text-3xl animate-pulse">⚡</div>
+                </div>
+            ) : currentBall !== null ? (
+                <div className="w-16 h-16 sm:w-24 sm:h-24 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 text-white flex items-center justify-center font-mono font-black text-2xl sm:text-4xl shadow-[0_0_30px_rgba(99,102,241,0.9)] border-2 border-white/70 animate-bounce">
+                    {String(currentBall).padStart(2, '0')}
+                </div>
+            ) : (
+                <div className="text-[10px] sm:text-xs font-black tracking-widest text-indigo-200 bg-indigo-950/80 px-4 py-1.5 sm:px-5 sm:py-2 rounded-full border border-indigo-500/50 shadow-lg backdrop-blur-md">
+                    {totalBalotas === 0 ? 'FINALIZADO' : 'LISTO'}
+                </div>
+            )}
+        </div>
+
+        <div className={`absolute inset-0 pointer-events-none overflow-hidden z-10 transition-all duration-500 ${
+            isDrawing ? 'animate-[spin_3s_linear_infinite]' : ''
+        }`}>
+            {availableNumbers.slice(0, 16).map((num, index) => {
+                const angle = (index / 16) * 360;
+                const distance = 35 + (index % 3) * 8;
+                
+                return (
+                    <div 
+                        key={index}
+                        className="absolute w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-tr from-slate-900 to-indigo-950 border border-indigo-400/50 text-[8px] sm:text-[10px] font-mono text-indigo-200 flex items-center justify-center shadow-[0_0_8px_rgba(99,102,241,0.4)]"
+                        style={{
+                            top: `calc(50% + ${Math.sin((angle * Math.PI) / 180) * distance}px - 10px)`,
+                            left: `calc(50% + ${Math.cos((angle * Math.PI) / 180) * distance}px - 10px)`,
+                            transform: isDrawing ? 'rotate(-360deg)' : 'none',
+                            transition: 'transform 3s linear'
+                        }}
+                    >
+                        {String(num).padStart(2, '0')}
+                    </div>
+                );
+            })}
+        </div>
+    </div>
+
+    {/* Historial reciente */}
+    <div className="w-full bg-slate-900/90 rounded-xl p-1.5 sm:p-2.5 border border-indigo-950 flex items-center justify-center gap-1.5 sm:gap-2 overflow-x-auto shadow-inner">
+        {drawnBalls.slice(0, 6).map((ball, index) => (
+            <div key={index} className="w-6 h-6 sm:w-8 sm:h-8 rounded-full bg-gradient-to-tr from-indigo-600 to-purple-600 text-white font-mono font-bold text-[10px] sm:text-xs flex items-center justify-center shrink-0 border border-white/30 shadow-[0_0_10px_rgba(99,102,241,0.5)]">
+                {String(ball).padStart(2, '0')}
+            </div>
+        ))}
+    </div>
+
+    {/* 🖥️ BOTÓN DE SORTEO TRADICIONAL (Escritorio: lg en adelante) */}
+    <button
+        onClick={drawNextBall}
+        disabled={isDrawing || totalBalotas === 0}
+        className={`hidden lg:flex relative group overflow-hidden w-full text-white font-black text-sm py-4 px-5 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.9)] transition-all transform active:scale-95 uppercase tracking-wider items-center justify-between border-2 ${
+            totalBalotas === 0 
+                ? 'bg-gradient-to-b from-slate-900 via-slate-950 to-indigo-950 border-indigo-500/30 opacity-50 cursor-not-allowed filter grayscale' 
+                : isDrawing 
+                    ? 'bg-gradient-to-r from-indigo-600 via-purple-600 via-pink-600 to-indigo-600 bg-[length:400%_400%] animate-[gradient_2s_linear_infinite] border-white cursor-wait' 
+                    : 'bg-gradient-to-b from-indigo-950/80 via-slate-900 to-slate-950 border-indigo-500/40 hover:border-indigo-400 cursor-pointer'
+        }`}
+    >
+        <div className="flex items-center gap-3 relative z-10">
+            <div className={`w-10 h-10 rounded-xl bg-indigo-950 border border-indigo-500/50 flex items-center justify-center shadow-md ${isDrawing ? 'animate-spin' : ''}`}>
+                <span className="text-base">{totalBalotas === 0 ? '🚀' : isDrawing ? '⚡' : '🔮'}</span>
+            </div>
+            <div className="flex flex-col text-left">
+                <span className="text-[9px] text-indigo-300 font-extrabold tracking-widest uppercase drop-shadow">
+                    {isDrawing ? '⚡ Sorteo Cuántico ⚡' : 'Núcleo Central'}
+                </span>
+                <span className="text-sm text-white drop-shadow-md">
+                    {isDrawing ? 'Activando...' : totalBalotas === 0 ? 'Finalizado' : 'Sortear Balota'}
+                </span>
+            </div>
+        </div>
+
+        <div className="relative flex items-center z-10">
+            <div className={`w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-500 to-pink-500 border-2 border-white flex items-center justify-center ${isDrawing ? 'animate-bounce' : ''}`}>
+                <span className="w-2 h-2 rounded-full bg-white"></span>
+            </div>
+        </div>
+    </button>
+
+    {/* 📱 BOTÓN DESLIZABLE CON TRANSICIÓN DE COLORES DINÁMICA (Solo Vista Móvil) */}
+    <div 
+        id="slider-container"
+        className="flex lg:hidden relative w-full h-12 bg-indigo-950/80 rounded-xl border border-indigo-500/40 overflow-hidden items-center p-1 shadow-inner select-none transition-colors duration-300"
+    >
+        {/* Barra de progreso de color interna que se llena conforme deslizas */}
+        <div 
+            id="slider-fill-bar"
+            className="absolute inset-0 bg-gradient-to-r from-indigo-900/40 via-purple-900/60 to-pink-600/60 opacity-0 transition-opacity pointer-events-none rounded-xl"
+        ></div>
+
+        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+            <span id="slider-text" className="text-[10px] font-black uppercase tracking-widest text-indigo-300 animate-pulse transition-colors duration-300">
+                {isDrawing ? 'Sorteando...' : 'Desliza para sortear ➔'}
+            </span>
+        </div>
+        
+        <div 
+            id="draggable-slider-btn"
+            className={`relative z-10 h-10 w-10 rounded-lg bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 border border-white/60 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] cursor-grab active:cursor-grabbing transition-colors duration-300`}
+            style={{ touchAction: 'none', transform: 'translateX(0px)' }}
+            onTouchStart={(e) => {
+                const touch = e.touches[0];
+                e.currentTarget.dataset.startX = touch.clientX;
+                e.currentTarget.dataset.dragging = "true";
+            }}
+            onTouchMove={(e) => {
+                const btn = e.currentTarget;
+                if (btn.dataset.dragging !== "true" || isDrawing || totalBalotas === 0) return;
+                const startX = parseFloat(btn.dataset.startX || 0);
+                const currentX = e.touches[0].clientX;
+                const diff = currentX - startX;
+                const parentWidth = btn.parentElement.clientWidth - btn.clientWidth - 8;
+                
+                if (diff >= 0 && diff <= parentWidth) {
+                    btn.style.transform = `translateX(${diff}px)`;
+                    
+                    // Calcular porcentaje de avance para transiciones de color dinámicas
+                    const progress = diff / parentWidth;
+                    const container = document.getElementById("slider-container");
+                    const fillBar = document.getElementById("slider-fill-bar");
+                    const txt = document.getElementById("slider-text");
+                    
+                    if (container && fillBar && txt) {
+                        fillBar.style.opacity = progress;
+                        container.style.borderColor = `rgba(236, 72, 153, ${0.4 + progress * 0.6})`; // Cambia a rosado brillante
+                        txt.style.color = progress > 0.5 ? '#fbcfe8' : '#a5b4fc';
+                    }
+
+                    if (diff >= parentWidth - 10) {
+                        btn.dataset.dragging = "false";
+                        btn.style.transform = `translateX(${parentWidth}px)`;
+                        drawNextBall();
+                        setTimeout(() => {
+                            btn.style.transform = 'translateX(0px)';
+                            if (container && fillBar && txt) {
+                                fillBar.style.opacity = '0';
+                                container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                                txt.style.color = '#a5b4fc';
+                            }
+                        }, 400);
+                    }
+                }
+            }}
+            onTouchEnd={(e) => {
+                const btn = e.currentTarget;
+                btn.dataset.dragging = "false";
+                btn.style.transform = 'translateX(0px)';
+                const container = document.getElementById("slider-container");
+                const fillBar = document.getElementById("slider-fill-bar");
+                const txt = document.getElementById("slider-text");
+                if (container && fillBar && txt) {
+                    fillBar.style.opacity = '0';
+                    container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                    txt.style.color = '#a5b4fc';
+                }
+            }}
+            onMouseDown={(e) => {
+                e.currentTarget.dataset.startX = e.clientX;
+                e.currentTarget.dataset.dragging = "true";
+            }}
+            onMouseMove={(e) => {
+                const btn = e.currentTarget;
+                if (btn.dataset.dragging !== "true" || isDrawing || totalBalotas === 0) return;
+                const startX = parseFloat(btn.dataset.startX || 0);
+                const diff = e.clientX - startX;
+                const parentWidth = btn.parentElement.clientWidth - btn.clientWidth - 8;
+                
+                if (diff >= 0 && diff <= parentWidth) {
+                    btn.style.transform = `translateX(${diff}px)`;
+                    
+                    const progress = diff / parentWidth;
+                    const container = document.getElementById("slider-container");
+                    const fillBar = document.getElementById("slider-fill-bar");
+                    const txt = document.getElementById("slider-text");
+                    
+                    if (container && fillBar && txt) {
+                        fillBar.style.opacity = progress;
+                        container.style.borderColor = `rgba(236, 72, 153, ${0.4 + progress * 0.6})`;
+                        txt.style.color = progress > 0.5 ? '#fbcfe8' : '#a5b4fc';
+                    }
+
+                    if (diff >= parentWidth - 10) {
+                        btn.dataset.dragging = "false";
+                        btn.style.transform = `translateX(${parentWidth}px)`;
+                        drawNextBall();
+                        setTimeout(() => {
+                            btn.style.transform = 'translateX(0px)';
+                            if (container && fillBar && txt) {
+                                fillBar.style.opacity = '0';
+                                container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                                txt.style.color = '#a5b4fc';
+                            }
+                        }, 400);
+                    }
+                }
+            }}
+            onMouseUp={(e) => {
+                const btn = e.currentTarget;
+                btn.dataset.dragging = "false";
+                btn.style.transform = 'translateX(0px)';
+                const container = document.getElementById("slider-container");
+                const fillBar = document.getElementById("slider-fill-bar");
+                const txt = document.getElementById("slider-text");
+                if (container && fillBar && txt) {
+                    fillBar.style.opacity = '0';
+                    container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                    txt.style.color = '#a5b4fc';
+                }
+            }}
+            onMouseLeave={(e) => {
+                const btn = e.currentTarget;
+                if (btn.dataset.dragging === "true") {
+                    btn.dataset.dragging = "false";
+                    btn.style.transform = 'translateX(0px)';
+                    const container = document.getElementById("slider-container");
+                    const fillBar = document.getElementById("slider-fill-bar");
+                    const txt = document.getElementById("slider-text");
+                    if (container && fillBar && txt) {
+                        fillBar.style.opacity = '0';
+                        container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
+                        txt.style.color = '#a5b4fc';
+                    }
+                }
+            }}
+        >
+            <span className="text-sm pointer-events-none">🔮</span>
+        </div>
+    </div>
+
+    {totalBalotas === 0 && (
+        <button
+            onClick={() => {
+                setGameOver(true);
+                setShowBingoAlert(true);
+            }}
+            className="w-full mt-1.5 bg-gradient-to-r from-amber-500 via-indigo-600 to-purple-600 text-white font-black text-xs py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl shadow-md uppercase tracking-wider flex items-center justify-center gap-2 animate-bounce cursor-pointer"
+        >
+            <span>🏆</span> Ver Resultado Final
+        </button>
+    )}
+</div>
+
+                {/* Columna 3: Tarjetón (Optimizado para compactarse sin scroll en móvil) */}
+<div className={`w-full lg:w-2/5 rounded-xl sm:rounded-2xl border p-2.5 sm:p-4 flex flex-col h-[32%] lg:h-full transition-all duration-500 overflow-y-auto ${
+                lineGlowEffect 
+                    ? 'border-amber-300 shadow-[0_0_50px_rgba(253,230,138,0.7)] bg-[#fef9c3] text-slate-900' 
+                    : 'border-slate-800 bg-slate-900/80 text-white'
+            }`}>
+   <div>
+    <div className="flex justify-between items-center bg-purple-950/60 border border-purple-800/60 px-2.5 py-1.5 rounded-lg mb-2">
+    <div className="flex items-center gap-1.5">
+        <h2 className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${lineGlowEffect ? 'text-amber-300' : 'text-purple-400'}`}>
+            TARJETÓN ESTELAR
+        </h2>
+        {lineGlowEffect && (
+            <span className="bg-amber-400 text-slate-950 font-black text-[9px] px-1.5 py-0.2 rounded-full animate-bounce">
+                ¡BINGO! 🎉
+            </span>
+        )}
+    </div>
+
+    <div className="flex items-center gap-1.5">
+        <span className="text-[10px] sm:text-[11px] font-bold text-purple-200">
+            {participantName ? `${participantName} ${participantLastName || ''}` : 'Participante'}
+        </span>
+    </div>
+</div>
+        
+        {/* PARRILLA DE CELDAS DINÁMICA: Alturas reducidas en móvil (h-9 sm:h-16) para que quepa todo */}
+        <div className="grid grid-cols-5 gap-1">
+            {tarjetonColumns && tarjetonColumns.map((col, idx) => (
+                <div key={`${col}-${idx}`} className={`text-center font-black text-[10px] sm:text-xs py-0.5 sm:py-1 rounded-md sm:rounded-lg border ${
                     lineGlowEffect 
-                        ? 'border-amber-300 shadow-[0_0_50px_rgba(253,230,138,0.7)] bg-[#fef9c3] text-slate-900' 
-                        : 'border-slate-800 bg-slate-900/80 text-white'
+                        ? 'bg-amber-200 text-amber-900 border-amber-300' 
+                        : 'bg-purple-950 text-purple-300 border-purple-800/50'
                 }`}>
-                   <div>
-                    <div className="flex justify-between items-center bg-purple-950/60 border border-purple-800/60 px-2.5 py-1.5 rounded-lg mb-2">
-                        <div className="flex items-center gap-1.5">
-                            <h2 className={`text-[11px] font-black uppercase tracking-wider ${lineGlowEffect ? 'text-amber-300' : 'text-purple-400'}`}>
-                                TARJETÓN ESTELAR
-                            </h2>
-                            {lineGlowEffect && (
-                                <span className="bg-amber-400 text-slate-950 font-black text-[9px] px-1.5 py-0.5 rounded-full shadow-[0_0_10px_rgba(251,191,36,0.8)] animate-bounce">
-                                    ¡BINGO! 🎉
-                                </span>
-                            )}
-                        </div>
-
-                        <div className="flex items-center gap-1.5">
-                            <span className="text-[10px] font-bold text-purple-200">
-                                {participantName ? `${participantName} ${participantLastName || ''}` : 'Participante'}
-                            </span>
-                            {participantCategory && (
-                                <span className={`text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-wider shadow-sm ${
-                                    participantCategory === 'NIÑO' ? 'bg-blue-600 text-white' : 'bg-pink-600 text-white'
-                                }`}>
-                                    {participantCategory}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                        
-                    {/* PARRILLA DE CELDAS */}
-                    <div className="grid grid-cols-5 gap-1">
-                        {tarjetonColumns && tarjetonColumns.map((col, idx) => (
-                            <div key={`${col}-${idx}`} className={`text-center font-black text-[11px] py-0.5 rounded-lg border ${
-                                lineGlowEffect 
-                                    ? 'bg-amber-200 text-amber-900 border-amber-300' 
-                                    : 'bg-purple-950 text-purple-300 border-purple-800/50'
-                            }`}>
-                                {col}
-                            </div>
-                        ))}
-                        
-                      {Array.isArray(bingoMasterCard) && bingoMasterCard.length > 0 && (() => {
-                            const drawnSet = new Set(drawnBalls.map(n => Number(n)));
-                            let winningRow = -1;
-                            let winningCol = -1;
-
-                            for (let r = 0; r < bingoMasterCard.length; r++) {
-                                const prods = bingoMasterCard[r].filter(c => c && c.type === 'product');
-                                if (prods.length > 0 && prods.every(c => drawnSet.has(Number(c.id)))) {
-                                    winningRow = r;
-                                    break;
-                                }
-                            }
-
-                            if (winningRow === -1) {
-                                for (let c = 0; c < bingoMasterCard[0].length; c++) {
-                                    let colProds = [];
-                                    for (let r = 0; r < bingoMasterCard.length; r++) {
-                                        const cell = bingoMasterCard[r][c];
-                                        if (cell && cell.type === 'product') colProds.push(cell);
-                                    }
-                                    if (colProds.length > 0 && colProds.every(cell => drawnSet.has(Number(cell.id)))) {
-                                        winningCol = c;
-                                        break;
-                                    }
-                                }
-                            }
-
-                            return bingoMasterCard.flat().map((cell, index) => {
-                                const rowIndex = Math.floor(index / 5);
-                                const colIndex = index % 5;
-                                const isSpecial = cell && cell.type === 'icon';
-                                const isMatch = cell && cell.type === 'product' && drawnSet.has(Number(cell.id));
-                                const isWinningLineCell = (winningRow !== -1 && rowIndex === winningRow) || (winningCol !== -1 && colIndex === winningCol);
-                                
-                                return (
-                                    <div 
-                                        key={index} 
-                                        className={`h-11 sm:h-14 rounded-xl p-1 flex flex-col items-center justify-center border transition-all duration-300 ${
-                                            isWinningLineCell && lineGlowEffect
-                                                ? 'bg-amber-400 border-amber-500 text-slate-950 shadow-[0_0_20px_rgba(251,191,36,0.9)] scale-105 font-black ring-2 ring-white animate-pulse'
-                                                : isMatch 
-                                                ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-300 text-white shadow-[0_0_15px_rgba(16,185,129,0.8)] scale-105 font-bold animate-pulse' 
-                                                : isSpecial
-                                                ? 'bg-gradient-to-br from-pink-500 to-purple-600 border-pink-400 text-white shadow-[0_0_10px_rgba(236,72,153,0.5)] scale-105 font-bold'
-                                                : lineGlowEffect 
-                                                ? 'bg-amber-100 border-amber-300 text-amber-900 hover:bg-amber-200' 
-                                                : 'bg-slate-800/80 border-slate-700 text-slate-300 hover:bg-slate-800'
-                                        }`}
-                                    >
-                                        {isSpecial ? (
-                                            <span className="text-sm sm:text-base text-center">{cell.value}</span>
-                                        ) : cell && cell.type === 'product' ? (
-                                            <span className={`text-xs sm:text-sm font-black tracking-wider drop-shadow ${
-                                                isWinningLineCell && lineGlowEffect ? 'text-slate-950' : isMatch ? 'text-white' : lineGlowEffect ? 'text-amber-950' : 'text-white'
-                                            }`}>
-                                                {cell.id}
-                                            </span>
-                                        ) : (
-                                            <span className={`text-[9px] ${lineGlowEffect ? 'text-amber-700/60' : 'text-slate-500'}`}>--</span>
-                                        )}
-                                    </div>
-                                );
-                            });
-                        })()}
-                    </div>
-
-                    {/* 🔴 SECCIÓN: Balotas Rojas */}
-                    <div className={`mt-2 p-2 rounded-xl border ${
-                        lineGlowEffect ? 'bg-amber-200/50 border-amber-300' : 'bg-slate-950/70 border-red-500/20'
-                    }`}>
-                        <div className="flex items-center justify-between mb-1">
-                            <span className={`text-[9px] font-black uppercase tracking-wider flex items-center gap-1 ${
-                                lineGlowEffect ? 'text-amber-900' : 'text-red-400'
-                            }`}>
-                                <span className="w-1.5 h-1.5 rounded-full bg-red-500 animate-pulse"></span> Balotas Rojas (Fuera)
-                            </span>
-                            <span className={`text-[9px] font-mono ${lineGlowEffect ? 'text-amber-800' : 'text-slate-400'}`}>
-                                {drawnBalls.filter(ball => {
-                                    const masterNumbers = new Set(bingoMasterCard.flat().filter(item => item && item.type === 'product').map(item => Number(item.id)));
-                                    return !masterNumbers.has(Number(ball));
-                                }).length}
-                            </span>
-                        </div>
-                        
-                        <div className="flex flex-wrap gap-1 max-h-16 overflow-y-auto custom-scrollbar p-0.5">
-                            {(() => {
-                                const masterNumbers = new Set(bingoMasterCard.flat().filter(item => item && item.type === 'product').map(item => Number(item.id)));
-                                const redBalls = drawnBalls.filter(ball => !masterNumbers.has(Number(ball)));
-
-                                if (redBalls.length === 0) {
-                                    return <p className={`text-[9px] italic w-full text-center py-0.5 ${lineGlowEffect ? 'text-amber-800/70' : 'text-slate-500'}`}>Aún no hay balotas rojas.</p>;
-                                }
-
-                                return redBalls.map((ballNum, idx) => (
-                                    <div 
-                                        key={idx}
-                                        className="w-6 h-6 rounded-full bg-gradient-to-br from-red-600 to-rose-900 border border-red-400/80 text-white text-[10px] font-black flex items-center justify-center shadow-[0_0_6px_rgba(239,68,68,0.6)] animate-fade-in"
-                                    >
-                                        {ballNum}
-                                    </div>
-                                ));
-                            })()}
-                        </div>
-                    </div>
+                    {col}
                 </div>
+            ))}
+            
+          {Array.isArray(bingoMasterCard) && bingoMasterCard.length > 0 && (() => {
+              const drawnSet = new Set(drawnBalls.map(n => Number(n)));
+              let winningRow = -1;
+              let winningCol = -1;
 
-               {showLineAlert && (
-                  <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
-                    <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md pointer-events-auto"></div>
+              for (let r = 0; r < bingoMasterCard.length; r++) {
+                  const prods = bingoMasterCard[r].filter(c => c && c.type === 'product');
+                  if (prods.length > 0 && prods.every(c => drawnSet.has(Number(c.id)))) {
+                      winningRow = r;
+                      break;
+                  }
+              }
 
-                    <div className="relative bg-gradient-to-br from-amber-500 via-pink-600 to-purple-900 p-1 rounded-[32px] shadow-[0_0_80px_rgba(251,191,36,0.8)] max-w-sm w-full mx-4 animate-bounce pointer-events-auto">
-                      <div className="bg-[#120421] rounded-[30px] p-6 text-center flex flex-col items-center space-y-3 relative overflow-hidden">
-                        
-                        <div className="absolute top-3 right-3 bg-amber-400/20 border border-amber-400/50 text-amber-300 text-[10px] font-mono font-bold px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                          <span>Cerrando en:</span>
-                        </div>
+              if (winningRow === -1) {
+                  for (let c = 0; c < bingoMasterCard[0].length; c++) {
+                      let colProds = [];
+                      for (let r = 0; r < bingoMasterCard.length; r++) {
+                          const cell = bingoMasterCard[r][c];
+                          if (cell && cell.type === 'product') colProds.push(cell);
+                      }
+                      if (colProds.length > 0 && colProds.every(cell => drawnSet.has(Number(cell.id)))) {
+                          winningCol = c;
+                          break;
+                      }
+                  }
+              }
+
+              return bingoMasterCard.flat().map((cell, index) => {
+                  const rowIndex = Math.floor(index / 5);
+                  const colIndex = index % 5;
+                  const isSpecial = cell && cell.type === 'icon';
+                  const isMatch = cell && cell.type === 'product' && drawnSet.has(Number(cell.id));
+                  const isWinningLineCell = (winningRow !== -1 && rowIndex === winningRow) || (winningCol !== -1 && colIndex === winningCol);
+                  
+                  return (
+                      <div 
+                          key={index} 
+                          className={`h-9 sm:h-16 rounded-lg sm:rounded-xl p-0.5 sm:p-1.5 flex flex-col items-center justify-center border transition-all duration-300 ${
+                              isWinningLineCell && lineGlowEffect
+                                  ? 'bg-amber-400 border-amber-500 text-slate-950 shadow-md scale-105 font-black animate-pulse'
+                                  : isMatch 
+                                  ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-300 text-white shadow-md scale-105 font-bold animate-pulse' 
+                                  : isSpecial
+                                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 border-pink-400 text-white font-bold'
+                                  : lineGlowEffect 
+                                  ? 'bg-amber-100 border-amber-300 text-amber-900' 
+                                  : 'bg-slate-800/80 border-slate-700 text-slate-300'
+                          }`}
+                      >
+                          {isSpecial ? (
+                              <span className="text-xs sm:text-base text-center">{cell.value}</span>
+                          ) : cell && cell.type === 'product' ? (
+                              <span className={`text-[11px] sm:text-sm font-black tracking-wider ${
+                                  isWinningLineCell && lineGlowEffect ? 'text-slate-950' : isMatch ? 'text-white' : 'text-white'
+                              }`}>
+                                  {cell.id}
+                              </span>
+                          ) : (
+                              <span className={`text-[9px] ${lineGlowEffect ? 'text-amber-700/60' : 'text-slate-500'}`}>--</span>
+                          )}
                       </div>
-                    </div>
-                  </div>
-                )}
+                  );
+              });
+          })()}
+        </div>
+
+        {/* 🔴 SECCIÓN: Balotas Rojas */}
+        <div className={`mt-2 p-1.5 sm:p-2.5 rounded-lg sm:rounded-xl border ${
+            lineGlowEffect ? 'bg-amber-200/50 border-amber-300' : 'bg-slate-950/70 border-red-500/20'
+        }`}>
+            <div className="flex items-center justify-between mb-1">
+                <span className={`text-[9px] sm:text-[10px] font-black uppercase tracking-wider flex items-center gap-1 ${
+                    lineGlowEffect ? 'text-amber-900' : 'text-red-400'
+                }`}>
+                    <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-red-500 animate-pulse"></span> Balotas Rojas (Fuera)
+                </span>
+                <span className={`text-[9px] sm:text-[10px] font-mono ${lineGlowEffect ? 'text-amber-800' : 'text-slate-400'}`}>
+                    {drawnBalls.filter(ball => {
+                        const masterNumbers = new Set(bingoMasterCard.flat().filter(item => item && item.type === 'product').map(item => Number(item.id)));
+                        return !masterNumbers.has(Number(ball));
+                    }).length}
+                </span>
+            </div>
+            
+            <div className="flex flex-wrap gap-1 max-h-12 sm:max-h-24 overflow-y-auto custom-scrollbar p-0.5">
+                {(() => {
+                    const masterNumbers = new Set(bingoMasterCard.flat().filter(item => item && item.type === 'product').map(item => Number(item.id)));
+                    const redBalls = drawnBalls.filter(ball => !masterNumbers.has(Number(ball)));
+
+                    if (redBalls.length === 0) {
+                        return <p className={`text-[9px] italic w-full text-center py-0.5 ${lineGlowEffect ? 'text-amber-800/70' : 'text-slate-500'}`}>Sin balotas rojas.</p>;
+                    }
+
+                    return redBalls.map((ballNum, idx) => (
+                        <div 
+                            key={idx}
+                            className="w-5 h-5 sm:w-7 sm:h-7 rounded-full bg-gradient-to-br from-red-600 to-rose-900 border border-red-400/80 text-white text-[9px] sm:text-[11px] font-black flex items-center justify-center shadow-sm"
+                        >
+                            {ballNum}
+                        </div>
+                    ));
+                })()}
             </div>
         </div>
     </div>
+</div>
+
+            </div>
+  </div>
     );
 }
 
