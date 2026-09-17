@@ -558,7 +558,7 @@ const closeIntro = () => {
     };
 
     return (
-       <div className="min-h-screen w-full lg:h-screen bg-slate-900 font-sans flex items-center justify-center p-2 sm:p-4 box-border select-none overflow-y-auto lg:overflow-hidden">
+       <div className="min-h-screen lg:h-screen w-full bg-slate-900 font-sans flex items-center justify-center p-2 sm:p-4 box-border select-none overflow-y-auto lg:overflow-hidden">
             
     <style>{`
         button, a, [role="button"], .cursor-pointer {
@@ -718,11 +718,11 @@ const closeIntro = () => {
 </div>
 )}
 
-            {/* Contenedor principal */}
+            {/* Contenedor principal: Altura adaptativa (móvil compacto, PC tamaño original cómodo) */}
             <div className="w-full max-w-7xl h-auto lg:h-[95vh] bg-slate-950 rounded-3xl shadow-2xl overflow-hidden flex flex-col lg:flex-row border border-slate-800 gap-2 p-2 sm:p-4">
                 
-                {/* Columna 1: Lista completa de Productos (Optimizado para Centrado Perfecto) */}
-                <div className="w-full lg:w-1/4 bg-slate-900/80 rounded-2xl border border-slate-800 p-2.5 flex flex-col h-56 lg:h-full overflow-hidden">
+                {/* Columna 1: Lista completa de Productos */}
+                <div className="w-full lg:w-1/4 bg-slate-900/80 rounded-2xl border border-slate-800 p-2.5 flex flex-col h-64 lg:h-full overflow-hidden">
                     <div className="flex items-center justify-between mb-1.5 shrink-0">
                         <h2 className="text-[11px] font-black uppercase tracking-wider text-purple-400">TODOS LOS PRODUCTOS</h2>
                     </div>
@@ -731,7 +731,6 @@ const closeIntro = () => {
                         <span>PRODUCTO</span>
                     </div>
                     
-                    {/* Contenedor de scroll con scroll-padding vertical para centrar cualquier elemento adecuadamente */}
                     <div 
                         className="flex-1 overflow-y-auto space-y-2 pt-3 pb-3 px-1 custom-scrollbar scroll-py-12" 
                         ref={scrollContainerRef}
@@ -751,7 +750,6 @@ const closeIntro = () => {
                                     return (
                                         <div 
                                             key={product.firebaseId || `${prodId}-${index}`} 
-                                            /* REF AUTOCENTRADOR: Centra el producto activo suavemente en el medio del recuadro */
                                             ref={(el) => {
                                                 if (isHighlighted && el) {
                                                     el.scrollIntoView({ behavior: 'smooth', block: 'center' });
@@ -790,7 +788,7 @@ const closeIntro = () => {
                         </span>
                     </div>
 
-                    {/* Núcleo de Plasma con Órbita Circular Unificada */}
+                    {/* Núcleo de Plasma (Tamaño PC original restaurado) */}
                     <div className={`relative w-36 h-36 sm:w-48 sm:h-48 rounded-full bg-gradient-to-tr from-slate-950 via-indigo-950 to-black flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.25),inset_0_0_20px_rgba(99,102,241,0.3)] overflow-hidden my-2 border border-indigo-500/40 transition-all duration-700 ${globeEffect}`}>
                         
                         <div className={`absolute inset-3 rounded-full border border-dashed border-indigo-400/20 pointer-events-none ${isDrawing ? 'animate-[spin_4s_linear_infinite]' : ''}`}></div>
@@ -903,7 +901,7 @@ const closeIntro = () => {
                     )}
                 </div>
 
-                {/* Columna 3: Tarjetón */}
+                {/* Columna 3: Tarjetón (Tamaño PC original restaurado) */}
                 <div className={`w-full lg:w-2/5 rounded-2xl border p-3 flex flex-col h-auto lg:h-full transition-all duration-500 ${
                     lineGlowEffect 
                         ? 'border-amber-300 shadow-[0_0_50px_rgba(253,230,138,0.7)] bg-[#fef9c3] text-slate-900' 
@@ -936,7 +934,7 @@ const closeIntro = () => {
                         </div>
                     </div>
                         
-                    {/* PARRILLA DE CELDAS DINÁMICA */}
+                    {/* PARRILLA DE CELDAS */}
                     <div className="grid grid-cols-5 gap-1">
                         {tarjetonColumns && tarjetonColumns.map((col, idx) => (
                             <div key={`${col}-${idx}`} className={`text-center font-black text-[11px] py-0.5 rounded-lg border ${
@@ -1014,7 +1012,7 @@ const closeIntro = () => {
                         })()}
                     </div>
 
-                    {/* 🔴 SECCIÓN: Balotas Rojas (Fallidas / Fuera del tarjetón) */}
+                    {/* 🔴 SECCIÓN: Balotas Rojas */}
                     <div className={`mt-2 p-2 rounded-xl border ${
                         lineGlowEffect ? 'bg-amber-200/50 border-amber-300' : 'bg-slate-950/70 border-red-500/20'
                     }`}>
@@ -1054,7 +1052,6 @@ const closeIntro = () => {
                     </div>
                 </div>
 
-                {/* Alerta Temporal de Línea Completa */}
                {showLineAlert && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none">
                     <div className="absolute inset-0 bg-slate-950/60 backdrop-blur-md pointer-events-auto"></div>
@@ -1072,7 +1069,6 @@ const closeIntro = () => {
             </div>
         </div>
     </div>
-
     );
 }
 
