@@ -558,7 +558,7 @@ const closeIntro = () => {
     };
 
     return (
-      <div className="h-screen w-screen bg-slate-900 font-sans flex items-center justify-center p-1 sm:p-4 overflow-hidden box-border select-none">
+     <div className="h-screen w-screen bg-slate-900 font-sans flex items-center justify-center p-1 sm:p-4 overflow-hidden box-border select-none">
             
             <style>{`
                 button, a, [role="button"], .cursor-pointer {
@@ -672,7 +672,7 @@ const closeIntro = () => {
     </h3>
     
     <p className="text-[10px] sm:text-[11px] font-bold text-amber-300/90 tracking-wider uppercase">
-        Categoría: {String(userGender || '')}
+        Categoría: {String(participantCategory || '')}
     </p>
 
     <p className="text-[11px] sm:text-xs text-purple-400 font-bold max-w-xs leading-relaxed shrink-0 pt-1">
@@ -767,8 +767,8 @@ const closeIntro = () => {
     </div>
 </div>
 
-      {/* Columna 2: Tómbola y Sorteo */}
-<div className="w-full lg:w-2/5 bg-slate-950/90 rounded-xl sm:rounded-3xl border border-indigo-500/30 p-2 sm:p-5 flex flex-col items-center justify-between h-[38%] lg:h-full overflow-y-auto shadow-[0_0_60px_rgba(99,102,241,0.15)] backdrop-blur-2xl">
+                {/* Columna 2: Tómbola y Sorteo (Optimizada en altura para móvil) */}
+               <div className="w-full lg:w-2/5 bg-slate-950/90 rounded-xl sm:rounded-3xl border border-indigo-500/30 p-2 sm:p-5 flex flex-col items-center justify-between h-[38%] lg:h-full overflow-y-auto shadow-[0_0_60px_rgba(99,102,241,0.15)] backdrop-blur-2xl">
     <div className="text-center">
         <h1 className="text-sm sm:text-lg font-black text-white tracking-widest drop-shadow-md">BINGO GALÁCTICO</h1>
         <span className="text-[9px] sm:text-[10px] font-extrabold uppercase tracking-widest text-indigo-300 bg-indigo-950/60 px-2.5 sm:px-3.5 py-0.5 sm:py-1 rounded-full border border-indigo-500/40 shadow-inner">
@@ -776,7 +776,7 @@ const closeIntro = () => {
         </span>
     </div>
 
-    {/* Núcleo de Plasma */}
+    {/* Núcleo de Plasma redimensionado a w-36 h-36 en móvil para evitar scroll */}
     <div className={`relative w-36 h-36 sm:w-56 sm:h-56 rounded-full bg-gradient-to-tr from-slate-950 via-indigo-950 to-black flex items-center justify-center shadow-[0_0_40px_rgba(79,70,229,0.25),inset_0_0_20px_rgba(99,102,241,0.3)] overflow-hidden my-1 sm:my-3 border border-indigo-500/40 transition-all duration-700 ${globeEffect}`}>
         
         <div className={`absolute inset-2 sm:inset-3 rounded-full border border-dashed border-indigo-400/20 pointer-events-none ${isDrawing ? 'animate-[spin_4s_linear_infinite]' : ''}`}></div>
@@ -806,7 +806,7 @@ const closeIntro = () => {
         }`}>
             {availableNumbers.slice(0, 16).map((num, index) => {
                 const angle = (index / 16) * 360;
-                const distance = 35 + (index % 3) * 8;
+                const distance = 35 + (index % 3) * 8; // Radio adaptado a móvil
                 
                 return (
                     <div 
@@ -835,11 +835,11 @@ const closeIntro = () => {
         ))}
     </div>
 
-    {/* 🖥️ BOTÓN DE SORTEO TRADICIONAL (Escritorio: lg en adelante) */}
+    {/* Botón de Sorteo */}
     <button
         onClick={drawNextBall}
         disabled={isDrawing || totalBalotas === 0}
-        className={`hidden lg:flex relative group overflow-hidden w-full text-white font-black text-sm py-4 px-5 rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.9)] transition-all transform active:scale-95 uppercase tracking-wider items-center justify-between border-2 ${
+        className={`relative group overflow-hidden w-full text-white font-black text-[11px] sm:text-sm py-2.5 sm:py-4 px-3 sm:px-5 rounded-xl sm:rounded-2xl shadow-[0_4px_15px_rgba(0,0,0,0.9)] transition-all transform active:scale-95 uppercase tracking-wider flex items-center justify-between border-2 ${
             totalBalotas === 0 
                 ? 'bg-gradient-to-b from-slate-900 via-slate-950 to-indigo-950 border-indigo-500/30 opacity-50 cursor-not-allowed filter grayscale' 
                 : isDrawing 
@@ -847,176 +847,26 @@ const closeIntro = () => {
                     : 'bg-gradient-to-b from-indigo-950/80 via-slate-900 to-slate-950 border-indigo-500/40 hover:border-indigo-400 cursor-pointer'
         }`}
     >
-        <div className="flex items-center gap-3 relative z-10">
-            <div className={`w-10 h-10 rounded-xl bg-indigo-950 border border-indigo-500/50 flex items-center justify-center shadow-md ${isDrawing ? 'animate-spin' : ''}`}>
-                <span className="text-base">{totalBalotas === 0 ? '🚀' : isDrawing ? '⚡' : '🔮'}</span>
+        <div className="flex items-center gap-2 sm:gap-3 relative z-10">
+            <div className={`w-7 h-7 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-indigo-950 border border-indigo-500/50 flex items-center justify-center shadow-md ${isDrawing ? 'animate-spin' : ''}`}>
+                <span className="text-xs sm:text-base">{totalBalotas === 0 ? '🚀' : isDrawing ? '⚡' : '🔮'}</span>
             </div>
             <div className="flex flex-col text-left">
-                <span className="text-[9px] text-indigo-300 font-extrabold tracking-widest uppercase drop-shadow">
+                <span className="text-[8px] sm:text-[9px] text-indigo-300 font-extrabold tracking-widest uppercase drop-shadow">
                     {isDrawing ? '⚡ Sorteo Cuántico ⚡' : 'Núcleo Central'}
                 </span>
-                <span className="text-sm text-white drop-shadow-md">
+                <span className="text-[11px] sm:text-sm text-white drop-shadow-md">
                     {isDrawing ? 'Activando...' : totalBalotas === 0 ? 'Finalizado' : 'Sortear Balota'}
                 </span>
             </div>
         </div>
 
         <div className="relative flex items-center z-10">
-            <div className={`w-7 h-7 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-500 to-pink-500 border-2 border-white flex items-center justify-center ${isDrawing ? 'animate-bounce' : ''}`}>
-                <span className="w-2 h-2 rounded-full bg-white"></span>
+            <div className={`w-6 sm:w-7 h-6 sm:h-7 rounded-full bg-gradient-to-tr from-indigo-600 via-purple-500 to-pink-500 border-2 border-white flex items-center justify-center ${isDrawing ? 'animate-bounce' : ''}`}>
+                <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-white"></span>
             </div>
         </div>
     </button>
-
-    {/* 📱 BOTÓN DESLIZABLE CON TRANSICIÓN DE COLORES DINÁMICA (Solo Vista Móvil) */}
-    <div 
-        id="slider-container"
-        className="flex lg:hidden relative w-full h-12 bg-indigo-950/80 rounded-xl border border-indigo-500/40 overflow-hidden items-center p-1 shadow-inner select-none transition-colors duration-300"
-    >
-        {/* Barra de progreso de color interna que se llena conforme deslizas */}
-        <div 
-            id="slider-fill-bar"
-            className="absolute inset-0 bg-gradient-to-r from-indigo-900/40 via-purple-900/60 to-pink-600/60 opacity-0 transition-opacity pointer-events-none rounded-xl"
-        ></div>
-
-        <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-            <span id="slider-text" className="text-[10px] font-black uppercase tracking-widest text-indigo-300 animate-pulse transition-colors duration-300">
-                {isDrawing ? 'Sorteando...' : 'Desliza para sortear ➔'}
-            </span>
-        </div>
-        
-        <div 
-            id="draggable-slider-btn"
-            className={`relative z-10 h-10 w-10 rounded-lg bg-gradient-to-tr from-indigo-600 via-purple-600 to-pink-600 border border-white/60 flex items-center justify-center shadow-[0_0_15px_rgba(99,102,241,0.5)] cursor-grab active:cursor-grabbing transition-colors duration-300`}
-            style={{ touchAction: 'none', transform: 'translateX(0px)' }}
-            onTouchStart={(e) => {
-                const touch = e.touches[0];
-                e.currentTarget.dataset.startX = touch.clientX;
-                e.currentTarget.dataset.dragging = "true";
-            }}
-            onTouchMove={(e) => {
-                const btn = e.currentTarget;
-                if (btn.dataset.dragging !== "true" || isDrawing || totalBalotas === 0) return;
-                const startX = parseFloat(btn.dataset.startX || 0);
-                const currentX = e.touches[0].clientX;
-                const diff = currentX - startX;
-                const parentWidth = btn.parentElement.clientWidth - btn.clientWidth - 8;
-                
-                if (diff >= 0 && diff <= parentWidth) {
-                    btn.style.transform = `translateX(${diff}px)`;
-                    
-                    // Calcular porcentaje de avance para transiciones de color dinámicas
-                    const progress = diff / parentWidth;
-                    const container = document.getElementById("slider-container");
-                    const fillBar = document.getElementById("slider-fill-bar");
-                    const txt = document.getElementById("slider-text");
-                    
-                    if (container && fillBar && txt) {
-                        fillBar.style.opacity = progress;
-                        container.style.borderColor = `rgba(236, 72, 153, ${0.4 + progress * 0.6})`; // Cambia a rosado brillante
-                        txt.style.color = progress > 0.5 ? '#fbcfe8' : '#a5b4fc';
-                    }
-
-                    if (diff >= parentWidth - 10) {
-                        btn.dataset.dragging = "false";
-                        btn.style.transform = `translateX(${parentWidth}px)`;
-                        drawNextBall();
-                        setTimeout(() => {
-                            btn.style.transform = 'translateX(0px)';
-                            if (container && fillBar && txt) {
-                                fillBar.style.opacity = '0';
-                                container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
-                                txt.style.color = '#a5b4fc';
-                            }
-                        }, 400);
-                    }
-                }
-            }}
-            onTouchEnd={(e) => {
-                const btn = e.currentTarget;
-                btn.dataset.dragging = "false";
-                btn.style.transform = 'translateX(0px)';
-                const container = document.getElementById("slider-container");
-                const fillBar = document.getElementById("slider-fill-bar");
-                const txt = document.getElementById("slider-text");
-                if (container && fillBar && txt) {
-                    fillBar.style.opacity = '0';
-                    container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
-                    txt.style.color = '#a5b4fc';
-                }
-            }}
-            onMouseDown={(e) => {
-                e.currentTarget.dataset.startX = e.clientX;
-                e.currentTarget.dataset.dragging = "true";
-            }}
-            onMouseMove={(e) => {
-                const btn = e.currentTarget;
-                if (btn.dataset.dragging !== "true" || isDrawing || totalBalotas === 0) return;
-                const startX = parseFloat(btn.dataset.startX || 0);
-                const diff = e.clientX - startX;
-                const parentWidth = btn.parentElement.clientWidth - btn.clientWidth - 8;
-                
-                if (diff >= 0 && diff <= parentWidth) {
-                    btn.style.transform = `translateX(${diff}px)`;
-                    
-                    const progress = diff / parentWidth;
-                    const container = document.getElementById("slider-container");
-                    const fillBar = document.getElementById("slider-fill-bar");
-                    const txt = document.getElementById("slider-text");
-                    
-                    if (container && fillBar && txt) {
-                        fillBar.style.opacity = progress;
-                        container.style.borderColor = `rgba(236, 72, 153, ${0.4 + progress * 0.6})`;
-                        txt.style.color = progress > 0.5 ? '#fbcfe8' : '#a5b4fc';
-                    }
-
-                    if (diff >= parentWidth - 10) {
-                        btn.dataset.dragging = "false";
-                        btn.style.transform = `translateX(${parentWidth}px)`;
-                        drawNextBall();
-                        setTimeout(() => {
-                            btn.style.transform = 'translateX(0px)';
-                            if (container && fillBar && txt) {
-                                fillBar.style.opacity = '0';
-                                container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
-                                txt.style.color = '#a5b4fc';
-                            }
-                        }, 400);
-                    }
-                }
-            }}
-            onMouseUp={(e) => {
-                const btn = e.currentTarget;
-                btn.dataset.dragging = "false";
-                btn.style.transform = 'translateX(0px)';
-                const container = document.getElementById("slider-container");
-                const fillBar = document.getElementById("slider-fill-bar");
-                const txt = document.getElementById("slider-text");
-                if (container && fillBar && txt) {
-                    fillBar.style.opacity = '0';
-                    container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
-                    txt.style.color = '#a5b4fc';
-                }
-            }}
-            onMouseLeave={(e) => {
-                const btn = e.currentTarget;
-                if (btn.dataset.dragging === "true") {
-                    btn.dataset.dragging = "false";
-                    btn.style.transform = 'translateX(0px)';
-                    const container = document.getElementById("slider-container");
-                    const fillBar = document.getElementById("slider-fill-bar");
-                    const txt = document.getElementById("slider-text");
-                    if (container && fillBar && txt) {
-                        fillBar.style.opacity = '0';
-                        container.style.borderColor = 'rgba(99, 102, 241, 0.4)';
-                        txt.style.color = '#a5b4fc';
-                    }
-                }
-            }}
-        >
-            <span className="text-sm pointer-events-none">🔮</span>
-        </div>
-    </div>
 
     {totalBalotas === 0 && (
         <button
@@ -1038,6 +888,30 @@ const closeIntro = () => {
                     : 'border-slate-800 bg-slate-900/80 text-white'
             }`}>
    <div>
+    {/* 🌟 PANEL INFORMATIVO (2 Columnas: Restantes y Categoría) */}
+    <div className={`grid grid-cols-2 gap-1.5 mb-2 p-2 rounded-xl border text-center shadow-inner ${
+        lineGlowEffect 
+            ? 'bg-amber-100/80 border-amber-300 text-slate-900' 
+            : 'bg-purple-950/80 border-purple-800/60 text-white'
+    }`}>
+        <div className="flex flex-col items-center justify-center border-r border-purple-800/40 pr-1">
+            <span className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-wider ${lineGlowEffect ? 'text-amber-800' : 'text-purple-300'}`}>
+                Restantes
+            </span>
+            <span className="text-xs sm:text-sm font-black font-mono">
+                {totalBalotas}
+            </span>
+        </div>
+        <div className="flex flex-col items-center justify-center pl-1">
+            <span className={`text-[8px] sm:text-[9px] font-bold uppercase tracking-wider ${lineGlowEffect ? 'text-amber-800' : 'text-purple-300'}`}>
+                Categoría
+            </span>
+            <span className="text-[10px] sm:text-xs font-black truncate max-w-full uppercase">
+                {String(participantCategory || '')}
+            </span>
+        </div>
+    </div>
+
     <div className="flex justify-between items-center bg-purple-950/60 border border-purple-800/60 px-2.5 py-1.5 rounded-lg mb-2">
     <div className="flex items-center gap-1.5">
         <h2 className={`text-[10px] sm:text-xs font-black uppercase tracking-wider ${lineGlowEffect ? 'text-amber-300' : 'text-purple-400'}`}>
@@ -1070,68 +944,68 @@ const closeIntro = () => {
             ))}
             
           {Array.isArray(bingoMasterCard) && bingoMasterCard.length > 0 && (() => {
-              const drawnSet = new Set(drawnBalls.map(n => Number(n)));
-              let winningRow = -1;
-              let winningCol = -1;
+            const drawnSet = new Set(drawnBalls.map(n => Number(n)));
+            let winningRow = -1;
+            let winningCol = -1;
 
-              for (let r = 0; r < bingoMasterCard.length; r++) {
-                  const prods = bingoMasterCard[r].filter(c => c && c.type === 'product');
-                  if (prods.length > 0 && prods.every(c => drawnSet.has(Number(c.id)))) {
-                      winningRow = r;
-                      break;
-                  }
-              }
+            for (let r = 0; r < bingoMasterCard.length; r++) {
+                const prods = bingoMasterCard[r].filter(c => c && c.type === 'product');
+                if (prods.length > 0 && prods.every(c => drawnSet.has(Number(c.id)))) {
+                    winningRow = r;
+                    break;
+                }
+            }
 
-              if (winningRow === -1) {
-                  for (let c = 0; c < bingoMasterCard[0].length; c++) {
-                      let colProds = [];
-                      for (let r = 0; r < bingoMasterCard.length; r++) {
-                          const cell = bingoMasterCard[r][c];
-                          if (cell && cell.type === 'product') colProds.push(cell);
-                      }
-                      if (colProds.length > 0 && colProds.every(cell => drawnSet.has(Number(cell.id)))) {
-                          winningCol = c;
-                          break;
-                      }
-                  }
-              }
+            if (winningRow === -1) {
+                for (let c = 0; c < bingoMasterCard[0].length; c++) {
+                    let colProds = [];
+                    for (let r = 0; r < bingoMasterCard.length; r++) {
+                        const cell = bingoMasterCard[r][c];
+                        if (cell && cell.type === 'product') colProds.push(cell);
+                    }
+                    if (colProds.length > 0 && colProds.every(cell => drawnSet.has(Number(cell.id)))) {
+                        winningCol = c;
+                        break;
+                    }
+                }
+            }
 
-              return bingoMasterCard.flat().map((cell, index) => {
-                  const rowIndex = Math.floor(index / 5);
-                  const colIndex = index % 5;
-                  const isSpecial = cell && cell.type === 'icon';
-                  const isMatch = cell && cell.type === 'product' && drawnSet.has(Number(cell.id));
-                  const isWinningLineCell = (winningRow !== -1 && rowIndex === winningRow) || (winningCol !== -1 && colIndex === winningCol);
-                  
-                  return (
-                      <div 
-                          key={index} 
-                          className={`h-9 sm:h-16 rounded-lg sm:rounded-xl p-0.5 sm:p-1.5 flex flex-col items-center justify-center border transition-all duration-300 ${
-                              isWinningLineCell && lineGlowEffect
-                                  ? 'bg-amber-400 border-amber-500 text-slate-950 shadow-md scale-105 font-black animate-pulse'
-                                  : isMatch 
-                                  ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-300 text-white shadow-md scale-105 font-bold animate-pulse' 
-                                  : isSpecial
-                                  ? 'bg-gradient-to-br from-pink-500 to-purple-600 border-pink-400 text-white font-bold'
-                                  : lineGlowEffect 
-                                  ? 'bg-amber-100 border-amber-300 text-amber-900' 
-                                  : 'bg-slate-800/80 border-slate-700 text-slate-300'
-                          }`}
-                      >
-                          {isSpecial ? (
-                              <span className="text-xs sm:text-base text-center">{cell.value}</span>
-                          ) : cell && cell.type === 'product' ? (
-                              <span className={`text-[11px] sm:text-sm font-black tracking-wider ${
-                                  isWinningLineCell && lineGlowEffect ? 'text-slate-950' : isMatch ? 'text-white' : 'text-white'
-                              }`}>
-                                  {cell.id}
-                              </span>
-                          ) : (
-                              <span className={`text-[9px] ${lineGlowEffect ? 'text-amber-700/60' : 'text-slate-500'}`}>--</span>
-                          )}
-                      </div>
-                  );
-              });
+            return bingoMasterCard.flat().map((cell, index) => {
+                const rowIndex = Math.floor(index / 5);
+                const colIndex = index % 5;
+                const isSpecial = cell && cell.type === 'icon';
+                const isMatch = cell && cell.type === 'product' && drawnSet.has(Number(cell.id));
+                const isWinningLineCell = (winningRow !== -1 && rowIndex === winningRow) || (winningCol !== -1 && colIndex === winningCol);
+                
+                return (
+                    <div 
+                        key={index} 
+                        className={`h-9 sm:h-16 rounded-lg sm:rounded-xl p-0.5 sm:p-1.5 flex flex-col items-center justify-center border transition-all duration-300 ${
+                            isWinningLineCell && lineGlowEffect
+                                ? 'bg-amber-400 border-amber-500 text-slate-950 shadow-md scale-105 font-black animate-pulse'
+                                : isMatch 
+                                ? 'bg-gradient-to-br from-emerald-500 to-green-600 border-emerald-300 text-white shadow-md scale-105 font-bold animate-pulse' 
+                                : isSpecial
+                                ? 'bg-gradient-to-br from-pink-500 to-purple-600 border-pink-400 text-white font-bold'
+                                : lineGlowEffect 
+                                ? 'bg-amber-100 border-amber-300 text-amber-900' 
+                                : 'bg-slate-800/80 border-slate-700 text-slate-300'
+                        }`}
+                    >
+                        {isSpecial ? (
+                            <span className="text-xs sm:text-base text-center">{cell.value}</span>
+                        ) : cell && cell.type === 'product' ? (
+                            <span className={`text-[11px] sm:text-sm font-black tracking-wider ${
+                                isWinningLineCell && lineGlowEffect ? 'text-slate-950' : isMatch ? 'text-white' : 'text-white'
+                            }`}>
+                                {cell.id}
+                            </span>
+                        ) : (
+                            <span className={`text-[9px] ${lineGlowEffect ? 'text-amber-700/60' : 'text-slate-500'}`}>--</span>
+                        )}
+                    </div>
+                );
+            });
           })()}
         </div>
 
@@ -1177,7 +1051,7 @@ const closeIntro = () => {
 </div>
 
             </div>
-  </div>
+ </div>
     );
 }
 
