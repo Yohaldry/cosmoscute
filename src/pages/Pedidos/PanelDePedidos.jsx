@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, getDocs, updateDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,24 +22,26 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
   const [pedidoACancelar, setPedidoACancelar] = useState(null);
   const [motivoCancelacion, setMotivoCancelacion] = useState("");
 
-  // Cargar pedidos desde Firestore
+  // Cargar y escuchar pedidos desde Firestore en tiempo real con onSnapshot
   useEffect(() => {
-    fetchPedidos();
-  }, []);
+    const unsubscribe = onSnapshot(
+      collection(db, "pedidos"),
+      (querySnapshot) => {
+        const listaPedidos = querySnapshot.docs.map(document => ({
+          firebaseId: document.id,
+          ...document.data()
+        }));
+        setPedidos(listaPedidos);
+      },
+      (error) => {
+        console.error("Error al escuchar pedidos en tiempo real:", error);
+        triggerErrorAlert("No se pudieron sincronizar los pedidos en tiempo real");
+      }
+    );
 
-  const fetchPedidos = async () => {
-    try {
-      const querySnapshot = await getDocs(collection(db, "pedidos"));
-      const listaPedidos = querySnapshot.docs.map(document => ({
-        firebaseId: document.id,
-        ...document.data()
-      }));
-      setPedidos(listaPedidos);
-    } catch (error) {
-      console.error("Error al cargar pedidos:", error);
-      triggerErrorAlert("No se pudieron cargar los pedidos");
-    }
-  };
+    // Limpiar el listener cuando el componente se desmonte
+    return () => unsubscribe();
+  }, []);
 
   // Función para manejar el cambio de estado con la validación solicitada y abrir alerta central
   const manejarCambioEstado = (pedido, siguienteEstado) => {
@@ -79,7 +81,7 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
       const pedidoRef = doc(db, "pedidos", firebaseId);
       await updateDoc(pedidoRef, { estado: nuevoEstado, ...datosExtra });
       triggerSuccessAlert("¡Estado actualizado correctamente!");
-      fetchPedidos();
+      // Nota: Al usar onSnapshot, ya no es necesario llamar a fetchPedidos() manualmente.
     } catch (error) {
       console.error("Error al actualizar estado:", error);
       triggerErrorAlert("Error al actualizar el estado");
@@ -136,7 +138,7 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4 pb-3 border-b border-rose-100 shadow-xs px-3 bg-white/80 backdrop-blur-md rounded-2xl">
         <div>
           <h2 className="text-xs sm:text-sm font-black text-[#2D3142] flex items-center gap-2 uppercase tracking-wider">
-            <span className="p-1.5 rounded-xl bg-rose-100 text-rose-500 shadow-2xs text-sm sm:text-base">📦</span> Panel de Pedidos (Firestore)
+            <span className="p-1.5 rounded-xl bg-rose-100 text-rose-500 shadow-2xs text-sm sm:text-base">📦</span> Panel de Pedidos (Firestore - Tiempo Real)
           </h2>
           <p className="text-[10px] sm:text-[11px] text-[#9EA2B3] ml-1">Gestiona el flujo de estados de tus clientes de forma sincronizada ✨</p>
         </div>
