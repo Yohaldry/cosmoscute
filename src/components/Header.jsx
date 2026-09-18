@@ -1,22 +1,19 @@
-import { Search, User, ShoppingBag, Sparkles } from 'lucide-react';
+import { Search, User, ShoppingBag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useState, useEffect } from 'react';
-import ModalPedido from './ModalPedido'; // Asegúrate de ajustar la ruta según la ubicación de tu archivo
+import CartDrawer from './cartcontent/CartDrawer'; // Ajusta la ruta si es necesario
+import { useCart } from './cartcontent/CartContext'; // Importamos el hook del contexto que me pasaste
 
 export default function Header() {
   const navigate = useNavigate();
   const [isScrolled, setIsScrolled] = useState(false);
-  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isCartOpen, setIsCartOpen] = useState(false); // Estado para abrir/cerrar el panel lateral
+  const { totalItems } = useCart(); // Obtenemos el total de ítems en tiempo real
 
   useEffect(() => {
     const handleScroll = () => {
-      if (window.scrollY > 20) {
-        setIsScrolled(true);
-      } else {
-        setIsScrolled(false);
-      }
+      setIsScrolled(window.scrollY > 20);
     };
-
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
@@ -28,20 +25,16 @@ export default function Header() {
           ? 'bg-[#1f0b36]/10 backdrop-blur-md border-purple-500/30 shadow-md' 
           : 'bg-transparent border-transparent'
       }`}>
-        {/* Navegación principal */}
         <div className="w-full px-4 md:px-20 flex items-center justify-between">
-          {/* Logo más grande que sobresale visualmente sin afectar el grosor del header */}
           <div className="flex items-center cursor-pointer group relative py-2 mt-3" onClick={() => navigate('/')}>
             <img 
               src="https://res.cloudinary.com/dtkirmtfq/image/upload/q_auto,f_auto,w_400/v1784603746/CosmosCute/uyjhbf3bqmox7ovppbmn.png" 
               alt="Cosmos Cute Logo" 
               className="w-16 h-16 md:w-20 md:h-20 object-contain drop-shadow-md transition-transform transform group-hover:scale-105"
-              style={{ imageRendering: 'high-quality' }}
             />
           </div>
 
-          {/* Menú de enlaces con tonos morados */}
-          <nav className="hidden md:flex items-center gap-1 font-medium text-xs text-black-200">
+          <nav className="hidden md:flex items-center gap-1 font-medium text-xs text-black">
             {['Inicio', 'Tienda', 'Colecciones', 'Novedades', 'Nosotros', 'Contacto'].map((item) => (
               <a
                 key={item}
@@ -53,32 +46,35 @@ export default function Header() {
             ))}
           </nav>
 
-          {/* Iconos de la derecha y botón de jugar */}
-          <div className="flex items-center gap-2 text-purple-200">
-         
-
+          <div className="flex items-center gap-2 text-black">
             <button className="p-1.5 rounded-full transition-all duration-200 hover:bg-purple-900/40 hover:backdrop-blur-sm">
-              <Search className="w-4 h-4 cursor-pointer" />
+              <Search className="w-4 h-4 cursor-pointer text-black" />
             </button>
             
             <button className="p-1.5 rounded-full transition-all duration-200 hover:bg-purple-900/40 hover:backdrop-blur-sm">
-              <User className="w-4 h-4 cursor-pointer" />
+              <User className="w-4 h-4 cursor-pointer text-black" />
             </button>
             
-            <div className="relative cursor-pointer p-1.5 rounded-full transition-all duration-200 group hover:bg-purple-900/40 hover:backdrop-blur-sm">
-              <ShoppingBag className="w-4 h-4 transition-colors" />
-              <span className="absolute top-0 right-0 bg-[#FF69B4] text-white text-[9px] w-3 h-3 rounded-full flex items-center justify-center font-bold shadow">
-                2
-              </span>
+            {/* Botón del carrito: abre directamente la barra lateral */}
+            <div 
+              onClick={() => setIsCartOpen(true)}
+              className="relative cursor-pointer p-1.5 rounded-full transition-all duration-200 group hover:bg-purple-900/40 hover:backdrop-blur-sm"
+            >
+              <ShoppingBag className="w-4 h-4 transition-colors text-black" />
+              {totalItems > 0 && (
+                <span className="absolute top-0 right-0 bg-[#FF69B4] text-white text-[9px] w-3 h-3 rounded-full flex items-center justify-center font-bold shadow">
+                  {totalItems}
+                </span>
+              )}
             </div>
           </div>
         </div>
       </header>
 
-      {/* Renderizado del Modal externo */}
-      <ModalPedido 
-        isOpen={isModalOpen} 
-        onClose={() => setIsModalOpen(false)} 
+      {/* Barra lateral del carrito */}
+      <CartDrawer 
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
       />
     </>
   );

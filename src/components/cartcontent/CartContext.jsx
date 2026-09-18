@@ -1,99 +1,66 @@
-import React, { createContext, useState, useEffect, useContext } from 'react';
+import { createContext, useContext, useState } from 'react';
 
-// 1. Crear el Contexto
 const CartContext = createContext();
 
-// 2. Hook personalizado para usar el carrito fácilmente
-export const useCart = () => useContext(CartContext);
+export function CartProvider({ children }) {
+  const [cartItems, setCartItems] = useState([]);
 
-// 3. El Proveedor (donde vive la lógica)
-export const CartProvider = ({ children }) => {
-    // Estado inicial: intenta cargar de LocalStorage, si no, usa array vacío
-    const [cart, setCart] = useState(() => {
-        try {
-            const storedCart = localStorage.getItem('bingo_cart');
-            return storedCart ? JSON.parse(storedCart) : [];
-        } catch (error) {
-            console.error("Error leyendo localStorage:", error);
-            return [];
-        }
-    });
+  // Costo fijo del domicilio
+  const SHIPPING_COST = 15000;
 
-    // Guardar en LocalStorage cada vez que el carrito cambie
-    useEffect(() => {
-        try {
-            localStorage.setItem('bingo_cart', JSON.stringify(cart));
-        } catch (error) {
-            console.error("Error guardando en localStorage:", error);
-        }
-    }, [cart]);
-
-    // --- LÓGICA DEL CARRITO ---
-
-    // Agregar producto (o aumentar cantidad si ya existe)
-    const addToCart = (product) => {
-        setCart(prevCart => {
-            const existingItem = prevCart.find(item => item.id === product.id);
-
-            if (existingItem) {
-                // Si ya existe, solo aumentamos la cantidad
-                return prevCart.map(item =>
-                    item.id === product.id
-                        ? { ...item, quantity: item.quantity + 1 }
-                        : item
-                );
-            } else {
-                // Si es nuevo, lo agregamos con quantity: 1
-                // Asignamos un ID único temporal si el producto no tiene (producto.id)
-                return [...prevCart, { ...product, quantity: 1 }];
-            }
-        });
-        // Opcional: Podrías lanzar una alerta visual o abrir el modal aquí
-    };
-
-    // Eliminar producto completamente
-    const removeFromCart = (productId) => {
-        setCart(prevCart => prevCart.filter(item => item.id !== productId));
-    };
-
-    // Cambiar cantidad (input manual o botones +/-)
-    const updateQuantity = (productId, quantity) => {
-        if (quantity <= 0) {
-            removeFromCart(productId);
-            return;
-        }
-        setCart(prevCart =>
-            prevCart.map(item =>
-                item.id === productId ? { ...item, quantity: parseInt(quantity) } : item
-            )
+  // Añadir producto o combo
+  const addToCart = (product) => {
+    setCartItems(prev => {
+      const existing = prev.find(item => item.id === product.id);
+      if (existing) {
+        return prev.map(item => 
+          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
         );
-    };
+      }
+      return [...prev, { ...product, quantity: 1 }];
+    });
+  };
 
-    // Vaciar carrito
-    const clearCart = () => {
-        setCart([]);
-    };
+  // Restar o eliminar producto si llega a 0
+  const removeFromCart = (id) => {
+    setCartItems(prev => {
+      const existing = prev.find(item => item.id === id);
+      if (!existing) return prev;
+      if (existing.quantity > 1) {
+        return prev.map(item => 
+          item.id === id ? { ...item, quantity: item.quantity - 1 } : item
+        );
+      }
+      return prev.filter(item => item.id !== id);
+    });
+  };
 
-    // Calcular totales (cantidad de items y precio total)
-    const totals = cart.reduce((acc, item) => {
-        acc.quantity += item.quantity;
-        acc.price += item.price * item.quantity;
-        return acc;
-    }, { quantity: 0, price: 0 });
+  // Eliminar por completo un ítem sin importar la cantidad
+  const deleteItem = (id) => {
+    setCartItems(prev => prev.filter(item => item.id !== id));
+  };
 
-    // El objeto que exponemos a la app
-    const value = {
-        cart,
-        addToCart,
-        removeFromCart,
-        updateQuantity,
-        clearCart,
-        totals
-    };
+  // Cálculos automáticos
+  const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
+  const productsPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
+  
+  // Total final sumando los productos + los 15.000 COP de domicilio (solo si hay productos en el carrito)
+  const totalPrice = cartItems.length > 0 ? productsPrice + SHIPPING_COST : 0;
 
-    return (
-        <CartContext.Provider value={value}>
-            {children}
-        </CartContext.Provider>
-    );
-};
+  return (
+    <CartContext.Provider value={{ 
+      cartItems, 
+      addToCart, 
+      removeFromCart, 
+      deleteItem, 
+      totalItems, 
+      productsPrice,
+      shippingCost: SHIPPING_COST,
+      totalPrice 
+    }}>
+      {children}
+    </CartContext.Provider>
+  );
+}
+
+export const useCart = () => useContext(CartContext);

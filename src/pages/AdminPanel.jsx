@@ -5,7 +5,7 @@ import ProductosBingo from "./bingoinfo/ProductosBingo";
 import InventarioGeneral from "../pages/InventarioGeneral";
 import Visitas from "./estadisticas_web/View"; 
 import BannersPromociones from './bannerspromociones/BannersPromociones';
-import PanelDePedidos from "./Pedidos/PanelDePedidos";
+import { PanelDePedidos } from './Pedidos/PanelDePedidos';
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);

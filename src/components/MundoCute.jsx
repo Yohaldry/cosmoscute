@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
+import { useCart } from './cartcontent/CartContext'; // Importamos el contexto del carrito
 import { 
   Heart, Star, ShoppingCart, Search, Sparkles, 
-  ArrowRight, ShieldCheck, Truck, Headphones, Send, Gift, Flame, X, CheckCircle2
+  ArrowRight, ShieldCheck, Truck, Headphones, Send, Gift, Flame, X, CheckCircle2, Check
 } from 'lucide-react';
 
 export default function CosmosCuteClean() {
@@ -13,15 +14,19 @@ export default function CosmosCuteClean() {
 
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
-  const [cartCount, setCartCount] = useState(2);
   const [favorites, setFavorites] = useState([1, 4]);
+
+  // Estado para controlar el destello verde y el mensaje flotante por ID de producto
+  const [addedId, setAddedId] = useState(null);
+
+  // Obtenemos la función para añadir al carrito global
+  const { addToCart } = useCart();
 
   // Estado para el Modal de Detalles
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  // Sincronización en tiempo real con Firestore
-// Sincronización en tiempo real con Firestore desde la colección "inventario" filtrando solo los activos
+  // Sincronización en tiempo real con Firestore desde la colección "inventario" filtrando solo los activos
   useEffect(() => {
     const unsubProd = onSnapshot(collection(db, "inventario"), (snapshot) => {
       const items = snapshot.docs.map(d => {
@@ -33,7 +38,6 @@ export default function CosmosCuteClean() {
           img1: data.img1 || ''
         };
       }).filter(prod => {
-        // Filtramos estrictamente para que solo pasen los que tienen estado true / activo
         const isActivo = 
           prod.estado === true || 
           String(prod.estado || "").toLowerCase() === "activo" || 
@@ -57,21 +61,17 @@ export default function CosmosCuteClean() {
     };
   }, []);
 
-  // Función directa para obtener las imágenes de 'img' y 'img1'
-  // Función para validar que el Base64 sea utilizable
- const getProductImages = (prod) => {
+  const getProductImages = (prod) => {
     const images = [];
     
     [prod.img, prod.img1].forEach(imgVal => {
       if (imgVal && typeof imgVal === 'string' && imgVal.trim().length > 10) {
         let val = imgVal.trim();
         
-        // Si por error se guardó un blob temporal de la PC, lo ignoramos para que no intente cargarlo en vano
         if (val.startsWith('blob:')) {
           return; 
         }
         
-        // Si es un base64 crudo sin el encabezado, se lo añadimos
         if (!val.startsWith('http') && !val.startsWith('data:image')) {
           val = `data:image/jpeg;base64,${val}`;
         }
@@ -83,7 +83,6 @@ export default function CosmosCuteClean() {
     return images;
   };
 
-  // Construir categorías dinámicamente
   const categories = [
     { id: 'all', name: '✨ Todo', count: productos.length },
     ...categoriasDB.map(cat => ({
@@ -111,6 +110,28 @@ export default function CosmosCuteClean() {
     setActiveImageIndex(0);
   };
 
+  // Función auxiliar para agregar al carrito estructurado + animación verde
+  const handleAddToCart = (prod, e) => {
+    if (e) e.stopPropagation();
+    const productImages = getProductImages(prod);
+    
+    // Formateamos el objeto para que coincida con lo que espera el CartContext
+    const itemToAdd = {
+      id: prod.id,
+      name: prod.nombre,
+      price: Number(prod.precio || 0),
+      image: productImages.length > 0 ? productImages[0] : ''
+    };
+
+    addToCart(itemToAdd);
+
+    // Activamos el destello verde y el mensaje en la tarjeta
+    setAddedId(prod.id);
+    setTimeout(() => {
+      setAddedId(null);
+    }, 1200);
+  };
+
   if (isLoading) {
     return (
       <div className="flex h-screen items-center justify-center bg-[#FFFDF9]">
@@ -131,7 +152,7 @@ export default function CosmosCuteClean() {
           <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-xl pointer-events-none"></div>
           
           <div className="flex items-center gap-2.5 text-center sm:text-left z-10">
-            <div className="w-8 h-8 rounded-lg bg-white/20 backdrop-blur-md flex items-center justify-center flex-shrink-0 text-yellow-200 shadow-xs">
+            <div className="w-8 h-8 rounded-lg bg-white/25 backdrop-blur-md flex items-center justify-center flex-shrink-0 text-yellow-200 shadow-xs">
               <Flame className="w-4 h-4 text-yellow-300 animate-bounce" />
             </div>
             <div>
@@ -187,13 +208,26 @@ export default function CosmosCuteClean() {
           {filteredProducts.map((prod) => {
             const productImages = getProductImages(prod);
             const mainImage = productImages.length > 0 ? productImages[0] : null;
+            const isJustAdded = addedId === prod.id;
 
             return (
               <div 
                 key={prod.id} 
                 onClick={() => handleOpenModal(prod)}
-                className="bg-white border border-pink-100/80 rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 flex flex-col justify-between relative group shadow-xs hover:shadow-xl hover:border-pink-300 transition-all duration-300 cursor-pointer"
+                className={`bg-white border rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 flex flex-col justify-between relative group shadow-xs transition-all duration-300 cursor-pointer overflow-hidden ${
+                  isJustAdded 
+                    ? 'border-emerald-500 ring-4 ring-emerald-400/30 bg-emerald-50/30 scale-[1.02]' 
+                    : 'border-pink-100/80 hover:shadow-xl hover:border-pink-300'
+                }`}
               >
+                
+                {/* MENSAJE FLOTANTE DE ÉXITO */}
+                {isJustAdded && (
+                  <div className="absolute inset-0 z-20 bg-emerald-600/90 backdrop-blur-xs flex flex-col items-center justify-center text-white text-center p-2 animate-in fade-in zoom-in duration-200">
+                    <Check className="w-8 h-8 mb-1 bg-white text-emerald-600 rounded-full p-1 shadow-lg animate-bounce" />
+                    <span className="text-[10px] sm:text-xs font-black tracking-wide leading-tight">¡Agregado al carrito!</span>
+                  </div>
+                )}
                 
                 <span className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10 bg-gradient-to-r from-pink-500 to-purple-600 text-white font-extrabold text-[7px] sm:text-[8px] px-1.5 sm:px-2 py-0.5 rounded-full uppercase shadow-xs">
                   {prod.categoria || "General"}
@@ -213,13 +247,10 @@ export default function CosmosCuteClean() {
                         src={mainImage} 
                         alt={prod.nombre} 
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                        onError={(e) => {
-                          console.error("Error al renderizar la imagen Base64 para el producto:", prod.nombre, mainImage);
-                        }}
                       />
                     ) : (
                       <div className="text-pink-300 text-[10px] font-bold text-center p-2">
-                        Imagen no válida o vacía
+                        Sin imagen
                       </div>
                     )}
                   </div>
@@ -229,8 +260,8 @@ export default function CosmosCuteClean() {
                       <Star className="w-2.5 h-2.5 sm:w-3 sm:h-3 fill-amber-400 text-amber-400" />
                       <span className="text-[9px] sm:text-[10px] font-extrabold text-slate-700">5.0</span>
                     </div>
-                    <span className={`text-[8px] font-black px-1.5 py-0.5 rounded ${Number(prod.udisponibles || prod.stockactual) > 0 ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-                      Stock Disponible
+                    <span className="text-[8px] font-black px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600">
+                      Stock
                     </span>
                   </div>
 
@@ -240,14 +271,11 @@ export default function CosmosCuteClean() {
                 </div>
 
                 <div>
-                  <div className="font-black text-[11px] sm:text-xs sm:text-sm text-slate-900 mb-1.5 sm:mb-2">
+                  <div className="font-black text-[11px] sm:text-xs text-slate-900 mb-1.5 sm:mb-2">
                     {formatPrice(prod.precio)}
                   </div>
                   <button 
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      setCartCount(c => c + 1);
-                    }}
+                    onClick={(e) => handleAddToCart(prod, e)}
                     className="w-full bg-pink-50 hover:bg-gradient-to-r hover:from-pink-500 hover:to-purple-600 hover:text-white text-pink-600 font-extrabold text-[9px] sm:text-[10px] py-1.5 sm:py-2 rounded-lg sm:rounded-xl flex items-center justify-center gap-1 transition-all shadow-2xs"
                   >
                     <ShoppingCart className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Agregar
@@ -263,7 +291,6 @@ export default function CosmosCuteClean() {
           <div className="text-center py-16 bg-white rounded-2xl border border-pink-100 shadow-sm">
             <Gift className="w-10 h-10 text-pink-300 mx-auto mb-2" />
             <p className="text-xs font-bold text-slate-700">No hay productos en esta categoría o búsqueda.</p>
-            <p className="text-[10px] text-slate-400 mt-1">Agrega productos desde tu panel de administración.</p>
           </div>
         )}
       </section>
@@ -277,7 +304,6 @@ export default function CosmosCuteClean() {
           <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-xs p-4">
             <div className="bg-white w-full max-w-2xl rounded-3xl shadow-2xl border border-pink-100 overflow-hidden relative animate-in fade-in zoom-in duration-200 flex flex-col max-h-[90vh]">
               
-              {/* Botón Cerrar */}
               <button 
                 onClick={() => setSelectedProduct(null)}
                 className="absolute top-4 right-4 z-20 bg-white/80 hover:bg-pink-100 text-slate-700 p-2 rounded-full backdrop-blur-md shadow-md transition-transform active:scale-95"
@@ -287,7 +313,6 @@ export default function CosmosCuteClean() {
 
               <div className="overflow-y-auto p-6 sm:p-8 flex flex-col md:flex-row gap-6">
                 
-                {/* Sección de Imágenes en Grande */}
                 <div className="w-full md:w-1/2 flex flex-col gap-3">
                   <div className="w-full h-72 sm:h-80 bg-pink-50/50 rounded-2xl overflow-hidden border border-pink-100 flex items-center justify-center relative shadow-inner">
                     {currentActiveImg ? (
@@ -297,7 +322,6 @@ export default function CosmosCuteClean() {
                     )}
                   </div>
 
-                  {/* Miniaturas dinámicas para img e img1 */}
                   {modalImages.length > 1 && (
                     <div className="flex gap-2 justify-center">
                       {modalImages.map((img, idx) => (
@@ -313,7 +337,6 @@ export default function CosmosCuteClean() {
                   )}
                 </div>
 
-                {/* Información del Producto */}
                 <div className="w-full md:w-1/2 flex flex-col justify-between">
                   <div>
                     <span className="bg-pink-100 text-pink-700 font-extrabold text-[10px] px-3 py-1 rounded-full uppercase tracking-wider inline-block mb-3">
@@ -329,7 +352,7 @@ export default function CosmosCuteClean() {
                     </div>
 
                     <div className="flex items-center gap-2 mb-4">
-                      <span className={`text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 ${Number(selectedProduct.udisponibles || selectedProduct.stockactual) > 0 ? 'bg-emerald-50 text-emerald-600 border border-emerald-200' : 'bg-rose-50 text-rose-600 border border-rose-200'}`}>
+                      <span className="text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1 bg-emerald-50 text-emerald-600 border border-emerald-200">
                         <CheckCircle2 className="w-3 h-3" /> Stock disponible
                       </span>
                     </div>
@@ -343,7 +366,7 @@ export default function CosmosCuteClean() {
 
                   <button 
                     onClick={() => {
-                      setCartCount(c => c + 1);
+                      handleAddToCart(selectedProduct);
                       setSelectedProduct(null);
                     }}
                     className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white font-extrabold text-xs py-3.5 rounded-xl flex items-center justify-center gap-2 shadow-lg shadow-pink-500/25 transition-transform active:scale-95"
