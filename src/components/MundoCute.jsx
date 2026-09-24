@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot } from 'firebase/firestore';
 import { db } from '../firebase';
-import { useCart } from './cartcontent/CartContext'; // Importamos el contexto del carrito
+import { useCart } from './cartcontent/CartContext';
 import { 
   Heart, Star, ShoppingCart, Search, Sparkles, 
   ArrowRight, ShieldCheck, Truck, Headphones, Send, Gift, Flame, X, CheckCircle2, Check
@@ -15,18 +15,14 @@ export default function CosmosCuteClean() {
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [favorites, setFavorites] = useState([1, 4]);
-
-  // Estado para controlar el destello verde y el mensaje flotante por ID de producto
   const [addedId, setAddedId] = useState(null);
-
-  // Obtenemos la función para añadir al carrito global
+  
   const { addToCart } = useCart();
 
-  // Estado para el Modal de Detalles
   const [selectedProduct, setSelectedProduct] = useState(null);
   const [activeImageIndex, setActiveImageIndex] = useState(0);
 
-  // Sincronización en tiempo real con Firestore desde la colección "inventario" filtrando solo los activos
+  // Sincronización en tiempo real con Firestore
   useEffect(() => {
     const unsubProd = onSnapshot(collection(db, "inventario"), (snapshot) => {
       const items = snapshot.docs.map(d => {
@@ -63,42 +59,40 @@ export default function CosmosCuteClean() {
 
   const getProductImages = (prod) => {
     const images = [];
-    
     [prod.img, prod.img1].forEach(imgVal => {
       if (imgVal && typeof imgVal === 'string' && imgVal.trim().length > 10) {
         let val = imgVal.trim();
-        
-        if (val.startsWith('blob:')) {
-          return; 
-        }
-        
+        if (val.startsWith('blob:')) return;
         if (!val.startsWith('http') && !val.startsWith('data:image')) {
           val = `data:image/jpeg;base64,${val}`;
         }
-        
         images.push(val);
       }
     });
-    
     return images;
   };
 
-  const categories = [
-    { id: 'all', name: '✨ Todo', count: productos.length },
-    ...categoriasDB.map(cat => ({
-      id: cat.nombre,
-      name: `🏷️ ${cat.nombre}`,
-      count: productos.filter(p => p.categoria === cat.nombre).length
-    }))
-  ];
+  const categories = useMemo(() => {
+    return [
+      { id: 'all', name: '✨ Todo', count: productos.length },
+      ...categoriasDB.map(cat => ({
+        id: cat.nombre,
+        name: `🏷️ ${cat.nombre}`,
+        count: productos.filter(p => p.categoria === cat.nombre).length
+      }))
+    ];
+  }, [productos, categoriasDB]);
 
   const formatPrice = (price) => `$${Number(price || 0).toLocaleString('es-CO')}`;
 
-  const filteredProducts = productos.filter(prod => {
-    const matchesCategory = selectedCategory === 'all' || prod.categoria === selectedCategory;
-    const matchesSearch = (prod.nombre || '').toLowerCase().includes(searchQuery.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
+  const filteredProducts = useMemo(() => {
+    const query = searchQuery.toLowerCase().trim();
+    return productos.filter(prod => {
+      const matchesCategory = selectedCategory === 'all' || prod.categoria === selectedCategory;
+      const matchesSearch = !query || (prod.nombre || '').toLowerCase().includes(query);
+      return matchesCategory && matchesSearch;
+    });
+  }, [productos, selectedCategory, searchQuery]);
 
   const toggleFavorite = (id, e) => {
     e.stopPropagation();
@@ -110,12 +104,10 @@ export default function CosmosCuteClean() {
     setActiveImageIndex(0);
   };
 
-  // Función auxiliar para agregar al carrito estructurado + animación verde
   const handleAddToCart = (prod, e) => {
     if (e) e.stopPropagation();
     const productImages = getProductImages(prod);
     
-    // Formateamos el objeto para que coincida con lo que espera el CartContext
     const itemToAdd = {
       id: prod.id,
       name: prod.nombre,
@@ -125,7 +117,6 @@ export default function CosmosCuteClean() {
 
     addToCart(itemToAdd);
 
-    // Activamos el destello verde y el mensaje en la tarjeta
     setAddedId(prod.id);
     setTimeout(() => {
       setAddedId(null);
@@ -202,10 +193,10 @@ export default function CosmosCuteClean() {
         </div>
       </section>
 
-      {/* GRILLA DE PRODUCTOS */}
+      {/* GRILLA DE PRODUCTOS CON ANIMACIÓN DE ENTRADA ESTABLE */}
       <section className="max-w-7xl mx-auto px-3 sm:px-6 py-1 pb-16">
         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 sm:gap-3">
-          {filteredProducts.map((prod) => {
+          {filteredProducts.map((prod, index) => {
             const productImages = getProductImages(prod);
             const mainImage = productImages.length > 0 ? productImages[0] : null;
             const isJustAdded = addedId === prod.id;
@@ -214,17 +205,19 @@ export default function CosmosCuteClean() {
               <div 
                 key={prod.id} 
                 onClick={() => handleOpenModal(prod)}
-                className={`bg-white border rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 flex flex-col justify-between relative group shadow-xs transition-all duration-300 cursor-pointer overflow-hidden ${
+                // Usamos clases de animación integradas de Tailwind que aparecen de forma fluida y se quedan estables
+                className={`bg-white border rounded-xl sm:rounded-2xl p-1.5 sm:p-2.5 flex flex-col justify-between relative group shadow-xs cursor-pointer overflow-hidden animate-in fade-in slide-in-from-bottom-4 duration-500 fill-mode-both hover:shadow-xl hover:border-pink-300 transition-all ${
                   isJustAdded 
                     ? 'border-emerald-500 ring-4 ring-emerald-400/30 bg-emerald-50/30 scale-[1.02]' 
-                    : 'border-pink-100/80 hover:shadow-xl hover:border-pink-300'
+                    : 'border-pink-100/80'
                 }`}
+                style={{ animationDelay: `${(index % 12) * 45}ms` }}
               >
                 
-                {/* MENSAJE FLOTANTE DE ÉXITO */}
+                {/* AVISO FLOTANTE DE ÉXITO */}
                 {isJustAdded && (
-                  <div className="absolute inset-0 z-20 bg-emerald-600/90 backdrop-blur-xs flex flex-col items-center justify-center text-white text-center p-2 animate-in fade-in zoom-in duration-200">
-                    <Check className="w-8 h-8 mb-1 bg-white text-emerald-600 rounded-full p-1 shadow-lg animate-bounce" />
+                  <div className="absolute inset-0 z-30 bg-emerald-600/95 backdrop-blur-xs flex flex-col items-center justify-center text-white text-center p-2 animate-in fade-in zoom-in duration-200">
+                    <Check className="w-7 h-7 mb-1 bg-white text-emerald-600 rounded-full p-1 shadow-lg animate-bounce" />
                     <span className="text-[10px] sm:text-xs font-black tracking-wide leading-tight">¡Agregado al carrito!</span>
                   </div>
                 )}
@@ -246,6 +239,7 @@ export default function CosmosCuteClean() {
                       <img 
                         src={mainImage} 
                         alt={prod.nombre} 
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     ) : (
@@ -295,7 +289,7 @@ export default function CosmosCuteClean() {
         )}
       </section>
 
-      {/* MODAL DE DETALLES DEL PRODUCTO */}
+      {/* MODAL DE DETALLES */}
       {selectedProduct && (() => {
         const modalImages = getProductImages(selectedProduct);
         const currentActiveImg = modalImages[activeImageIndex] || modalImages[0];
@@ -316,7 +310,7 @@ export default function CosmosCuteClean() {
                 <div className="w-full md:w-1/2 flex flex-col gap-3">
                   <div className="w-full h-72 sm:h-80 bg-pink-50/50 rounded-2xl overflow-hidden border border-pink-100 flex items-center justify-center relative shadow-inner">
                     {currentActiveImg ? (
-                      <img src={currentActiveImg} alt={selectedProduct.nombre} className="w-full h-full object-cover" />
+                      <img src={currentActiveImg} alt={selectedProduct.nombre} loading="lazy" className="w-full h-full object-cover" />
                     ) : (
                       <div className="text-pink-300 text-xs font-bold">Sin imágenes disponibles</div>
                     )}
@@ -330,7 +324,7 @@ export default function CosmosCuteClean() {
                           onClick={() => setActiveImageIndex(idx)}
                           className={`w-16 h-16 rounded-xl overflow-hidden border-2 transition-all ${activeImageIndex === idx ? 'border-pink-500 scale-105 shadow-md' : 'border-pink-100 opacity-70'}`}
                         >
-                          <img src={img} alt="" className="w-full h-full object-cover" />
+                          <img src={img} alt="" loading="lazy" className="w-full h-full object-cover" />
                         </button>
                       ))}
                     </div>
@@ -384,4 +378,4 @@ export default function CosmosCuteClean() {
 
     </div>
   );
-}
+} 

@@ -6,6 +6,8 @@ import InventarioGeneral from "../pages/InventarioGeneral";
 import Visitas from "./estadisticas_web/View"; 
 import BannersPromociones from './bannerspromociones/BannersPromociones';
 import { PanelDePedidos } from './Pedidos/PanelDePedidos';
+import CargoyDescargo  from './cargoydescargo/CargoyDescargo'
+import Movimientos from './movimientos/Movimientos'
 
 export default function AdminPanel() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -311,7 +313,7 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   }
 
   return (
-    <div className="flex flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
+  <div className="flex flex-1 flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
      
      {/* SIDEBAR ESCRITORIO */}
      <aside className={`hidden md:flex ${isSidebarCollapsed ? "w-20" : "w-60"} bg-white/90 backdrop-blur-md border-r border-purple-100/60 flex-col shrink-0 shadow-lg justify-between transition-all duration-300 ease-in-out relative z-10`}>
@@ -362,6 +364,34 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
       >
         <span className="text-base shrink-0">📋</span>
         <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Inventario General</span>
+      </button>
+
+      {/* CARGA Y DESCARGO */}
+      <button
+        onClick={() => setActiveTab("carga-descargo")}
+        title="Carga y Descargo"
+        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
+          activeTab === "carga-descargo"
+            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
+            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
+        }`}
+      >
+        <span className="text-base shrink-0">📦</span>
+        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Carga y Descargo</span>
+      </button>
+
+      {/* NUEVA SECCIÓN: MOVIMIENTOS */}
+      <button
+        onClick={() => setActiveTab("movimientos")}
+        title="Movimientos"
+        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
+          activeTab === "movimientos"
+            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
+            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
+        }`}
+      >
+        <span className="text-base shrink-0">📜</span>
+        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Movimientos</span>
       </button>
 
       <button
@@ -418,7 +448,7 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   </div>
 </aside>
 
-      {/* MENÚ HAMBURGUESA MÓVIL */}
+     {/* MENÚ HAMBURGUESA MÓVIL */}
    <div 
   className={`fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex md:hidden transition-opacity duration-300 ease-in-out ${
     isMobileMenuOpen ? "opacity-100 pointer-events-auto" : "opacity-0 pointer-events-none"
@@ -477,6 +507,32 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
           <span>Inventario General</span>
         </button>
 
+        {/* CARGA Y DESCARGO EN MÓVIL */}
+        <button
+          onClick={() => { setActiveTab("carga-descargo"); setIsMobileMenuOpen(false); }}
+          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
+            activeTab === "carga-descargo" 
+              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
+              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
+          }`}
+        >
+          <span className="text-base shrink-0">📦</span>
+          <span>Carga y Descargo</span>
+        </button>
+
+        {/* NUEVA SECCIÓN EN MÓVIL: MOVIMIENTOS */}
+        <button
+          onClick={() => { setActiveTab("movimientos"); setIsMobileMenuOpen(false); }}
+          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
+            activeTab === "movimientos" 
+              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
+              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
+          }`}
+        >
+          <span className="text-base shrink-0">📜</span>
+          <span>Movimientos</span>
+        </button>
+
         <button
           onClick={() => { setActiveTab("estadisticas"); setIsMobileMenuOpen(false); }}
           className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
@@ -528,320 +584,336 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   </div>
 </div>
 
-      {/* CONTENIDO CENTRAL */}
-      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
-        
-        {/* BARRA SUPERIOR MÓVIL */}
-        <div className="flex md:hidden bg-white border-b border-[#E4E8F0] px-3 py-2 items-center justify-between shrink-0 shadow-2xs">
-          <div className="flex items-center gap-2">
-            <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
-              CT
-            </div>
-            <div>
-              <h1 className="text-[10px] font-extrabold text-[#2D3142] leading-tight">Carolina Torres</h1>
-              <p className="text-[7px] text-[#9EA2B3] leading-tight">Admin</p>
-            </div>
-          </div>
-          <button 
-            onClick={() => setIsMobileMenuOpen(true)}
-            className="w-7 h-7 flex items-center justify-center rounded-md bg-[#F4F5FB] text-[#2D3142] text-xs font-black shadow-2xs border border-[#E4E8F0]"
-          >
-            ☰
-          </button>
-        </div>
+     {/* CONTENIDO CENTRAL */}
+     <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
+       
+       {/* BARRA SUPERIOR MÓVIL */}
+       <div className="flex md:hidden bg-white border-b border-[#E4E8F0] px-3 py-2 items-center justify-between shrink-0 shadow-2xs">
+         <div className="flex items-center gap-2">
+           <div className="w-6 h-6 rounded-md bg-gradient-to-tr from-[#7C69EF] to-[#9B8AFB] flex items-center justify-center text-white font-black text-[10px]">
+             CT
+           </div>
+           <div>
+             <h1 className="text-[10px] font-extrabold text-[#2D3142] leading-tight">Carolina Torres</h1>
+             <p className="text-[7px] text-[#9EA2B3] leading-tight">Admin</p>
+           </div>
+         </div>
+         <button 
+           onClick={() => setIsMobileMenuOpen(true)}
+           className="w-7 h-7 flex items-center justify-center rounded-md bg-[#F4F5FB] text-[#2D3142] text-xs font-black shadow-2xs border border-[#E4E8F0]"
+         >
+           ☰
+         </button>
+       </div>
 
-        {/* HEADER */}
-        <header className="h-9 md:h-11 bg-white border-b border-[#E4E8F0] px-3 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-2">
-            <h2 className="text-[10px] md:text-[11px] font-black text-[#2D3142] uppercase tracking-wider">
-              {activeTab === "bingo-productos" && "Bingo Productos"}
-              {activeTab === "inventario-general" && "Inventario General"}
-              {activeTab === "estadisticas" && "Estadísticas y Visitas"}
-              {activeTab === "banners-promociones" && "Banners y Promociones"}
-              {activeTab === "pedidos" && "Pedidos"}
-            </h2>
-          </div>
-          {activeTab === "inventario-general" && (
-            <button
-              onClick={() => { setEditingCategory(null); setCatNombre(""); setCatSearch(""); setIsCategoryModalOpen(true); }}
-              className="bg-gradient-to-r from-[#7C69EF] to-[#9B8AFB] hover:opacity-90 text-white font-extrabold px-3 py-1.5 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20 transition-all flex items-center gap-1.5"
-            >
-              <span>🏷️</span> Gestionar Categorías
-            </button>
-          )}
-        </header>
+       {/* HEADER */}
+       <header className="h-9 md:h-11 bg-white border-b border-[#E4E8F0] px-3 flex items-center justify-between shrink-0">
+         <div className="flex items-center gap-2">
+           <h2 className="text-[10px] md:text-[11px] font-black text-[#2D3142] uppercase tracking-wider">
+             {activeTab === "bingo-productos" && "Bingo Productos"}
+             {activeTab === "inventario-general" && "Inventario General"}
+             {activeTab === "carga-descargo" && "Carga y Descargo de Stock"}
+             {activeTab === "movimientos" && "Historial de Movimientos"}
+             {activeTab === "estadisticas" && "Estadísticas y Visitas"}
+             {activeTab === "banners-promociones" && "Banners y Promociones"}
+             {activeTab === "pedidos" && "Pedidos"}
+           </h2>
+         </div>
+         {activeTab === "inventario-general" && (
+           <button
+             onClick={() => { setEditingCategory(null); setCatNombre(""); setCatSearch(""); setIsCategoryModalOpen(true); }}
+             className="bg-gradient-to-r from-[#7C69EF] to-[#9B8AFB] hover:opacity-90 text-white font-extrabold px-3 py-1.5 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20 transition-all flex items-center gap-1.5"
+           >
+             <span>🏷️</span> Gestionar Categorías
+           </button>
+         )}
+       </header>
 
-        {/* CONTENEDOR */}
-        <main className="flex-1 p-1.5 md:p-3 overflow-hidden flex flex-col">
-          
-          {activeTab === "bingo-productos" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs p-2">
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <ProductosBingo 
-                  productos={productos}
-                  categorias={categorias}
-                  activeTab={activeTab}
-                  setActiveTab={setActiveTab}
-                  onOpenProductModal={() => setIsProductModalOpen(true)}
-                  onUpdateProduct={handleUpdateProduct}
-                  onDeleteProduct={handleDeleteProductRequest}
-                  triggerSuccessAlert={triggerSuccessAlert}
-                />
-              </div>
-            </div>
-          )}
+       {/* CONTENEDOR */}
+       <main className="flex-1 p-1.5 md:p-3 overflow-hidden flex flex-col">
+         
+         {activeTab === "bingo-productos" && (
+           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs p-2">
+             <div className="flex-1 flex flex-col overflow-hidden">
+               <ProductosBingo 
+                 productos={productos}
+                 categorias={categorias}
+                 activeTab={activeTab}
+                 setActiveTab={setActiveTab}
+                 onOpenProductModal={() => setIsProductModalOpen(true)}
+                 onUpdateProduct={handleUpdateProduct}
+                 onDeleteProduct={handleDeleteProductRequest}
+                 triggerSuccessAlert={triggerSuccessAlert}
+               />
+             </div>
+           </div>
+         )}
 
-          {activeTab === "inventario-general" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
-              <InventarioGeneral 
-                inventario={inventario}
-                productosBingo={productos}
-                categorias={categorias}
-                availableMissingCodes={availableMissingCodes}
-                onOpenCategoryModal={() => { setEditingCategory(null); setCatNombre(""); setCatSearch(""); setIsCategoryModalOpen(true); }}
-                onDeleteCategory={handleDeleteCategoryRequest}
-                triggerSuccessAlert={triggerSuccessAlert}
-                triggerErrorAlert={triggerErrorAlert}
-              />
-            </div>
-          )}
+         {activeTab === "inventario-general" && (
+           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
+             <InventarioGeneral 
+               inventario={inventario}
+               productosBingo={productos}
+               categorias={categorias}
+               availableMissingCodes={availableMissingCodes}
+               onOpenCategoryModal={() => { setEditingCategory(null); setCatNombre(""); setCatSearch(""); setIsCategoryModalOpen(true); }}
+               onDeleteCategory={handleDeleteCategoryRequest}
+               triggerSuccessAlert={triggerSuccessAlert}
+               triggerErrorAlert={triggerErrorAlert}
+             />
+           </div>
+         )}
 
-          {activeTab === "banners-promociones" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
-              <BannersPromociones 
-                triggerSuccessAlert={triggerSuccessAlert}
-                triggerErrorAlert={triggerErrorAlert}
-              />
-            </div>
-          )}
+         {/* VISTA DE CARGA Y DESCARGO */}
+         {activeTab === "carga-descargo" && (
+           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs overflow-y-auto">
+             <CargoyDescargo />
+           </div>
+         )}
 
-          {/* VISTA DE PEDIDOS (PanelDePedidos.jsx) */}
-          {activeTab === "pedidos" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
-              <PanelDePedidos 
-                triggerSuccessAlert={triggerSuccessAlert}
-                triggerErrorAlert={triggerErrorAlert}
-              />
-            </div>
-          )}
+         {/* VISTA DE MOVIMIENTOS */}
+         {activeTab === "movimientos" && (
+           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs overflow-y-auto">
+             <Movimientos />
+           </div>
+         )}
 
-          {activeTab === "estadisticas" && (
-            <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs p-2">
-              <div className="flex-1 flex flex-col overflow-hidden">
-                <Visitas />
-              </div>
-            </div>
-          )}
+         {activeTab === "banners-promociones" && (
+           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
+             <BannersPromociones 
+               triggerSuccessAlert={triggerSuccessAlert}
+               triggerErrorAlert={triggerErrorAlert}
+             />
+           </div>
+         )}
 
-        </main>
-      </div>
+         {/* VISTA DE PEDIDOS (PanelDePedidos.jsx) */}
+         {activeTab === "pedidos" && (
+           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs">
+             <PanelDePedidos 
+               triggerSuccessAlert={triggerSuccessAlert}
+               triggerErrorAlert={triggerErrorAlert}
+             />
+           </div>
+         )}
 
-      {/* MODAL PRODUCTO */}
-      {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
-          <div className="bg-white rounded-2xl max-w-xs w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3">
-            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
-              <h3 className="text-xs font-black text-[#2D3142]">Nuevo Producto</h3>
-              <button onClick={() => setIsProductModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold">✕</button>
-            </div>
-            <form onSubmit={handleAddProduct} className="space-y-2">
-              <div>
-                <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Código</label>
-                <select 
-                  value={prodCodigo} 
-                  onChange={(e) => setProdCodigo(e.target.value)}
-                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
-                  required
-                >
-                  <option value="">Selecciona código...</option>
-                  {availableMissingCodes.map(code => (
-                    <option key={code} value={code}>Código {code}</option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Nombre</label>
-                <input 
-                  type="text" 
-                  value={prodNombre} 
-                  onChange={(e) => setProdNombre(e.target.value)}
-                  placeholder="Ej. Silla..."
-                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
-                  required
-                />
-              </div>
-              <div>
-                <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Categoría</label>
-                <select 
-                  value={prodCategoria} 
-                  onChange={(e) => setProdCategoria(e.target.value)}
-                  className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
-                >
-                  <option value="General">General</option>
-                  {categorias.map(cat => (
-                    <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="grid grid-cols-2 gap-1.5">
-                <div>
-                  <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Precio ($)</label>
-                  <input 
-                    type="number" 
-                    value={prodPrecio} 
-                    onChange={(e) => setProdPrecio(e.target.value)}
-                    placeholder="0"
-                    className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
-                  />
-                </div>
-                <div>
-                  <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Stock</label>
-                  <input 
-                    type="number" 
-                    value={prodStockActual} 
-                    onChange={(e) => setProdStockActual(e.target.value)}
-                    placeholder="0"
-                    className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
-                  />
-                </div>
-              </div>
-              <div className="flex justify-end gap-1.5 pt-2 border-t border-[#E4E8F0]">
-                <button type="button" onClick={() => setIsProductModalOpen(false)} className="px-3 py-1.5 rounded-xl text-[9px] font-bold text-[#9EA2B3] bg-[#F4F5FB]">Cancelar</button>
-                <button type="submit" className="px-3 py-1.5 rounded-xl text-[9px] font-bold bg-[#7C69EF] text-white shadow-md shadow-[#7C69EF]/20">Guardar</button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+         {activeTab === "estadisticas" && (
+           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs p-2">
+             <div className="flex-1 flex flex-col overflow-hidden">
+               <Visitas />
+             </div>
+           </div>
+         )}
 
-      {/* MODAL CATEGORÍA CON CAMPO DE BUSCAR */}
-      {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
-          <div className="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs">🏷️</span>
-                <h3 className="text-xs font-black text-[#2D3142]">Gestión de Categorías</h3>
-              </div>
-              <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold hover:text-[#2D3142]">✕</button>
-            </div>
+       </main>
+     </div>
 
-            <form onSubmit={handleSaveCategory} className="bg-[#F4F5FB] p-3 rounded-xl border border-[#E4E8F0] space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#7C69EF]">
-                  {editingCategory ? "✏️ Editando Categoría" : "✨ Nueva Categoría"}
-                </label>
-                {editingCategory && (
-                  <button type="button" onClick={handleCancelCategoryEdit} className="text-[8px] font-bold text-rose-500 hover:underline">
-                    Cancelar edición
-                  </button>
-                )}
-              </div>
-              <div className="flex gap-1.5">
-                <input 
-                  type="text" 
-                  value={catNombre} 
-                  onChange={(e) => setCatNombre(e.target.value)}
-                  placeholder="Nombre de la categoría..."
-                  className="flex-1 bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-                  required
-                />
-                <button 
-                  type="submit" 
-                  className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-extrabold px-3 py-1.5 rounded-xl text-[9px] shadow-sm transition-all shrink-0"
-                >
-                  {editingCategory ? "Actualizar" : "Guardar"}
-                </button>
-              </div>
-            </form>
+     {/* MODAL PRODUCTO */}
+     {isProductModalOpen && (
+       <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
+         <div className="bg-white rounded-2xl max-w-xs w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3">
+           <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
+             <h3 className="text-xs font-black text-[#2D3142]">Nuevo Producto</h3>
+             <button onClick={() => setIsProductModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold">✕</button>
+           </div>
+           <form onSubmit={handleAddProduct} className="space-y-2">
+             <div>
+               <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Código</label>
+               <select 
+                 value={prodCodigo} 
+                 onChange={(e) => setProdCodigo(e.target.value)}
+                 className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                 required
+               >
+                 <option value="">Selecciona código...</option>
+                 {availableMissingCodes.map(code => (
+                   <option key={code} value={code}>Código {code}</option>
+                 ))}
+               </select>
+             </div>
+             <div>
+               <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Nombre</label>
+               <input 
+                 type="text" 
+                 value={prodNombre} 
+                 onChange={(e) => setProdNombre(e.target.value)}
+                 placeholder="Ej. Silla..."
+                 className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                 required
+               />
+             </div>
+             <div>
+               <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Categoría</label>
+               <select 
+                 value={prodCategoria} 
+                 onChange={(e) => setProdCategoria(e.target.value)}
+                 className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+               >
+                 <option value="General">General</option>
+                 {categorias.map(cat => (
+                   <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                 ))}
+               </select>
+             </div>
+             <div className="grid grid-cols-2 gap-1.5">
+               <div>
+                 <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Precio ($)</label>
+                 <input 
+                   type="number" 
+                   value={prodPrecio} 
+                   onChange={(e) => setProdPrecio(e.target.value)}
+                   placeholder="0"
+                   className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                 />
+               </div>
+               <div>
+                 <label className="text-[7px] font-extrabold uppercase tracking-wider text-[#9EA2B3]">Stock</label>
+                 <input 
+                   type="number" 
+                   value={prodStockActual} 
+                   onChange={(e) => setProdStockActual(e.target.value)}
+                   placeholder="0"
+                   className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl px-2 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF] mt-0.5"
+                 />
+               </div>
+             </div>
+             <div className="flex justify-end gap-1.5 pt-2 border-t border-[#E4E8F0]">
+               <button type="button" onClick={() => setIsProductModalOpen(false)} className="px-3 py-1.5 rounded-xl text-[9px] font-bold text-[#9EA2B3] bg-[#F4F5FB]">Cancelar</button>
+               <button type="submit" className="px-3 py-1.5 rounded-xl text-[9px] font-bold bg-[#7C69EF] text-white shadow-md shadow-[#7C69EF]/20">Guardar</button>
+             </div>
+           </form>
+         </div>
+       </div>
+     )}
 
-            <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#9EA2B3]">🔍</span>
-              <input 
-                type="text"
-                value={catSearch}
-                onChange={(e) => setCatSearch(e.target.value)}
-                placeholder="Buscar categoría..."
-                className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl pl-7 pr-3 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-              />
-            </div>
+     {/* MODAL CATEGORÍA CON CAMPO DE BUSCAR */}
+     {isCategoryModalOpen && (
+       <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
+         <div className="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3 max-h-[90vh] flex flex-col">
+           <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
+             <div className="flex items-center gap-1.5">
+               <span className="text-xs">🏷️</span>
+               <h3 className="text-xs font-black text-[#2D3142]">Gestión de Categorías</h3>
+             </div>
+             <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold hover:text-[#2D3142]">✕</button>
+           </div>
 
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-44">
-              <p className="text-[8px] font-black uppercase tracking-wider text-[#9EA2B3] px-1">
-                Resultados ({filteredCategorias.length} de {categorias.length})
-              </p>
-              {filteredCategorias.length === 0 ? (
-                <div className="p-4 text-center text-[#9EA2B3] bg-[#F4F5FB]/50 rounded-xl text-[9px]">
-                  {catSearch ? "No se encontraron categorías con ese nombre." : "No hay categorías registradas todavía."}
-                </div>
-              ) : (
-                filteredCategorias.map((cat) => (
-                  <div key={cat.id} className="flex items-center justify-between bg-white border border-[#E4E8F0] p-2 rounded-xl shadow-2xs hover:border-[#7C69EF]/50 transition-all">
-                    <span className="text-[9px] font-bold text-[#2D3142] truncate max-w-[180px]">{cat.nombre}</span>
-                    <div className="flex items-center gap-1">
-                      <button 
-                        type="button" 
-                        onClick={() => handleEditCategoryClick(cat)}
-                        className="bg-[#7C69EF]/10 hover:bg-[#7C69EF]/20 text-[#7C69EF] font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => handleDeleteCategoryRequest(cat.id)}
-                        className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
+           <form onSubmit={handleSaveCategory} className="bg-[#F4F5FB] p-3 rounded-xl border border-[#E4E8F0] space-y-2">
+             <div className="flex justify-between items-center">
+               <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#7C69EF]">
+                 {editingCategory ? "✏️ Editando Categoría" : "✨ Nueva Categoría"}
+               </label>
+               {editingCategory && (
+                 <button type="button" onClick={handleCancelCategoryEdit} className="text-[8px] font-bold text-rose-500 hover:underline">
+                   Cancelar edición
+                 </button>
+               )}
+             </div>
+             <div className="flex gap-1.5">
+               <input 
+                 type="text" 
+                 value={catNombre} 
+                 onChange={(e) => setCatNombre(e.target.value)}
+                 placeholder="Nombre de la categoría..."
+                 className="flex-1 bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                 required
+               />
+               <button 
+                 type="submit" 
+                 className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-extrabold px-3 py-1.5 rounded-xl text-[9px] shadow-sm transition-all shrink-0"
+               >
+                 {editingCategory ? "Actualizar" : "Guardar"}
+               </button>
+             </div>
+           </form>
 
-            <div className="flex justify-end pt-2 border-t border-[#E4E8F0]">
-              <button 
-                type="button" 
-                onClick={() => setIsCategoryModalOpen(false)} 
-                className="w-full bg-[#7C69EF] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20"
-              >
-                Cerrar Ventana
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+           <div className="relative">
+             <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#9EA2B3]">🔍</span>
+             <input 
+               type="text"
+               value={catSearch}
+               onChange={(e) => setCatSearch(e.target.value)}
+               placeholder="Buscar categoría..."
+               className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl pl-7 pr-3 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+             />
+           </div>
 
-      {/* MODAL ELIMINAR */}
-      {deleteModal.isOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
-          <div className="bg-white rounded-2xl p-4 max-w-xs w-full shadow-2xl border border-[#E4E8F0] space-y-3 text-center">
-            <div className="w-8 h-8 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center mx-auto text-xs font-black shadow-sm">⚠️</div>
-            <div className="space-y-1">
-              <h3 className="text-xs font-black text-[#2D3142]">¿Estás seguro?</h3>
-              <p className="text-[9px] text-[#9EA2B3]">
-                Vas a eliminar <span className="font-bold text-[#2D3142]">{deleteModal.name}</span>.
-              </p>
-            </div>
-            <div className="flex gap-1.5 pt-1">
-              <button type="button" onClick={() => setDeleteModal({ isOpen: false, type: null, id: null, name: "", isMultiple: false })} className="flex-1 bg-[#F4F5FB] text-[#2D3142] font-bold py-2 px-2 rounded-xl text-[9px]">Cancelar</button>
-              <button type="button" onClick={executeDelete} className="flex-1 bg-rose-600 text-white font-bold py-2 px-2 rounded-xl text-[9px] shadow-md shadow-rose-600/20">Eliminar</button>
-            </div>
-          </div>
-        </div>
-      )}
+           <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-44">
+             <p className="text-[8px] font-black uppercase tracking-wider text-[#9EA2B3] px-1">
+               Resultados ({filteredCategorias.length} de {categorias.length})
+             </p>
+             {filteredCategorias.length === 0 ? (
+               <div className="p-4 text-center text-[#9EA2B3] bg-[#F4F5FB]/50 rounded-xl text-[9px]">
+                 {catSearch ? "No se encontraron categorías con ese nombre." : "No hay categorías registradas todavía."}
+               </div>
+             ) : (
+               filteredCategorias.map((cat) => (
+                 <div key={cat.id} className="flex items-center justify-between bg-white border border-[#E4E8F0] p-2 rounded-xl shadow-2xs hover:border-[#7C69EF]/50 transition-all">
+                   <span className="text-[9px] font-bold text-[#2D3142] truncate max-w-[180px]">{cat.nombre}</span>
+                   <div className="flex items-center gap-1">
+                     <button 
+                       type="button" 
+                       onClick={() => handleEditCategoryClick(cat)}
+                       className="bg-[#7C69EF]/10 hover:bg-[#7C69EF]/20 text-[#7C69EF] font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
+                     >
+                       Editar
+                     </button>
+                     <button 
+                       type="button" 
+                       onClick={() => handleDeleteCategoryRequest(cat.id)}
+                       className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
+                     >
+                       Eliminar
+                     </button>
+                   </div>
+                 </div>
+               ))
+             )}
+           </div>
 
-      {/* ALERTAS */}
-      {successAlert.isOpen && (
-        <div className="fixed bottom-3 right-3 z-50 bg-emerald-600 text-white px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-[9px] font-bold animate-bounce">
-          <span>✅</span> <span>{successAlert.message}</span>
-        </div>
-      )}
-      {errorAlert.isOpen && (
-        <div className="fixed bottom-3 right-3 z-50 bg-rose-600 text-white px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-[9px] font-bold">
-          <span>⚠️</span> <span>{errorAlert.message}</span>
-        </div>
-      )}
-    </div>
+           <div className="flex justify-end pt-2 border-t border-[#E4E8F0]">
+             <button 
+               type="button" 
+               onClick={() => setIsCategoryModalOpen(false)} 
+               className="w-full bg-[#7C69EF] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20"
+             >
+               Cerrar Ventana
+             </button>
+           </div>
+         </div>
+       </div>
+     )}
+
+     {/* MODAL ELIMINAR */}
+     {deleteModal.isOpen && (
+       <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
+         <div className="bg-white rounded-2xl p-4 max-w-xs w-full shadow-2xl border border-[#E4E8F0] space-y-3 text-center">
+           <div className="w-8 h-8 bg-rose-50 text-rose-500 rounded-xl flex items-center justify-center mx-auto text-xs font-black shadow-sm">⚠️</div>
+           <div className="space-y-1">
+             <h3 className="text-xs font-black text-[#2D3142]">¿Estás seguro?</h3>
+             <p className="text-[9px] text-[#9EA2B3]">
+               Vas a eliminar <span className="font-bold text-[#2D3142]">{deleteModal.name}</span>.
+             </p>
+           </div>
+           <div className="flex gap-1.5 pt-1">
+             <button type="button" onClick={() => setDeleteModal({ isOpen: false, type: null, id: null, name: "", isMultiple: false })} className="flex-1 bg-[#F4F5FB] text-[#2D3142] font-bold py-2 px-2 rounded-xl text-[9px]">Cancelar</button>
+             <button type="button" onClick={executeDelete} className="flex-1 bg-rose-600 text-white font-bold py-2 px-2 rounded-xl text-[9px] shadow-md shadow-rose-600/20">Eliminar</button>
+           </div>
+         </div>
+       </div>
+     )}
+
+     {/* ALERTAS */}
+     {successAlert.isOpen && (
+       <div className="fixed bottom-3 right-3 z-50 bg-emerald-600 text-white px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-[9px] font-bold animate-bounce">
+         <span>✅</span> <span>{successAlert.message}</span>
+       </div>
+     )}
+     {errorAlert.isOpen && (
+       <div className="fixed bottom-3 right-3 z-50 bg-rose-600 text-white px-3 py-1.5 rounded-xl shadow-lg flex items-center gap-1.5 text-[9px] font-bold">
+         <span>⚠️</span> <span>{errorAlert.message}</span>
+       </div>
+     )}
+   </div>
   );
 }
