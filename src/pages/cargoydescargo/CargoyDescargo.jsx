@@ -3,7 +3,7 @@ import { collection, onSnapshot, doc, updateDoc, increment, addDoc, serverTimest
 import { db } from '../../firebase';
 import { 
   PackagePlus, PackageMinus, Search, 
-  CheckCircle2, AlertCircle, Layers, Sparkles, ShieldAlert 
+  CheckCircle2, AlertCircle, Layers, Sparkles, ShieldAlert, X 
 } from 'lucide-react';
 
 export default function CargoyDescargo() {
@@ -27,6 +27,9 @@ export default function CargoyDescargo() {
   
   // Nuevo estado para la alerta cute de error de clave
   const [errorClaveModalOpen, setErrorClaveModalOpen] = useState(false);
+
+  // Estado para el modal de teléfono al seleccionar un producto
+  const [isMobileModalOpen, setIsMobileModalOpen] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onSnapshot(collection(db, "inventario"), (snapshot) => {
@@ -53,6 +56,14 @@ export default function CargoyDescargo() {
     if (!q) return productos;
     return productos.filter(p => (p.nombre || '').toLowerCase().includes(q) || (p.categoria || '').toLowerCase().includes(q));
   }, [productos, searchQuery]);
+
+  const handleSelectProduct = (prod) => {
+    setSelectedProduct(prod);
+    // Si estamos en vista de teléfono (pantallas menores a lg), abrimos el modal automáticamente
+    if (window.innerWidth < 1024) {
+      setIsMobileModalOpen(true);
+    }
+  };
 
   const handlePreparaMovimiento = (e) => {
     e.preventDefault();
@@ -82,7 +93,7 @@ export default function CargoyDescargo() {
         return alert("Escribe el detalle del motivo 'OTRO' 📝.");
       }
       
-      // Validación de la clave de admin con el nuevo modal cute (puedes cambiar "1234" por tu clave real)
+      // Validación de la clave de admin con el nuevo modal cute
       if (motivoDescargo === 'ERROR DE INGRESO' && claveAdmin !== '270523') {
         setErrorClaveModalOpen(true);
         return;
@@ -138,6 +149,7 @@ export default function CargoyDescargo() {
       setAutorizadoPor('');
       setClaveAdmin('');
       setJustificacionOtro('');
+      setIsMobileModalOpen(false);
 
       setTimeout(() => setMensajeFeedback(null), 4000);
     } catch (error) {
@@ -158,6 +170,130 @@ export default function CargoyDescargo() {
       </div>
     );
   }
+
+  const renderFormularioMovimiento = () => (
+    <form onSubmit={handlePreparaMovimiento} className="space-y-4">
+      <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100">
+        <div className="text-[9px] font-black text-pink-600 uppercase tracking-wider mb-1">Seleccionado</div>
+        <div className="font-black text-sm text-slate-900 mb-1">{selectedProduct.nombre}</div>
+        <div className="text-xs font-bold text-slate-600">Stock bodega: <span className="text-emerald-600 font-black">{selectedProduct.udisponibles} un.</span></div>
+      </div>
+
+      <div>
+        <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Operación</label>
+        <div className="grid grid-cols-2 gap-2">
+          <button type="button" onClick={() => { setTipoOperacion('carga'); setMotivoDescargo(''); }} className={`py-2.5 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all ${tipoOperacion === 'carga' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-600'}`}>
+            <PackagePlus className="w-4 h-4" /> Carga (+)
+          </button>
+          <button type="button" onClick={() => { setTipoOperacion('descargo'); setJustificacionCarga(''); }} className={`py-2.5 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all ${tipoOperacion === 'descargo' ? 'bg-amber-600 text-white shadow-md' : 'bg-slate-100 text-slate-600'}`}>
+            <PackageMinus className="w-4 h-4" /> Descargo (-)
+          </button>
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Cantidad</label>
+        <input 
+          type="number" min="1" value={cantidadInput} onChange={(e) => setCantidadInput(e.target.value)} placeholder="Ej. 10" required
+          className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2.5 text-xs font-black text-slate-900 focus:outline-none focus:border-pink-500"
+        />
+      </div>
+
+      <div className="flex gap-2">
+        {[1, 5, 10, 20].map((num) => (
+          <button key={num} type="button" onClick={() => setCantidadInput(String(num))} className="flex-1 bg-pink-50 hover:bg-pink-100 text-pink-700 font-extrabold text-[10px] py-1.5 rounded-lg border border-pink-100">
+            +{num}
+          </button>
+        ))}
+      </div>
+
+      {tipoOperacion === 'carga' && (
+        <div>
+          <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Justificación de Carga *</label>
+          <input 
+            type="text" 
+            value={justificacionCarga} 
+            onChange={(e) => setJustificacionCarga(e.target.value)} 
+            placeholder="Ej. Compra de nueva mercancía proveedor X" 
+            required
+            className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
+          />
+        </div>
+      )}
+
+      {tipoOperacion === 'descargo' && (
+        <div className="space-y-3">
+          <div>
+            <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Motivo del Descargo *</label>
+            <select 
+              value={motivoDescargo} 
+              onChange={(e) => { setMotivoDescargo(e.target.value); setAutorizadoPor(''); setClaveAdmin(''); setJustificacionOtro(''); }}
+              required
+              className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
+            >
+              <option value="">Selecciona un motivo...</option>
+              <option value="DAÑO">DAÑO</option>
+              <option value="VENCIMIENTO">VENCIMIENTO</option>
+              <option value="OBSEQUIO">OBSEQUIO</option>
+              <option value="USO INTERNO">USO INTERNO</option>
+              <option value="ERROR DE INGRESO">ERROR DE INGRESO</option>
+              <option value="OTRO">OTRO</option>
+            </select>
+          </div>
+
+          {motivoDescargo === 'USO INTERNO' && (
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Autorizado por: *</label>
+              <input 
+                type="text" 
+                value={autorizadoPor} 
+                onChange={(e) => setAutorizadoPor(e.target.value)} 
+                placeholder="Nombre de quien autoriza" 
+                required
+                className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
+              />
+            </div>
+          )}
+
+          {motivoDescargo === 'ERROR DE INGRESO' && (
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Clave de Administrador *</label>
+              <input 
+                type="password" 
+                value={claveAdmin} 
+                onChange={(e) => setClaveAdmin(e.target.value)} 
+                placeholder="Introduce clave admin" 
+                required
+                className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
+              />
+            </div>
+          )}
+
+          {motivoDescargo === 'OTRO' && (
+            <div>
+              <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Escribe el motivo: *</label>
+              <input 
+                type="text" 
+                value={justificacionOtro} 
+                onChange={(e) => setJustificacionOtro(e.target.value)} 
+                placeholder="Detalle de la salida..." 
+                required
+                className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
+              />
+            </div>
+          )}
+        </div>
+      )}
+
+      <button type="submit" disabled={isSubmitting || !cantidadInput} className={`w-full py-3 rounded-xl font-black text-xs text-white shadow-lg transition-transform active:scale-95 ${tipoOperacion === 'carga' ? 'bg-emerald-600' : 'bg-amber-600'} ${isSubmitting ? 'opacity-50' : ''}`}>
+        {isSubmitting ? 'Actualizando...' : `Continuar con ${tipoOperacion === 'carga' ? 'Carga' : 'Descargo'} ✨`}
+      </button>
+
+      <button type="button" onClick={() => { setSelectedProduct(null); setIsMobileModalOpen(false); }} className="w-full text-slate-400 hover:text-slate-600 font-bold text-xs py-1">
+        Cancelar selección
+      </button>
+    </form>
+  );
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 text-slate-800 font-sans relative">
@@ -208,7 +344,7 @@ export default function CargoyDescargo() {
               return (
                 <div
                   key={prod.id}
-                  onClick={() => setSelectedProduct(prod)}
+                  onClick={() => handleSelectProduct(prod)}
                   className={`bg-white border rounded-2xl p-3.5 flex items-center gap-3.5 cursor-pointer transition-all shadow-xs ${
                     isSelected ? 'border-pink-500 ring-2 ring-pink-400/30 bg-pink-50/40' : 'border-pink-100 hover:border-pink-300'
                   }`}
@@ -239,134 +375,15 @@ export default function CargoyDescargo() {
           </div>
         </div>
 
-        <div className="lg:col-span-1">
+        {/* Panel de escritorio (oculto en móviles) */}
+        <div className="hidden lg:block lg:col-span-1">
           <div className="bg-white rounded-3xl border border-pink-100 p-6 shadow-sm sticky top-6">
             <h3 className="text-sm font-black text-slate-900 mb-4 flex items-center gap-2">
               <Sparkles className="w-4 h-4 text-pink-500" /> Registro de Movimiento
             </h3>
 
             {selectedProduct ? (
-              <form onSubmit={handlePreparaMovimiento} className="space-y-4">
-                <div className="bg-pink-50/50 p-4 rounded-2xl border border-pink-100">
-                  <div className="text-[9px] font-black text-pink-600 uppercase tracking-wider mb-1">Seleccionado</div>
-                  <div className="font-black text-sm text-slate-900 mb-1">{selectedProduct.nombre}</div>
-                  <div className="text-xs font-bold text-slate-600">Stock bodega: <span className="text-emerald-600 font-black">{selectedProduct.udisponibles} un.</span></div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Operación</label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <button type="button" onClick={() => { setTipoOperacion('carga'); setMotivoDescargo(''); }} className={`py-2.5 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all ${tipoOperacion === 'carga' ? 'bg-emerald-600 text-white shadow-md' : 'bg-slate-100 text-slate-600'}`}>
-                      <PackagePlus className="w-4 h-4" /> Carga (+)
-                    </button>
-                    <button type="button" onClick={() => { setTipoOperacion('descargo'); setJustificacionCarga(''); }} className={`py-2.5 px-3 rounded-xl font-extrabold text-xs flex items-center justify-center gap-1.5 transition-all ${tipoOperacion === 'descargo' ? 'bg-amber-600 text-white shadow-md' : 'bg-slate-100 text-slate-600'}`}>
-                      <PackageMinus className="w-4 h-4" /> Descargo (-)
-                    </button>
-                  </div>
-                </div>
-
-                <div>
-                  <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-2">Cantidad</label>
-                  <input 
-                    type="number" min="1" value={cantidadInput} onChange={(e) => setCantidadInput(e.target.value)} placeholder="Ej. 10" required
-                    className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2.5 text-xs font-black text-slate-900 focus:outline-none focus:border-pink-500"
-                  />
-                </div>
-
-                <div className="flex gap-2">
-                  {[1, 5, 10, 20].map((num) => (
-                    <button key={num} type="button" onClick={() => setCantidadInput(String(num))} className="flex-1 bg-pink-50 hover:bg-pink-100 text-pink-700 font-extrabold text-[10px] py-1.5 rounded-lg border border-pink-100">
-                      +{num}
-                    </button>
-                  ))}
-                </div>
-
-                {tipoOperacion === 'carga' && (
-                  <div>
-                    <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Justificación de Carga *</label>
-                    <input 
-                      type="text" 
-                      value={justificacionCarga} 
-                      onChange={(e) => setJustificacionCarga(e.target.value)} 
-                      placeholder="Ej. Compra de nueva mercancía proveedor X" 
-                      required
-                      className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
-                    />
-                  </div>
-                )}
-
-                {tipoOperacion === 'descargo' && (
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Motivo del Descargo *</label>
-                      <select 
-                        value={motivoDescargo} 
-                        onChange={(e) => { setMotivoDescargo(e.target.value); setAutorizadoPor(''); setClaveAdmin(''); setJustificacionOtro(''); }}
-                        required
-                        className="w-full bg-white border border-pink-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
-                      >
-                        <option value="">Selecciona un motivo...</option>
-                        <option value="DAÑO">DAÑO</option>
-                        <option value="VENCIMIENTO">VENCIMIENTO</option>
-                        <option value="OBSEQUIO">OBSEQUIO</option>
-                        <option value="USO INTERNO">USO INTERNO</option>
-                        <option value="ERROR DE INGRESO">ERROR DE INGRESO</option>
-                        <option value="OTRO">OTRO</option>
-                      </select>
-                    </div>
-
-                    {motivoDescargo === 'USO INTERNO' && (
-                      <div>
-                        <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Autorizado por: *</label>
-                        <input 
-                          type="text" 
-                          value={autorizadoPor} 
-                          onChange={(e) => setAutorizadoPor(e.target.value)} 
-                          placeholder="Nombre de quien autoriza" 
-                          required
-                          className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
-                        />
-                      </div>
-                    )}
-
-                    {motivoDescargo === 'ERROR DE INGRESO' && (
-                      <div>
-                        <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Clave de Administrador *</label>
-                        <input 
-                          type="password" 
-                          value={claveAdmin} 
-                          onChange={(e) => setClaveAdmin(e.target.value)} 
-                          placeholder="Introduce clave admin" 
-                          required
-                          className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
-                        />
-                      </div>
-                    )}
-
-                    {motivoDescargo === 'OTRO' && (
-                      <div>
-                        <label className="block text-[10px] font-black uppercase text-slate-500 tracking-wider mb-1">Escribe el motivo: *</label>
-                        <input 
-                          type="text" 
-                          value={justificacionOtro} 
-                          onChange={(e) => setJustificacionOtro(e.target.value)} 
-                          placeholder="Detalle de la salida..." 
-                          required
-                          className="w-full bg-white border border-pink-200 rounded-xl px-4 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-pink-500"
-                        />
-                      </div>
-                    )}
-                  </div>
-                )}
-
-                <button type="submit" disabled={isSubmitting || !cantidadInput} className={`w-full py-3 rounded-xl font-black text-xs text-white shadow-lg transition-transform active:scale-95 ${tipoOperacion === 'carga' ? 'bg-emerald-600' : 'bg-amber-600'} ${isSubmitting ? 'opacity-50' : ''}`}>
-                  {isSubmitting ? 'Actualizando...' : `Continuar con ${tipoOperacion === 'carga' ? 'Carga' : 'Descargo'} ✨`}
-                </button>
-
-                <button type="button" onClick={() => setSelectedProduct(null)} className="w-full text-slate-400 hover:text-slate-600 font-bold text-xs py-1">
-                  Cancelar selección
-                </button>
-              </form>
+              renderFormularioMovimiento()
             ) : (
               <div className="text-center py-12 text-slate-400">
                 <PackagePlus className="w-12 h-12 text-pink-200 mx-auto mb-3 animate-pulse" />
@@ -377,6 +394,27 @@ export default function CargoyDescargo() {
         </div>
 
       </div>
+
+      {/* MODAL PARA VISTA DE TELÉFONO */}
+      {isMobileModalOpen && selectedProduct && (
+        <div className="fixed inset-0 z-40 flex items-end sm:items-center justify-center bg-black/40 backdrop-blur-xs p-0 sm:p-4 lg:hidden">
+          <div className="bg-white w-full max-w-sm rounded-t-3xl sm:rounded-3xl p-6 shadow-2xl border-2 border-pink-200 max-h-[90vh] overflow-y-auto relative animate-in slide-in-from-bottom duration-200">
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-black text-slate-900 flex items-center gap-2">
+                <Sparkles className="w-4 h-4 text-pink-500" /> Registro de Movimiento
+              </h3>
+              <button 
+                type="button" 
+                onClick={() => { setIsMobileModalOpen(false); setSelectedProduct(null); }}
+                className="w-8 h-8 rounded-full bg-slate-100 text-slate-500 flex items-center justify-center hover:bg-slate-200"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+            {renderFormularioMovimiento()}
+          </div>
+        </div>
+      )}
 
       {/* MODAL DE CONFIRMACIÓN */}
       {isConfirmModalOpen && selectedProduct && (
