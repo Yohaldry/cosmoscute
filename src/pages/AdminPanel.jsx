@@ -313,7 +313,7 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   }
 
   return (
-  <div className="flex flex-1 flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
+ <div className="flex flex-1 flex-col md:flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px]">
      
      {/* SIDEBAR ESCRITORIO */}
      <aside className={`hidden md:flex ${isSidebarCollapsed ? "w-20" : "w-60"} bg-white/90 backdrop-blur-md border-r border-purple-100/60 flex-col shrink-0 shadow-lg justify-between transition-all duration-300 ease-in-out relative z-10`}>
@@ -364,34 +364,6 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
       >
         <span className="text-base shrink-0">📋</span>
         <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Inventario General</span>
-      </button>
-
-      {/* CARGA Y DESCARGO */}
-      <button
-        onClick={() => setActiveTab("carga-descargo")}
-        title="Carga y Descargo"
-        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
-          activeTab === "carga-descargo"
-            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
-            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
-        }`}
-      >
-        <span className="text-base shrink-0">📦</span>
-        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Carga y Descargo</span>
-      </button>
-
-      {/* NUEVA SECCIÓN: MOVIMIENTOS */}
-      <button
-        onClick={() => setActiveTab("movimientos")}
-        title="Movimientos"
-        className={`flex items-center gap-3 px-3.5 py-3 rounded-2xl text-[11px] font-extrabold transition-all ${
-          activeTab === "movimientos"
-            ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]'
-            : 'text-slate-600 hover:bg-purple-50/70 hover:text-purple-700'
-        }`}
-      >
-        <span className="text-base shrink-0">📜</span>
-        <span className={`truncate transition-opacity duration-200 ${isSidebarCollapsed ? "hidden" : "inline"}`}>Movimientos</span>
       </button>
 
       <button
@@ -507,32 +479,6 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
           <span>Inventario General</span>
         </button>
 
-        {/* CARGA Y DESCARGO EN MÓVIL */}
-        <button
-          onClick={() => { setActiveTab("carga-descargo"); setIsMobileMenuOpen(false); }}
-          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
-            activeTab === "carga-descargo" 
-              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
-              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
-          }`}
-        >
-          <span className="text-base shrink-0">📦</span>
-          <span>Carga y Descargo</span>
-        </button>
-
-        {/* NUEVA SECCIÓN EN MÓVIL: MOVIMIENTOS */}
-        <button
-          onClick={() => { setActiveTab("movimientos"); setIsMobileMenuOpen(false); }}
-          className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
-            activeTab === "movimientos" 
-              ? 'bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] text-white shadow-md shadow-purple-500/30 scale-[1.02]' 
-              : 'text-slate-600 bg-purple-50/40 hover:bg-purple-50 hover:text-purple-700'
-          }`}
-        >
-          <span className="text-base shrink-0">📜</span>
-          <span>Movimientos</span>
-        </button>
-
         <button
           onClick={() => { setActiveTab("estadisticas"); setIsMobileMenuOpen(false); }}
           className={`flex items-center gap-3.5 px-4 py-3 rounded-2xl text-xs font-extrabold transition-all ${
@@ -612,8 +558,6 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
            <h2 className="text-[10px] md:text-[11px] font-black text-[#2D3142] uppercase tracking-wider">
              {activeTab === "bingo-productos" && "Bingo Productos"}
              {activeTab === "inventario-general" && "Inventario General"}
-             {activeTab === "carga-descargo" && "Carga y Descargo de Stock"}
-             {activeTab === "movimientos" && "Historial de Movimientos"}
              {activeTab === "estadisticas" && "Estadísticas y Visitas"}
              {activeTab === "banners-promociones" && "Banners y Promociones"}
              {activeTab === "pedidos" && "Pedidos"}
@@ -661,20 +605,6 @@ const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
                triggerSuccessAlert={triggerSuccessAlert}
                triggerErrorAlert={triggerErrorAlert}
              />
-           </div>
-         )}
-
-         {/* VISTA DE CARGA Y DESCARGO */}
-         {activeTab === "carga-descargo" && (
-           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs overflow-y-auto">
-             <CargoyDescargo />
-           </div>
-         )}
-
-         {/* VISTA DE MOVIMIENTOS */}
-         {activeTab === "movimientos" && (
-           <div className="flex-1 flex flex-col overflow-hidden bg-white border border-[#E4E8F0] rounded-lg shadow-2xs overflow-y-auto">
-             <Movimientos />
            </div>
          )}
 

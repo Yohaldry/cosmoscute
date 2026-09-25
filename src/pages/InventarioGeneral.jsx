@@ -2,7 +2,8 @@ import React, { useState } from "react";
 import { collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
 import { db, storage } from "../firebase"; // O la ruta de tu archivo de configuración
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
-
+import CargoyDescargo from '../pages/cargoydescargo/CargoyDescargo';
+import Movimientos from '../pages/movimientos/Movimientos';
 export default function InventarioGeneral({
   inventario,
   productosBingo,
@@ -25,7 +26,7 @@ const [porcentajeDescuento, setPorcentajeDescuento] = useState(0);
 
 const [descripcion, setDescripcion] = useState("");
 const [estado, setEstado] = useState(true);
-
+const [activeMenuId, setActiveMenuId] = useState(null);
   // Estados para el formulario del modal de nuevo producto
   const [nombre, setNombre] = useState("");
   const [categoria, setCategoria] = useState(categorias[0]?.nombre || "General");
@@ -42,6 +43,9 @@ const [estado, setEstado] = useState(true);
   const [editingItemData, setEditingItemData] = useState(null);
   const [editFileImg, setEditFileImg] = useState(null);
   const [editFileImg1, setEditFileImg1] = useState(null);
+  
+const [cargoyDescargoModal, setCargoyDescargoModal] = useState({ isOpen: false, item: null });
+const [movimientosModal, setMovimientosModal] = useState({ isOpen: false, item: null });
 
   const [precioManual, setPrecioManual] = useState("");
 
@@ -435,7 +439,7 @@ const handleUpdateInventario = async (e) => {
 )}
 
       {/* TABLA PRINCIPAL */}
-     <div className="flex-1 overflow-y-auto overflow-x-auto p-2 md:p-4 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30">
+  <div className="flex-1 overflow-y-auto overflow-x-auto p-2 md:p-4 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30 relative">
   <table className="w-full text-left border-collapse text-xs relative whitespace-nowrap">
     <thead className="sticky top-0 z-10 bg-purple-50/90 backdrop-blur-md">
       <tr className="border-b border-purple-100 text-purple-700 uppercase text-[10px] font-black tracking-wider">
@@ -472,6 +476,9 @@ const handleUpdateInventario = async (e) => {
           const itemName = item.nombre || item.productos || "";
           const isSelected = selectedIds.includes(item.id);
           const isEditing = editingId === item.id;
+          
+          // Estado local para abrir o cerrar el menú de 3 puntos en cada fila
+          const isMenuOpen = activeMenuId === item.id;
 
           const isActivo = item.estado === true || item.activo === true || String(item.estado || "").toLowerCase() === "activo" || String(item.estado || "").toLowerCase() === "true" || item.estado === 1 || item.activo === 1;
           
@@ -639,6 +646,42 @@ const handleUpdateInventario = async (e) => {
                       >
                         🗑️
                       </button>
+
+                      {/* --- MENÚ DE 3 PUNTOS (CARGO Y DESCARGO / MOVIMIENTOS) --- */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveMenuId(isMenuOpen ? null : item.id)}
+                          className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-purple-600 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md font-bold text-sm"
+                          title="Más opciones"
+                        >
+                          ⋮
+                        </button>
+
+                        {isMenuOpen && (
+                          <div className="absolute right-0 mt-2 w-40 bg-white border border-purple-100 rounded-2xl shadow-xl z-50 py-1.5 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-100">
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setCargoyDescargoModal({ isOpen: true, item }); 
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#7C69EF] transition-colors flex items-center gap-2"
+                            >
+                              <span>➕➖</span> Cargo y descargo
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setMovimientosModal({ isOpen: true, item }); 
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#7C69EF] transition-colors flex items-center gap-2 border-t border-purple-50"
+                            >
+                              <span>📋</span> Movimientos
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                      {/* ---------------------------------------------------- */}
+
                     </div>
                   )}
                 </div>
@@ -650,6 +693,461 @@ const handleUpdateInventario = async (e) => {
       )}
     </tbody>
   </table>
+
+  {/* ========================================================= */}
+  {/* MODALES CON TUS COMPONENTES EXTERNOS                      */}
+  {/* ========================================================= */}
+
+  {/* 1. MODAL DE DETALLES (👁️) */}
+  {detailModal.isOpen && detailModal.item && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-full max-w-md overflow-hidden p-6 space-y-4">
+        <div className="flex items-center justify-between border-b border-purple-50 pb-3">
+          <h3 className="font-black text-purple-800 text-base flex items-center gap-2">
+            <span>👁️</span> Detalle del Producto
+          </h3>
+          <button 
+            onClick={() => setDetailModal({ isOpen: false, item: null })}
+            className="w-8 h-8 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 flex items-center justify-center font-bold"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <div className="space-y-3 text-xs">
+          <div className="bg-purple-50/50 p-3 rounded-2xl border border-purple-100/60 space-y-2">
+            <p><strong className="text-purple-700">ID Único:</strong> <span className="font-mono text-slate-600">{detailModal.item.id}</span></p>
+            <p><strong className="text-purple-700">Nombre:</strong> <span className="text-slate-800 font-bold">{detailModal.item.nombre || detailModal.item.productos}</span></p>
+            <p><strong className="text-purple-700">Categoría:</strong> <span className="text-slate-700">{detailModal.item.categoria || "General"}</span></p>
+          </div>
+          <div className="grid grid-cols-2 gap-2">
+            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
+              <span className="block text-slate-400 text-[10px] uppercase font-bold">Costo</span>
+              <span className="font-black text-slate-700 text-sm">${Number(detailModal.item.costo || 0).toLocaleString()}</span>
+            </div>
+            <div className="bg-purple-50/70 p-3 rounded-2xl border border-purple-100">
+              <span className="block text-purple-400 text-[10px] uppercase font-bold">Precio Venta</span>
+              <span className="font-black text-[#7C69EF] text-sm">${Number(detailModal.item.precio || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="pt-2 flex justify-end">
+          <button
+            onClick={() => setDetailModal({ isOpen: false, item: null })}
+            className="w-full bg-[#7C69EF] hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all shadow-md shadow-purple-500/20"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* 2. MODAL DE CARGO Y DESCARGO (CargoyDescargo.jsx) */}
+  {cargoyDescargoModal.isOpen && cargoyDescargoModal.item && (
+    <div className="flex-1 overflow-y-auto overflow-x-auto p-2 md:p-4 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30 relative">
+  <table className="w-full text-left border-collapse text-xs relative whitespace-nowrap">
+    <thead className="sticky top-0 z-10 bg-purple-50/90 backdrop-blur-md">
+      <tr className="border-b border-purple-100 text-purple-700 uppercase text-[10px] font-black tracking-wider">
+        <th className="py-3 px-2 w-10 text-center">
+          <input 
+            type="checkbox"
+            onChange={handleSelectAll}
+            checked={filteredInventario.length > 0 && selectedIds.length === filteredInventario.length}
+            className="rounded accent-[#7C69EF] cursor-pointer w-4 h-4 shadow-xs"
+          />
+        </th>
+        <th className="py-3 px-3">ID Único</th>
+        <th className="py-3 px-3">Producto</th>
+        <th className="py-3 px-3">Categoría</th>
+        <th className="py-3 px-3">Costo</th>
+        <th className="py-3 px-3">Precio</th>
+        <th className="py-3 px-3">Stock (Disp)</th>
+        <th className="py-3 px-3">Ingresadas</th>
+        <th className="py-3 px-3">Vendidas</th>
+        <th className="py-3 px-3 text-center">Estado</th>
+        <th className="py-3 px-3 text-center">Acciones</th>
+      </tr>
+    </thead>
+    <tbody className="divide-y divide-purple-50">
+      {filteredInventario.length === 0 ? (
+        <tr>
+          <td colSpan="11" className="text-center py-16 text-slate-400 font-semibold text-xs">
+            <div className="text-3xl mb-2">📦</div>
+            No se encontraron productos coincidentes en el inventario.
+          </td>
+        </tr>
+      ) : (
+        filteredInventario.map((item) => {
+          const itemName = item.nombre || item.productos || "";
+          const isSelected = selectedIds.includes(item.id);
+          const isEditing = editingId === item.id;
+          
+          const isMenuOpen = activeMenuId === item.id;
+
+          const isActivo = item.estado === true || item.activo === true || String(item.estado || "").toLowerCase() === "activo" || String(item.estado || "").toLowerCase() === "true" || item.estado === 1 || item.activo === 1;
+          
+          const rowStyle = isActivo 
+            ? 'bg-emerald-50/60 hover:bg-emerald-50/90 border-l-4 border-l-emerald-500 shadow-2xs' 
+            : 'bg-white/80 hover:bg-purple-50/30 border-l-4 border-l-slate-300';
+
+          const editCostoNum = Number(editForm.costo) || 0;
+          const editPrecioCalculado = editCostoNum / 0.50;
+
+          return (
+            <tr key={item.id} className={`transition-all ${rowStyle}`}>
+              
+              <td className="py-3 px-2 text-center">
+                <input 
+                  type="checkbox"
+                  checked={isSelected}
+                  onChange={() => handleSelectOne(item.id)}
+                  className="rounded accent-[#7C69EF] cursor-pointer w-4 h-4 shadow-xs"
+                />
+              </td>
+
+              <td className="py-3 px-3 font-mono text-[11px] text-slate-400 font-semibold" title={item.id}>
+                <span className="bg-purple-50 px-2 py-1 rounded-xl border border-purple-100/60">
+                  {item.id ? `${item.id.substring(0, 6)}...` : 'N/A'}
+                </span>
+              </td>
+
+              <td className="py-3 px-3 font-extrabold text-slate-800 text-xs">
+                {isEditing ? (
+                  <input 
+                    type="text"
+                    value={editForm.nombre}
+                    onChange={(e) => setEditForm({...editForm, nombre: e.target.value})}
+                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-full font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-inner"
+                  />
+                ) : (
+                  itemName
+                )}
+              </td>
+
+              <td className="py-3 px-3">
+                {isEditing ? (
+                  <select 
+                    value={editForm.categoria}
+                    onChange={(e) => setEditForm({...editForm, categoria: e.target.value})}
+                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-inner focus:outline-none"
+                  >
+                    <option value="General">General</option>
+                    {categorias.map(cat => (
+                      <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <span className="bg-purple-100/70 text-purple-700 px-2.5 py-1 rounded-xl font-extrabold text-[10px] border border-purple-200/50 shadow-2xs">
+                    {item.categoria || "General"}
+                  </span>
+                )}
+              </td>
+
+              <td className="py-3 px-3 font-extrabold text-slate-700">
+                {isEditing ? (
+                  <input 
+                    type="number"
+                    value={editForm.costo}
+                    onChange={(e) => setEditForm({...editForm, costo: e.target.value})}
+                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-24 font-bold text-slate-700 shadow-inner focus:outline-none"
+                  />
+                ) : (
+                  `$${Number(item.costo || 0).toLocaleString()}`
+                )}
+              </td>
+
+              <td className="py-3 px-3 font-black text-[#7C69EF]">
+                {isEditing ? (
+                  <span className="bg-purple-50 border border-purple-200 px-2.5 py-1.5 rounded-xl text-purple-600 text-xs font-black inline-block shadow-inner" title="Calculado automáticamente: Costo / 0.50">
+                    ${editPrecioCalculado.toLocaleString()}
+                  </span>
+                ) : (
+                  `$${Number(item.precio || 0).toLocaleString()}`
+                )}
+              </td>
+
+              <td className="py-3 px-3 font-extrabold text-slate-700">
+                {isEditing ? (
+                  <input 
+                    type="number"
+                    value={editForm.stockactual}
+                    onChange={(e) => setEditForm({...editForm, stockactual: e.target.value})}
+                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-20 font-bold text-slate-700 shadow-inner focus:outline-none"
+                  />
+                ) : (
+                  <span className="font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-xl text-xs font-black">
+                    {item.udisponibles ?? item.stockactual ?? 0}
+                  </span>
+                )}
+              </td>
+
+              <td className="py-3 px-3 font-bold text-slate-600">
+                <span className="font-mono text-xs">{item.uingresadas ?? "0"}</span>
+              </td>
+
+              <td className="py-3 px-3 font-bold text-slate-600">
+                <span className="font-mono text-xs">{item.uvendidas ?? "0"}</span>
+              </td>
+
+              <td className="py-3 px-3 text-center">
+                <button
+                  type="button"
+                  onClick={() => handleToggleEstadoDirecto(item)}
+                  title="Haz clic para cambiar estado"
+                  className="transition-transform active:scale-95 focus:outline-none"
+                >
+                  {isActivo ? (
+                    <span className="inline-flex items-center gap-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-black tracking-wide shadow-2xl cursor-pointer transition-colors border border-emerald-200">
+                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Activo ✨
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 px-3 py-1 rounded-full text-[10px] font-black tracking-wide shadow-2xl cursor-pointer transition-colors border border-rose-200">
+                      <span className="w-2 h-2 rounded-full bg-rose-500"></span> Inactivo 🌙
+                    </span>
+                  )}
+                </button>
+              </td>
+
+              <td className="py-3 px-3">
+                <div className="flex items-center justify-center gap-1.5">
+                  {isEditing ? (
+                    <div className="flex items-center gap-1.5">
+                      <button 
+                        onClick={() => saveEditing(item.id)}
+                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-1.5 rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-all"
+                      >
+                        OK ✓
+                      </button>
+                      <button 
+                        onClick={() => setEditingId(null)}
+                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition-all"
+                      >
+                        ✕
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => setDetailModal({ isOpen: true, item })}
+                        className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-sky-500 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
+                        title="Ver detalles completos"
+                      >
+                        👁️
+                      </button>
+
+                      <button 
+                        onClick={() => startEditing(item)}
+                        className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-amber-500 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
+                        title="Editar"
+                      >
+                        ✏️
+                      </button>
+
+                      <button 
+                        onClick={() => confirmDelete(item.id, false)}
+                        className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
+                        title="Eliminar"
+                      >
+                        🗑️
+                      </button>
+
+                      {/* --- MENÚ DE 3 PUNTOS --- */}
+                      <div className="relative">
+                        <button
+                          onClick={() => setActiveMenuId(isMenuOpen ? null : item.id)}
+                          className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-purple-600 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md font-bold text-sm"
+                          title="Más opciones"
+                        >
+                          ⋮
+                        </button>
+
+                        {isMenuOpen && (
+                          <div className="absolute right-0 mt-2 w-40 bg-white border border-purple-100 rounded-2xl shadow-xl z-50 py-1.5 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-100">
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setCargoyDescargoModal({ isOpen: true, item }); 
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#7C69EF] transition-colors flex items-center gap-2"
+                            >
+                              <span>➕➖</span> Cargo y descargo
+                            </button>
+                            <button
+                              onClick={() => {
+                                setActiveMenuId(null);
+                                setMovimientosModal({ isOpen: true, item }); 
+                              }}
+                              className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#7C69EF] transition-colors flex items-center gap-2 border-t border-purple-50"
+                            >
+                              <span>📋</span> Movimientos
+                            </button>
+                          </div>
+                        )}
+                      </div>
+
+                    </div>
+                  )}
+                </div>
+              </td>
+
+            </tr>
+          );
+        })
+      )}
+    </tbody>
+  </table>
+
+  {/* ========================================================= */}
+  {/* MODALES GIGANTES (Abarcan casi toda la pantalla)           */}
+  {/* ========================================================= */}
+
+  {/* 1. MODAL DE DETALLES (👁️) */}
+  {detailModal.isOpen && detailModal.item && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 sm:p-6 animate-in fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-11/12 max-w-4xl h-[85vh] overflow-hidden flex flex-col relative">
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
+          <h3 className="font-black text-purple-800 text-base flex items-center gap-2">
+            <span>👁️</span> Detalle del Producto
+          </h3>
+          <button 
+            onClick={() => setDetailModal({ isOpen: false, item: null })}
+            className="w-9 h-9 rounded-2xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-purple-100 flex items-center justify-center font-black transition-all shadow-xs"
+          >
+            ✕
+          </button>
+        </div>
+        
+        <div className="p-6 overflow-y-auto flex-1 space-y-4">
+          <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100/60 space-y-2 text-xs">
+            <p><strong className="text-purple-700">ID Único:</strong> <span className="font-mono text-slate-600">{detailModal.item.id}</span></p>
+            <p><strong className="text-purple-700">Nombre:</strong> <span className="text-slate-800 font-bold">{detailModal.item.nombre || detailModal.item.productos}</span></p>
+            <p><strong className="text-purple-700">Categoría:</strong> <span className="text-slate-700">{detailModal.item.categoria || "General"}</span></p>
+          </div>
+          <div className="grid grid-cols-2 gap-4 text-xs">
+            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
+              <span className="block text-slate-400 text-[10px] uppercase font-bold">Costo</span>
+              <span className="font-black text-slate-700 text-base">${Number(detailModal.item.costo || 0).toLocaleString()}</span>
+            </div>
+            <div className="bg-purple-50/70 p-4 rounded-2xl border border-purple-100">
+              <span className="block text-purple-400 text-[10px] uppercase font-bold">Precio Venta</span>
+              <span className="font-black text-[#7C69EF] text-base">${Number(detailModal.item.precio || 0).toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        <div className="p-4 border-t border-purple-50 flex justify-end bg-slate-50/50">
+          <button
+            onClick={() => setDetailModal({ isOpen: false, item: null })}
+            className="bg-[#7C69EF] hover:bg-purple-700 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition-all shadow-md shadow-purple-500/20"
+          >
+            Cerrar
+          </button>
+        </div>
+      </div>
+    </div>
+  )}
+
+  {/* 2. MODAL DE CARGO Y DESCARGO (Gigante, abarca casi toda la pantalla) */}
+  {cargoyDescargoModal.isOpen && cargoyDescargoModal.item && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 sm:p-6 animate-in fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-11/12 max-w-6xl h-[90vh] overflow-hidden flex flex-col relative">
+        
+        {/* Cabecera bonita del Modal */}
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-[#7C69EF] text-white flex items-center justify-center font-black shadow-md shadow-purple-500/20">
+              📦
+            </div>
+            <div>
+              <h3 className="font-black text-purple-900 text-base sm:text-lg">Gestión de Stock: Cargo y Descargo</h3>
+              <p className="text-xs text-slate-500 font-bold">
+                Producto seleccionado: <span className="text-[#7C69EF] font-black">{cargoyDescargoModal.item.nombre || cargoyDescargoModal.item.productos}</span>
+              </p>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => setCargoyDescargoModal({ isOpen: false, item: null })}
+            className="w-10 h-10 rounded-2xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-purple-100 flex items-center justify-center font-black transition-all shadow-xs"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Contenido amplio con scroll interno */}
+        <div className="p-6 md:p-8 overflow-y-auto flex-1">
+          <CargoyDescargo 
+            item={cargoyDescargoModal.item} 
+            onClose={() => setCargoyDescargoModal({ isOpen: false, item: null })} 
+          />
+        </div>
+
+      </div>
+    </div>
+  )}
+
+  {/* 3. MODAL DE MOVIMIENTOS (Gigante, abarca casi toda la pantalla) */}
+  {movimientosModal.isOpen && movimientosModal.item && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 sm:p-6 animate-in fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-11/12 max-w-6xl h-[90vh] overflow-hidden flex flex-col relative">
+        
+        {/* Cabecera del Modal de Movimientos */}
+        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black shadow-md shadow-purple-500/20">
+              📋
+            </div>
+            <div>
+              <h3 className="font-black text-purple-900 text-base sm:text-lg">Historial de Movimientos</h3>
+              <p className="text-xs text-slate-500 font-bold">
+                Producto seleccionado: <span className="text-[#7C69EF] font-black">{movimientosModal.item.nombre || movimientosModal.item.productos}</span>
+              </p>
+            </div>
+          </div>
+          
+          <button 
+            onClick={() => setMovimientosModal({ isOpen: false, item: null })}
+            className="w-10 h-10 rounded-2xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-purple-100 flex items-center justify-center font-black transition-all shadow-xs"
+          >
+            ✕
+          </button>
+        </div>
+
+        {/* Contenido amplio con scroll interno */}
+        <div className="p-6 md:p-8 overflow-y-auto flex-1">
+          <Movimientos 
+            item={movimientosModal.item} 
+            onClose={() => setMovimientosModal({ isOpen: false, item: null })} 
+          />
+        </div>
+
+      </div>
+    </div>
+  )}
+
+</div>
+  )}
+
+  {/* 3. MODAL DE MOVIMIENTOS (Movimientos.jsx) */}
+  {movimientosModal.isOpen && movimientosModal.item && (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in">
+      <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-full max-w-lg overflow-hidden p-6 relative">
+        <button 
+          onClick={() => setMovimientosModal({ isOpen: false, item: null })}
+          className="absolute top-5 right-5 w-8 h-8 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 flex items-center justify-center font-bold z-10"
+        >
+          ✕
+        </button>
+        <Movimientos 
+          item={movimientosModal.item} 
+          onClose={() => setMovimientosModal({ isOpen: false, item: null })} 
+        />
+      </div>
+    </div>
+  )}
+
 </div>
 
       {/* MODAL PARA AGREGAR NUEVO PRODUCTO */}
