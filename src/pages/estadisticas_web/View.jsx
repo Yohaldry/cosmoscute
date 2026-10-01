@@ -245,41 +245,41 @@ export default function View({ categorias, inventario, setIsAddModalOpen, setIsE
   const calcularPorcentajeFuente = (valor) => Math.round((valor / totalFuentesSuma) * 100);
 
   return (
-    <div className="h-full overflow-y-auto space-y-4 p-3 md:p-4 w-full">
+    <div className="h-full overflow-y-auto space-y-3 p-2.5 md:p-4 w-full">
       
       {/* Cabecera del Panel */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-purple-100 pb-3 gap-2">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between border-b border-purple-100 pb-2.5 gap-2">
         <div>
-          <h2 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2">
+          <h2 className="text-xs md:text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-1.5">
             <span>📊</span> Panel de Rendimiento y Estadísticas
           </h2>
-          <p className="text-[11px] text-slate-500 font-medium">Métricas de audiencia e indicadores de inventario en tiempo real para CosmosCute.</p>
+          <p className="text-[10px] md:text-[11px] text-slate-500 font-medium">Métricas de audiencia e indicadores de inventario en tiempo real para CosmosCute.</p>
         </div>
         <div className="flex items-center gap-2">
-          <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-700 text-[11px] font-black shadow-2xs">
-            <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span>
+          <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-lg bg-emerald-50 border border-emerald-200 text-emerald-700 text-[10px] font-black shadow-2xs">
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
             Sistema en Línea
           </span>
         </div>
       </div>
 
       {/* Selector de Pestañas */}
-      <div className="flex items-center gap-2 bg-purple-50/60 p-1.5 rounded-2xl border border-purple-100 w-fit">
+      <div className="flex items-center gap-1.5 bg-purple-50/60 p-1 rounded-xl border border-purple-100 w-fit">
         <button
           onClick={() => setActiveTab("visitas")}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-300 ease-in-out ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black transition-all duration-300 ease-in-out ${
             activeTab === "visitas"
-              ? "bg-[#7C69EF] text-white shadow-md shadow-purple-500/20 scale-[1.02]"
+              ? "bg-[#7C69EF] text-white shadow-sm shadow-purple-500/20 scale-[1.02]"
               : "text-slate-600 hover:text-purple-700 hover:bg-white/50"
           }`}
         >
-          <span>🌐</span> Rendimiento Web (Visitas)
+          <span>🌐</span> Rendimiento Web
         </button>
         <button
           onClick={() => setActiveTab("inventario")}
-          className={`flex items-center gap-2 px-3 py-1.5 rounded-xl text-xs font-black transition-all duration-300 ease-in-out ${
+          className={`flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-[11px] font-black transition-all duration-300 ease-in-out ${
             activeTab === "inventario"
-              ? "bg-[#7C69EF] text-white shadow-md shadow-purple-500/20 scale-[1.02]"
+              ? "bg-[#7C69EF] text-white shadow-sm shadow-purple-500/20 scale-[1.02]"
               : "text-slate-600 hover:text-purple-700 hover:bg-white/50"
           }`}
         >
@@ -287,22 +287,22 @@ export default function View({ categorias, inventario, setIsAddModalOpen, setIsE
         </button>
       </div>
 
-      <div className="space-y-4 pb-6">
+      <div className="space-y-3 pb-6">
         
         {activeTab === "visitas" && (
-          <div className="space-y-4 animate-fadeIn">
+          <div className="space-y-3 animate-fadeIn">
             
-            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-purple-50/40 p-3 rounded-2xl border border-purple-100">
-              <h3 className="text-xs font-black text-purple-900 uppercase tracking-wider flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 bg-purple-50/40 p-2.5 rounded-xl border border-purple-100">
+              <h3 className="text-[11px] md:text-xs font-black text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
                 <span>🌐</span> Rendimiento de Audiencia Web
               </h3>
               
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-extrabold text-slate-500">Período Gráfico/Métrica:</span>
+              <div className="flex items-center gap-1.5">
+                <span className="text-[10px] font-extrabold text-slate-500">Período:</span>
                 <select
                   value={filtroPeriodo}
                   onChange={(e) => setFiltroPeriodo(e.target.value)}
-                  className="bg-white border border-purple-200 rounded-xl px-3 py-1 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] shadow-2xs cursor-pointer"
+                  className="bg-white border border-purple-200 rounded-lg px-2 py-0.5 text-[10px] md:text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] shadow-2xs cursor-pointer"
                 >
                   <option value="hoy">Diaria (Hoy)</option>
                   <option value="semana">Semanal (7 Días)</option>
@@ -312,66 +312,63 @@ export default function View({ categorias, inventario, setIsAddModalOpen, setIsE
               </div>
             </div>
 
-            {/* 1. PRIMERO: RENDIMIENTO DE AUDIENCIA (Tarjetas) */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            {/* 1. PRIMERO: RENDIMIENTO DE AUDIENCIA (Tarjetas compactas en 2 columnas) */}
+            <div className="grid grid-cols-2 gap-2">
               
-              <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-purple-100 shadow-lg shadow-purple-900/5 flex items-center justify-between relative overflow-hidden group hover:border-purple-300 transition-all">
-                <div className="absolute -right-6 -bottom-6 w-20 h-20 bg-purple-100/50 rounded-full blur-xl group-hover:bg-purple-200/50 transition-all"></div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-purple-100 text-purple-700">Alcance Histórico</span>
+              <div className="bg-white/90 backdrop-blur-md p-2.5 rounded-xl border border-purple-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-purple-300 transition-all">
+                <div className="absolute -right-3 -bottom-3 w-12 h-12 bg-purple-100/50 rounded-full blur-md"></div>
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-purple-100 text-purple-700">Histórico</span>
+                  <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-purple-500 to-[#7C69EF] text-white flex items-center justify-center text-xs shadow-sm">
+                    🌐
                   </div>
-                  <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">Visitas Totales Web</p>
-                  <p className="text-2xl font-black text-[#7C69EF] mt-0.5 tracking-tight">
+                </div>
+                <div className="relative z-10 mt-1.5">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider truncate">Visitas Totales</p>
+                  <p className="text-base font-black text-[#7C69EF] mt-0.5 tracking-tight">
                     {loadingVisitas ? "..." : totalVisitas.toLocaleString()}
                   </p>
                 </div>
-                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-[#7C69EF] text-white flex items-center justify-center text-xl shadow-md shadow-purple-500/30 relative z-10">
-                  🌐
-                </div>
               </div>
 
-              <div className="bg-white/90 backdrop-blur-md p-4 rounded-2xl border border-purple-100 shadow-lg shadow-purple-900/5 flex items-center justify-between relative overflow-hidden group hover:border-purple-300 transition-all">
-                <div className={`absolute -right-6 -bottom-6 w-20 h-20 ${infoFiltro.blob} rounded-full blur-xl transition-all`}></div>
-                <div className="relative z-10">
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-lg bg-pink-100 text-pink-700">
-                      {infoFiltro.badge}
-                    </span>
+              <div className="bg-white/90 backdrop-blur-md p-2.5 rounded-xl border border-purple-100 shadow-sm flex flex-col justify-between relative overflow-hidden group hover:border-purple-300 transition-all">
+                <div className={`absolute -right-3 -bottom-3 w-12 h-12 ${infoFiltro.blob} rounded-full blur-md`}></div>
+                <div className="relative z-10 flex items-center justify-between">
+                  <span className="text-[8px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-pink-100 text-pink-700">
+                    {infoFiltro.badge}
+                  </span>
+                  <div className={`w-7 h-7 rounded-lg bg-gradient-to-br ${infoFiltro.gradiente} text-white flex items-center justify-center text-xs shadow-sm`}>
+                    📈
                   </div>
-                  <p className="text-[11px] text-slate-400 font-bold uppercase tracking-wider">{infoFiltro.titulo}</p>
-                  <p className={`text-2xl font-black ${infoFiltro.color} mt-0.5 tracking-tight`}>
+                </div>
+                <div className="relative z-10 mt-1.5">
+                  <p className="text-[9px] text-slate-400 font-bold uppercase tracking-wider truncate">{infoFiltro.titulo}</p>
+                  <p className={`text-base font-black ${infoFiltro.color} mt-0.5 tracking-tight`}>
                     {loadingVisitas ? "..." : infoFiltro.valor.toLocaleString()}
                   </p>
-                </div>
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${infoFiltro.gradiente} text-white flex items-center justify-center text-xl shadow-md shadow-pink-500/30 relative z-10`}>
-                  📈
                 </div>
               </div>
 
             </div>
 
             {/* 2. SEGUNDO: GRÁFICO DE TRADING PROFESIONAL DINÁMICO */}
-            <div className="bg-slate-950 p-4 rounded-3xl border border-purple-900/50 shadow-2xl space-y-3 text-white">
+            <div className="bg-slate-950 p-3 rounded-2xl border border-purple-900/50 shadow-xl space-y-2 text-white">
               
-              <div className="flex items-center justify-between border-b border-slate-800 pb-2.5">
-                <div className="flex items-center gap-2">
-                  <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-ping"></span>
-                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-200">
-                    Terminal Visitas XAU / WEB ({filtroPeriodo.toUpperCase()})
+              <div className="flex items-center justify-between border-b border-slate-800 pb-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping"></span>
+                  <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-200">
+                    Terminal XAU / WEB ({filtroPeriodo.toUpperCase()})
                   </h4>
                 </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">
+                <div className="flex items-center gap-1.5">
+                  <span className="text-[9px] font-mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">
                     {infoFiltro.subLabel}
-                  </span>
-                  <span className="text-[10px] font-bold text-emerald-400 bg-emerald-950/80 px-2 py-0.5 rounded border border-emerald-800">
-                    Activo
                   </span>
                 </div>
               </div>
 
-              <div className="relative w-full h-48 bg-slate-900/80 rounded-2xl p-2 border border-slate-800 overflow-hidden">
+              <div className="relative w-full h-32 md:h-40 bg-slate-900/80 rounded-xl p-1.5 border border-slate-800 overflow-hidden">
                 
                 <div className="absolute inset-0 grid grid-rows-4 grid-cols-6 pointer-events-none opacity-10">
                   <div className="border-b border-r border-white"></div>
@@ -399,7 +396,7 @@ export default function View({ categorias, inventario, setIsAddModalOpen, setIsE
                       d={pathSvgString} 
                       fill="none" 
                       stroke="#A855F7" 
-                      strokeWidth="3" 
+                      strokeWidth="2.5" 
                       strokeLinecap="round" 
                       strokeLinejoin="round" 
                     />
@@ -410,11 +407,11 @@ export default function View({ categorias, inventario, setIsAddModalOpen, setIsE
                       <circle 
                         cx={p.x} 
                         cy={p.y} 
-                        r="4" 
+                        r="3.5" 
                         className="fill-[#7C69EF] stroke-white stroke-2 transition-all duration-300 group-hover/node:scale-150" 
                       />
-                      <foreignObject x={p.x - 40} y={p.y - 45} width="80" height="35" className="overflow-visible opacity-0 group-hover/node:opacity-100 transition-opacity z-30 pointer-events-none">
-                        <div className="bg-slate-900 border border-purple-500 text-white text-[10px] font-bold rounded-lg px-2 py-1 text-center shadow-xl">
+                      <foreignObject x={p.x - 40} y={p.y - 40} width="80" height="30" className="overflow-visible opacity-0 group-hover/node:opacity-100 transition-opacity z-30 pointer-events-none">
+                        <div className="bg-slate-900 border border-purple-500 text-white text-[9px] font-bold rounded px-1.5 py-0.5 text-center shadow-lg">
                           {p.label}: {p.visitas} vis.
                         </div>
                       </foreignObject>
@@ -424,7 +421,7 @@ export default function View({ categorias, inventario, setIsAddModalOpen, setIsE
               </div>
 
               {/* Eje X Dinámico */}
-              <div className="flex justify-between px-1 text-[10px] font-mono font-bold text-slate-400 overflow-x-auto gap-2">
+              <div className="flex justify-between px-1 text-[9px] font-mono font-bold text-slate-400 overflow-x-auto gap-1.5">
                 {datosActualesGrafico.map((item, index) => (
                   <div key={index} className="text-center shrink-0">
                     {item.label}
@@ -434,124 +431,106 @@ export default function View({ categorias, inventario, setIsAddModalOpen, setIsE
 
             </div>
 
-            {/* 3. TERCERO: PROCEDENCIA DE VISITAS / REDES SOCIALES */}
-            <div className="bg-white/90 backdrop-blur-md p-4 rounded-3xl border border-purple-100 shadow-xl space-y-4">
-              <div className="flex items-center justify-between border-b border-purple-100 pb-2.5">
-                <h4 className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-2">
-                  <span>🎯</span> Procedencia de Visitas (Redes Sociales & Canales)
+            {/* 3. TERCERO: PROCEDENCIA DE VISITAS / REDES SOCIALES (Compactos y Cuadrados) */}
+            <div className="bg-white/90 backdrop-blur-md p-2.5 rounded-xl border border-purple-100 shadow-sm space-y-2.5">
+              <div className="flex items-center justify-between border-b border-purple-100 pb-2">
+                <h4 className="text-[11px] font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <span>🎯</span> Procedencia de Visitas
                 </h4>
-                <span className="text-[10px] font-bold text-purple-600 bg-purple-50 px-2.5 py-1 rounded-xl border border-purple-200">
-                  Monitoreo de Tráfico
+                <span className="text-[9px] font-bold text-purple-600 bg-purple-50 px-2 py-0.5 rounded-lg border border-purple-200">
+                  Tráfico
                 </span>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              <div className="grid grid-cols-2 gap-2">
                 
                 {/* Instagram */}
-                <div className="bg-purple-50/50 p-3 rounded-2xl border border-purple-100/80 space-y-2">
+                <div className="bg-purple-50/50 p-2 rounded-xl border border-purple-100/80 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">📸</span>
-                      <span className="text-xs font-black text-slate-700">Instagram</span>
-                    </div>
-                    <span className="text-xs font-black text-purple-700">{fuentesTráfico.instagram} visitas</span>
+                    <span className="text-xs">📸</span>
+                    <span className="text-[9px] font-black text-purple-700">{calcularPorcentajeFuente(fuentesTráfico.instagram)}%</span>
                   </div>
-                  <div className="w-full bg-purple-200/60 h-2 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-pink-500 to-purple-600 h-full rounded-full transition-all duration-500" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.instagram)}%` }}></div>
+                  <div className="my-1">
+                    <span className="text-[10px] font-black text-slate-700 block truncate">Instagram</span>
+                    <span className="text-[9px] font-bold text-slate-500">{fuentesTráfico.instagram} vis.</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                    <span>Participación</span>
-                    <span>{calcularPorcentajeFuente(fuentesTráfico.instagram)}%</span>
+                  <div className="w-full bg-purple-200/60 h-1 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-pink-500 to-purple-600 h-full rounded-full" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.instagram)}%` }}></div>
                   </div>
                 </div>
 
                 {/* TikTok */}
-                <div className="bg-purple-50/50 p-3 rounded-2xl border border-purple-100/80 space-y-2">
+                <div className="bg-purple-50/50 p-2 rounded-xl border border-purple-100/80 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">🎵</span>
-                      <span className="text-xs font-black text-slate-700">TikTok</span>
-                    </div>
-                    <span className="text-xs font-black text-purple-700">{fuentesTráfico.tiktok} visitas</span>
+                    <span className="text-xs">🎵</span>
+                    <span className="text-[9px] font-black text-purple-700">{calcularPorcentajeFuente(fuentesTráfico.tiktok)}%</span>
                   </div>
-                  <div className="w-full bg-purple-200/60 h-2 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-slate-800 to-purple-700 h-full rounded-full transition-all duration-500" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.tiktok)}%` }}></div>
+                  <div className="my-1">
+                    <span className="text-[10px] font-black text-slate-700 block truncate">TikTok</span>
+                    <span className="text-[9px] font-bold text-slate-500">{fuentesTráfico.tiktok} vis.</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                    <span>Participación</span>
-                    <span>{calcularPorcentajeFuente(fuentesTráfico.tiktok)}%</span>
+                  <div className="w-full bg-purple-200/60 h-1 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-slate-800 to-purple-700 h-full rounded-full" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.tiktok)}%` }}></div>
                   </div>
                 </div>
 
                 {/* WhatsApp */}
-                <div className="bg-purple-50/50 p-3 rounded-2xl border border-purple-100/80 space-y-2">
+                <div className="bg-purple-50/50 p-2 rounded-xl border border-purple-100/80 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">💬</span>
-                      <span className="text-xs font-black text-slate-700">WhatsApp</span>
-                    </div>
-                    <span className="text-xs font-black text-purple-700">{fuentesTráfico.whatsapp} visitas</span>
+                    <span className="text-xs">💬</span>
+                    <span className="text-[9px] font-black text-purple-700">{calcularPorcentajeFuente(fuentesTráfico.whatsapp)}%</span>
                   </div>
-                  <div className="w-full bg-purple-200/60 h-2 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full transition-all duration-500" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.whatsapp)}%` }}></div>
+                  <div className="my-1">
+                    <span className="text-[10px] font-black text-slate-700 block truncate">WhatsApp</span>
+                    <span className="text-[9px] font-bold text-slate-500">{fuentesTráfico.whatsapp} vis.</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                    <span>Participación</span>
-                    <span>{calcularPorcentajeFuente(fuentesTráfico.whatsapp)}%</span>
+                  <div className="w-full bg-purple-200/60 h-1 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-emerald-500 to-teal-600 h-full rounded-full" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.whatsapp)}%` }}></div>
                   </div>
                 </div>
 
                 {/* Facebook */}
-                <div className="bg-purple-50/50 p-3 rounded-2xl border border-purple-100/80 space-y-2">
+                <div className="bg-purple-50/50 p-2 rounded-xl border border-purple-100/80 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">👥</span>
-                      <span className="text-xs font-black text-slate-700">Facebook</span>
-                    </div>
-                    <span className="text-xs font-black text-purple-700">{fuentesTráfico.facebook} visitas</span>
+                    <span className="text-xs">👥</span>
+                    <span className="text-[9px] font-black text-purple-700">{calcularPorcentajeFuente(fuentesTráfico.facebook)}%</span>
                   </div>
-                  <div className="w-full bg-purple-200/60 h-2 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-500" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.facebook)}%` }}></div>
+                  <div className="my-1">
+                    <span className="text-[10px] font-black text-slate-700 block truncate">Facebook</span>
+                    <span className="text-[9px] font-bold text-slate-500">{fuentesTráfico.facebook} vis.</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                    <span>Participación</span>
-                    <span>{calcularPorcentajeFuente(fuentesTráfico.facebook)}%</span>
+                  <div className="w-full bg-purple-200/60 h-1 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.facebook)}%` }}></div>
                   </div>
                 </div>
 
                 {/* Directo / Web */}
-                <div className="bg-purple-50/50 p-3 rounded-2xl border border-purple-100/80 space-y-2">
+                <div className="bg-purple-50/50 p-2 rounded-xl border border-purple-100/80 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">🔗</span>
-                      <span className="text-xs font-black text-slate-700">Directo / URL</span>
-                    </div>
-                    <span className="text-xs font-black text-purple-700">{fuentesTráfico.directo} visitas</span>
+                    <span className="text-xs">🔗</span>
+                    <span className="text-[9px] font-black text-purple-700">{calcularPorcentajeFuente(fuentesTráfico.directo)}%</span>
                   </div>
-                  <div className="w-full bg-purple-200/60 h-2 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-purple-400 to-[#7C69EF] h-full rounded-full transition-all duration-500" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.directo)}%` }}></div>
+                  <div className="my-1">
+                    <span className="text-[10px] font-black text-slate-700 block truncate">Directo / URL</span>
+                    <span className="text-[9px] font-bold text-slate-500">{fuentesTráfico.directo} vis.</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                    <span>Participación</span>
-                    <span>{calcularPorcentajeFuente(fuentesTráfico.directo)}%</span>
+                  <div className="w-full bg-purple-200/60 h-1 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-purple-400 to-[#7C69EF] h-full rounded-full" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.directo)}%` }}></div>
                   </div>
                 </div>
 
                 {/* Otros */}
-                <div className="bg-purple-50/50 p-3 rounded-2xl border border-purple-100/80 space-y-2">
+                <div className="bg-purple-50/50 p-2 rounded-xl border border-purple-100/80 flex flex-col justify-between">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <span className="text-base">🌐</span>
-                      <span className="text-xs font-black text-slate-700">Otros / Referral</span>
-                    </div>
-                    <span className="text-xs font-black text-purple-700">{fuentesTráfico.otros} visitas</span>
+                    <span className="text-xs">🌐</span>
+                    <span className="text-[9px] font-black text-purple-700">{calcularPorcentajeFuente(fuentesTráfico.otros)}%</span>
                   </div>
-                  <div className="w-full bg-purple-200/60 h-2 rounded-full overflow-hidden">
-                    <div className="bg-gradient-to-r from-slate-400 to-slate-600 h-full rounded-full transition-all duration-500" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.otros)}%` }}></div>
+                  <div className="my-1">
+                    <span className="text-[10px] font-black text-slate-700 block truncate">Otros / Ref</span>
+                    <span className="text-[9px] font-bold text-slate-500">{fuentesTráfico.otros} vis.</span>
                   </div>
-                  <div className="flex justify-between text-[10px] font-bold text-slate-400">
-                    <span>Participación</span>
-                    <span>{calcularPorcentajeFuente(fuentesTráfico.otros)}%</span>
+                  <div className="w-full bg-purple-200/60 h-1 rounded-full overflow-hidden">
+                    <div className="bg-gradient-to-r from-slate-400 to-slate-600 h-full rounded-full" style={{ width: `${calcularPorcentajeFuente(fuentesTráfico.otros)}%` }}></div>
                   </div>
                 </div>
 
@@ -563,67 +542,67 @@ export default function View({ categorias, inventario, setIsAddModalOpen, setIsE
 
         {activeTab === "inventario" && (
           <div className="space-y-3 animate-fadeIn">
-            <h3 className="text-xs font-black text-purple-900 uppercase tracking-wider flex items-center gap-2">
+            <h3 className="text-[11px] md:text-xs font-black text-purple-900 uppercase tracking-wider flex items-center gap-1.5">
               <span>📦</span> Estadísticas del Catálogo e Inventario
             </h3>
             
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="grid grid-cols-2 gap-2">
               
-              <div className="bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-purple-100 shadow-lg shadow-purple-900/5 space-y-2">
+              <div className="bg-white/90 backdrop-blur-md p-2.5 rounded-xl border border-purple-100 shadow-sm space-y-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Catálogo</span>
-                  <span className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xs font-bold">📋</span>
+                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">Catálogo</span>
+                  <span className="w-5 h-5 rounded bg-purple-50 text-purple-600 flex items-center justify-center text-[9px] font-bold">📋</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-500 font-bold uppercase">Total Productos</p>
-                  <p className="text-xl font-black text-slate-800 mt-0.5">{totalProductos}</p>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase truncate">Total Productos</p>
+                  <p className="text-base font-black text-slate-800 mt-0.5">{totalProductos}</p>
                 </div>
-                <div className="flex items-center gap-2 pt-1 border-t border-purple-50 text-[10px] font-extrabold text-slate-500">
-                  <span className="text-emerald-600">🟢 {productosActivos} Activos</span>
+                <div className="flex items-center gap-1 pt-1 border-t border-purple-50 text-[8px] font-extrabold text-slate-500">
+                  <span className="text-emerald-600">🟢 {productosActivos}</span>
                   <span>•</span>
-                  <span className="text-rose-600">🔴 {productosInactivos} Inactivos</span>
+                  <span className="text-rose-600">🔴 {productosInactivos}</span>
                 </div>
               </div>
 
-              <div className="bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-purple-100 shadow-lg shadow-purple-900/5 space-y-2">
+              <div className="bg-white/90 backdrop-blur-md p-2.5 rounded-xl border border-purple-100 shadow-sm space-y-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Logística</span>
-                  <span className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xs font-bold">📊</span>
+                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">Logística</span>
+                  <span className="w-5 h-5 rounded bg-purple-50 text-purple-600 flex items-center justify-center text-[9px] font-bold">📊</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-500 font-bold uppercase">Stock Disponible</p>
-                  <p className="text-xl font-black text-slate-800 mt-0.5">{stockTotalUnidades.toLocaleString()} un.</p>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase truncate">Stock Disponible</p>
+                  <p className="text-base font-black text-slate-800 mt-0.5">{stockTotalUnidades.toLocaleString()} un.</p>
                 </div>
-                <p className="text-[10px] font-extrabold text-purple-600 pt-1 border-t border-purple-50">
-                  Suma de unidades en bodega
+                <p className="text-[8px] font-extrabold text-purple-600 pt-1 border-t border-purple-50 truncate">
+                  Unidades en bodega
                 </p>
               </div>
 
-              <div className="bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-purple-100 shadow-lg shadow-purple-900/5 space-y-2">
+              <div className="bg-white/90 backdrop-blur-md p-2.5 rounded-xl border border-purple-100 shadow-sm space-y-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Organización</span>
-                  <span className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xs font-bold">🏷️</span>
+                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">Organización</span>
+                  <span className="w-5 h-5 rounded bg-purple-50 text-purple-600 flex items-center justify-center text-[9px] font-bold">🏷️</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-500 font-bold uppercase">Categorías</p>
-                  <p className="text-xl font-black text-slate-800 mt-0.5">{categorias ? categorias.length : 0}</p>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase truncate">Categorías</p>
+                  <p className="text-base font-black text-slate-800 mt-0.5">{categorias ? categorias.length : 0}</p>
                 </div>
-                <p className="text-[10px] font-extrabold text-slate-400 pt-1 border-t border-purple-50">
-                  Secciones activas en tienda
+                <p className="text-[8px] font-extrabold text-slate-400 pt-1 border-t border-purple-50 truncate">
+                  Secciones activas
                 </p>
               </div>
 
-              <div className="bg-white/90 backdrop-blur-md p-3.5 rounded-2xl border border-purple-100 shadow-lg shadow-purple-900/5 space-y-2">
+              <div className="bg-white/90 backdrop-blur-md p-2.5 rounded-xl border border-purple-100 shadow-sm space-y-1 flex flex-col justify-between">
                 <div className="flex items-center justify-between">
-                  <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">Finanzas</span>
-                  <span className="w-7 h-7 rounded-xl bg-purple-50 text-purple-600 flex items-center justify-center text-xs font-bold">💰</span>
+                  <span className="text-[8px] font-black uppercase tracking-wider text-slate-400">Finanzas</span>
+                  <span className="w-5 h-5 rounded bg-purple-50 text-purple-600 flex items-center justify-center text-[9px] font-bold">💰</span>
                 </div>
                 <div>
-                  <p className="text-[11px] text-slate-500 font-bold uppercase">Inversión en Stock</p>
-                  <p className="text-lg font-black text-purple-700 mt-0.5">${valorInventarioCosto.toLocaleString()}</p>
+                  <p className="text-[9px] text-slate-500 font-bold uppercase truncate">Inversión Stock</p>
+                  <p className="text-sm font-black text-purple-700 mt-0.5">${valorInventarioCosto.toLocaleString()}</p>
                 </div>
-                <p className="text-[10px] font-extrabold text-slate-400 pt-1 border-t border-purple-50">
-                  Valor base de mercancía
+                <p className="text-[8px] font-extrabold text-slate-400 pt-1 border-t border-purple-50 truncate">
+                  Valor de mercancía
                 </p>
               </div>
 

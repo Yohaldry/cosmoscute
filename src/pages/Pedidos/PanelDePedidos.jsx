@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { collection, onSnapshot, updateDoc, doc } from 'firebase/firestore';
+import { collection, onSnapshot, updateDoc, doc, getDocs, query, where, increment, getDoc } from 'firebase/firestore';
 import { db } from '../../firebase';
 import { useNavigate } from 'react-router-dom';
 
@@ -73,18 +73,57 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
     if (!confirmacionCambioEstado) return;
     const { pedido, siguienteEstado } = confirmacionCambioEstado;
     setConfirmacionCambioEstado(null);
-    await cambiarEstadoPedido(pedido.firebaseId, siguienteEstado);
+    await cambiarEstadoPedido(pedido.firebaseId, siguienteEstado, { productos: pedido.productos });
   };
 
   const cambiarEstadoPedido = async (firebaseId, nuevoEstado, datosExtra = {}) => {
     try {
       const pedidoRef = doc(db, "pedidos", firebaseId);
+
+      // Si el nuevo estado es "pagado", actualizamos el inventario: descontamos de udisponibles y sumamos a uvendidas
+      if (nuevoEstado === "pagado") {
+        const pedidoSnap = await getDoc(pedidoRef);
+        const pedidoData = pedidoSnap.exists() ? pedidoSnap.data() : {};
+        const productosPedido = datosExtra.productos || pedidoData.productos || [];
+
+        if (Array.isArray(productosPedido) && productosPedido.length > 0) {
+          const inventarioSnapshot = await getDocs(collection(db, "inventario"));
+
+          for (const prod of productosPedido) {
+            const nombreProdCrudo = typeof prod === 'object' ? (prod.name || prod.nombre || '') : String(prod);
+            const nombreLimpioPedido = String(nombreProdCrudo).trim().toLowerCase();
+            const cantidadProd = typeof prod === 'object' ? Number(prod.quantity || prod.cantidad || 1) : 1;
+
+            if (nombreLimpioPedido) {
+              for (const invDoc of inventarioSnapshot.docs) {
+                const dataInv = invDoc.data();
+                const nombreInvLimpio = String(dataInv.nombre || "").trim().toLowerCase();
+
+                if (nombreInvLimpio === nombreLimpioPedido) {
+                  const invRef = doc(db, "inventario", invDoc.id);
+                  
+                  const udisponiblesActual = Number(dataInv.udisponibles ?? 0);
+                  const uvendidasActual = Number(dataInv.uvendidas ?? 0);
+
+                  const nuevoDisponible = Math.max(0, udisponiblesActual - cantidadProd);
+                  const nuevoVendido = uvendidasActual + cantidadProd;
+
+                  await updateDoc(invRef, {
+                    udisponibles: nuevoDisponible,
+                    uvendidas: nuevoVendido
+                  });
+                }
+              }
+            }
+          }
+        }
+      }
+
       await updateDoc(pedidoRef, { estado: nuevoEstado, ...datosExtra });
-      triggerSuccessAlert("¡Estado actualizado correctamente!");
-      // Nota: Al usar onSnapshot, ya no es necesario llamar a fetchPedidos() manualmente.
+      triggerSuccessAlert("¡Estado actualizado y stock sumado a vendidas correctamente!");
     } catch (error) {
-      console.error("Error al actualizar estado:", error);
-      triggerErrorAlert("Error al actualizar el estado");
+      console.error("Error al actualizar estado e inventario:", error);
+      triggerErrorAlert("Error al actualizar el estado o el inventario");
     }
   };
 
@@ -125,7 +164,7 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
 
   const pestañas = [
     { id: "recibido", label: "Recibidos", icon: "📥", siguienteEstado: "pendiente", textoBoton: "Pasar" },
-    { id: "pendiente", label: "Pendiente de Pago", icon: "⏳", siguienteEstado: "pagado", textoBoton: "Pasar" },
+    { id: "pendiente", label: "Pendiente de Pago", icon: "⏳", siguienteEstado: "pagado", textoBoton: "Pasar a Pagado 💳" },
     { id: "pagado", label: "Pagados", icon: "💳", siguienteEstado: "enviado", textoBoton: "Pasar" },
     { id: "enviado", label: "Enviados", icon: "🚀", siguienteEstado: null, textoBoton: null },
     { id: "cancelado", label: "Cancelados", icon: "❌", siguienteEstado: null, textoBoton: null },
@@ -269,7 +308,7 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                       esCanceladoTab ? 'bg-red-50/50 text-red-900/80 border border-red-100/50' : esVentaDirecta ? 'bg-indigo-50/40 text-indigo-950/80 border border-indigo-100/50' : esTarjetaVerde ? 'bg-emerald-50/50 text-emerald-900/80 border border-emerald-100/50' : 'text-[#6E7387] pt-2 sm:pt-2.5 border-t border-rose-50 bg-[#FAF8FF]/50'
                     }`}>
                       <p className="flex items-center gap-1.5 truncate">
-                        <span className={esCanceladoTab ? 'text-red-500' : esVentaDirecta ? 'text-[#7C69EF]' : esTarjetaVerde ? 'text-emerald-500' : 'text-rose-400'}>✉️</span> <span className="truncate">{pedido.correo}</span>
+                        <span className={esCanceladoTab ? 'text-red-500' : esVentaDirecta ? 'text-[#7C69EF]' : esTarjetaVerde ? 'text-emerald-500' : 'text-rose-400'}>✉</span> <span className="truncate">{pedido.correo}</span>
                       </p>
                       <p className="flex items-center gap-1.5">
                         <span className={esCanceladoTab ? 'text-red-500' : esVentaDirecta ? 'text-[#7C69EF]' : esTarjetaVerde ? 'text-emerald-500' : 'text-rose-400'}>📱</span> <span className="truncate">{pedido.telefono}</span>
@@ -294,7 +333,6 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                             <span>👁️</span> <span className="hidden sm:inline">Ver más</span><span className="sm:hidden">Ver</span>
                           </button>
 
-                          {/* Si es venta directa, NUNCA mostrar botón de bingo */}
                           {!esTarjetaVerde && !esVentaDirecta && (
                             <button
                               onClick={() => {
@@ -346,7 +384,7 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                             className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-extrabold px-2 py-1.5 sm:py-2 rounded-xl text-[9px] sm:text-xs transition-all flex items-center justify-center gap-1 shadow-xs border border-indigo-100"
                             title="Ver todos los detalles del pedido"
                           >
-                            <span>👁️</span> <span className="hidden sm:inline">Ver más</span><span className="sm:hidden">Ver</span>
+                            <span>👁️️</span> <span className="hidden sm:inline">Ver más</span><span className="sm:hidden">Ver</span>
                           </button>
 
                           {pestañaActual && pestañaActual.siguienteEstado && (
@@ -523,7 +561,6 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                     <span className="font-bold text-[#2D3142]">{pedidoSeleccionado.quienrecibe || "No especificado"}</span>
                   </div>
 
-                  {/* CAMBIO CONDICIONAL SEGÚN 'estadoventa' */}
                   <div className="col-span-2">
                     {pedidoSeleccionado.estadoventa === 'bingo' ? (
                       <div>

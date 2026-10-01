@@ -1,62 +1,41 @@
 import React, { useState } from "react";
 import { collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
-import { db, storage } from "../firebase"; // O la ruta de tu archivo de configuración
-import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import { db } from "../firebase";
 import CargoyDescargo from '../pages/cargoydescargo/CargoyDescargo';
 import Movimientos from '../pages/movimientos/Movimientos';
 export default function InventarioGeneral({
   inventario,
   productosBingo,
   categorias,
-  availableMissingCodes,
   triggerSuccessAlert,
   triggerErrorAlert
 }) {
-  // Estado para la barra de búsqueda
   const [searchTerm, setSearchTerm] = useState("");
   const [isUploading, setIsUploading] = useState(false);
-  
   const [proveedor, setProveedor] = useState("");
-
-  // Estado para controlar la apertura/cierre del Modal de "Nuevo Producto"
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 const [porcentajeDescuento, setPorcentajeDescuento] = useState(0);
   const [porcentajeGanancia, setPorcentajeGanancia] = useState(50);
-
-
 const [descripcion, setDescripcion] = useState("");
 const [estado, setEstado] = useState(true);
 const [activeMenuId, setActiveMenuId] = useState(null);
-  // Estados para el formulario del modal de nuevo producto
   const [nombre, setNombre] = useState("");
   const [categoria, setCategoria] = useState(categorias[0]?.nombre || "General");
   const [costo, setCosto] = useState("");
   const [stock, setStock] = useState("");
-  const [portada, setPortada] = useState("");
-
   const [fileImg, setFileImg] = useState(null);
   const [fileImg1, setFileImg1] = useState(null);
   const [detailImgIndex, setDetailImgIndex] = useState(0);
-
-  // Estados para el Modal de Edición Completa
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingItemData, setEditingItemData] = useState(null);
   const [editFileImg, setEditFileImg] = useState(null);
   const [editFileImg1, setEditFileImg1] = useState(null);
-  
 const [cargoyDescargoModal, setCargoyDescargoModal] = useState({ isOpen: false, item: null });
 const [movimientosModal, setMovimientosModal] = useState({ isOpen: false, item: null });
-
   const [precioManual, setPrecioManual] = useState("");
-
-  // Control de selección múltiple con checkboxes
   const [selectedIds, setSelectedIds] = useState([]);
-
-  // Control de edición en línea (Inline Editing)
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({ nombre: "", categoria: "", costo: 0, stockactual: 0 });
-
-  // Modal de confirmación para eliminar
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, id: null, name: "", isMultiple: false });
 
   // Modal del "Ojito" para ver detalles completos
@@ -127,87 +106,50 @@ const calculatedNewPrecio = costoNum > 0 && porcentajeNum < 100
 
   // Guardar nuevo producto en la colección "inventario" de Firebase con validación de campos llenos
 const handleAddInventario = async (e) => {
-  e.preventDefault();
-  setIsUploading(true);
+    e.preventDefault();
+    setIsUploading(true);
 
-  try {
-    // Función auxiliar para convertir un archivo a Base64
-   const convertirABase64 = (archivo) => {
-  return new Promise((resolve) => {
-    // Si viene vacío, retornamos vacío
-    if (!archivo) return resolve("");
-    
-    // Si ya es un texto (como un Base64 o URL), lo devolvemos directo sin rompernos
-    if (typeof archivo === 'string') {
-      return resolve(archivo);
+    try {
+      // Convertimos el stock inicial a número para asegurarnos de que udisponibles y uingresadas sean números idénticos
+      const stockInicialNum = Number(stock) || 0;
+
+      // Calculamos el precio final según corresponda (automático o manual)
+      const precioFinalCalculado = Number(costo) === 0 
+        ? (Number(precioManual) || 0) 
+        : (calculatedNewPrecio || 0);
+
+      await addDoc(collection(db, "inventario"), {
+        nombre: String(nombre).trim(),
+        proveedor: String(proveedor).trim(),
+        descripcion: String(descripcion || "").trim(),
+        categoria: categoria || "General",
+        
+        // Aquí asignamos el mismo valor numérico a ambos campos:
+        udisponibles: stockInicialNum,
+        uingresadas: stockInicialNum,
+        uvendidas: 0, // Siempre inicia en 0 al crear el producto
+
+        costo: Number(costo) || 0,
+        porcentajeGanancia: Number(porcentajeGanancia) || 0,
+        precio: precioFinalCalculado,
+        porcentajeDescuento: Number(porcentajeDescuento) || 0,
+        estado: Boolean(estado),
+        fechaIngreso: new Date().toLocaleDateString(),
+        img: fileImg || "",
+        img1: fileImg1 || "",
+        createdAt: new Date()
+      });
+
+      triggerSuccessAlert("¡Producto registrado con éxito!");
+      setIsAddModalOpen(false);
+      // Limpiar estados del formulario aquí si lo requieres...
+    } catch (error) {
+      console.error("Error al guardar el producto:", error);
+      triggerErrorAlert("No se pudo registrar el producto");
+    } finally {
+      setIsUploading(false);
     }
-    
-    // Si es un archivo real (Blob o File), lo leemos con seguridad
-    if (archivo instanceof Blob || archivo instanceof File) {
-      const reader = new FileReader();
-      reader.readAsDataURL(archivo);
-      reader.onload = () => resolve(reader.result);
-      reader.onerror = () => resolve("");
-    } else {
-      resolve("");
-    }
-  });
-};
-
-    // Convertimos ambas imágenes a Base64 si el usuario las seleccionó
-    const imgBase64 = await convertirABase64(fileImg);
-    const img1Base64 = await convertirABase64(fileImg1);
-
-    const costoNum = Number(costo) || 0;
-    const stockNum = Number(stock) || 0;
-    let precioFinalParaGuardar = 0;
-
-    if (costoNum === 0) {
-      precioFinalParaGuardar = Number(precioManual) || 0;
-    } else {
-      const porc = Number(porcentajeGanancia) || 50;
-      const divisor = 1 - (porc / 100);
-      precioFinalParaGuardar = divisor > 0 ? Math.round(costoNum / divisor) : costoNum;
-    }
-
-    const nuevoProducto = {
-      nombre: nombre,
-      proveedor: proveedor,
-      descripcion: descripcion,
-      categoria: categoria,
-      stock: stockNum,
-      udisponibles: stockNum,
-      uingresadas: stockNum,
-      costo: costoNum,
-      precio: precioFinalParaGuardar,
-      porcentajeGanancia: porcentajeGanancia,
-      descuento: Number(porcentajeDescuento),
-      estado: estado,
-      fentrada: new Date().toLocaleDateString(),
-      fsalida: "--",
-      img: fileImg || "",  
-      img1: fileImg1 || ""
-    };
-
-    await addDoc(collection(db, "inventario"), nuevoProducto);
-
-    // Limpiar formulario y cerrar modal
-    setIsAddModalOpen(false);
-    setNombre("");
-    setProveedor("");
-    setDescripcion("");
-    setStock("");
-    setCosto("");
-    setPrecioManual("");
-    setFileImg(null);
-    setFileImg1(null);
-
-  } catch (error) {
-    console.error("Error al registrar el producto:", error);
-  } finally {
-    setIsUploading(false);
-  }
-};
+  };
 
   // Abrir Modal de Edición Completa
 const startEditing = (item) => {
@@ -362,39 +304,8 @@ const handleUpdateInventario = async (e) => {
     }
   };
 
- const executeDelete = async () => {
-    try {
-      if (deleteModal.isMultiple) {
-        // Eliminar múltiples en Firestore
-        for (const id of deleteModal.id) {
-          await deleteDoc(doc(db, "inventario", id));
-        }
-        
-        // 👉 ACTUALIZAR EL ESTADO LOCAL DE LA TABLA (MÚLTIPLE)
-        setInventario(prevInventario => prevInventario.filter(item => !deleteModal.id.includes(item.id)));
-        
-        setSelectedIds([]);
-        triggerSuccessAlert("Productos seleccionados eliminados del inventario");
-      } else {
-        // Eliminar individual en Firestore
-        await deleteDoc(doc(db, "inventario", deleteModal.id));
-        
-        // 👉 ACTUALIZAR EL ESTADO LOCAL DE LA TABLA (INDIVIDUAL)
-        setInventario(prevInventario => prevInventario.filter(item => item.id !== deleteModal.id));
-        
-        triggerSuccessAlert("Producto eliminado del inventario");
-      }
-    } catch (error) {
-      console.error("Error al eliminar del inventario:", error);
-    } finally {
-      setDeleteModal({ isOpen: false, id: null, name: "", isMultiple: false });
-    }
-  };
-
   return (
     <div className="flex-1 flex flex-col overflow-hidden bg-white">
-      
-      {/* SECCIÓN SUPERIOR: BOTÓN DE APERTURA DE MODAL Y BARRA DE BÚSQUEDA */}
       <div className="p-4 border-b border-[#E4E8F0] bg-[#FAFBFC] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
         <div className="flex items-center gap-3">
           <button
@@ -407,10 +318,8 @@ const handleUpdateInventario = async (e) => {
             Total registros: {(inventario || []).length}
           </div>
         </div>
-          
-        {/* BARRA DE BÚSQUEDA */}
         <div className="w-full sm:w-80">
-          <input 
+          <input
             type="text"
             placeholder="🔍 Buscar por nombre, categoría o ID..."
             value={searchTerm}
@@ -419,14 +328,10 @@ const handleUpdateInventario = async (e) => {
           />
         </div>
       </div>
-
-      {/* BARRA DE ACCIÓN MÚLTIPLE */}
      {selectedIds.length > 0 && (
   <div className="flex items-center justify-between bg-slate-900 text-white px-4 py-2 rounded-xl my-3 text-xs shadow-lg">
     <span>{selectedIds.length} productos seleccionados</span>
-    
     <div className="flex items-center gap-2">
-      {/* Botón exclusivo para eliminar varios al tiempo */}
       <button
         type="button"
         onClick={() => confirmDelete(selectedIds, true)} // O tu función para eliminar múltiples IDs
@@ -437,14 +342,12 @@ const handleUpdateInventario = async (e) => {
     </div>
   </div>
 )}
-
-      {/* TABLA PRINCIPAL */}
   <div className="flex-1 overflow-y-auto overflow-x-auto p-2 md:p-4 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30 relative">
   <table className="w-full text-left border-collapse text-xs relative whitespace-nowrap">
     <thead className="sticky top-0 z-10 bg-purple-50/90 backdrop-blur-md">
       <tr className="border-b border-purple-100 text-purple-700 uppercase text-[10px] font-black tracking-wider">
         <th className="py-3 px-2 w-10 text-center">
-          <input 
+          <input
             type="checkbox"
             onChange={handleSelectAll}
             checked={filteredInventario.length > 0 && selectedIds.length === filteredInventario.length}
@@ -476,40 +379,31 @@ const handleUpdateInventario = async (e) => {
           const itemName = item.nombre || item.productos || "";
           const isSelected = selectedIds.includes(item.id);
           const isEditing = editingId === item.id;
-          
-          // Estado local para abrir o cerrar el menú de 3 puntos en cada fila
           const isMenuOpen = activeMenuId === item.id;
-
           const isActivo = item.estado === true || item.activo === true || String(item.estado || "").toLowerCase() === "activo" || String(item.estado || "").toLowerCase() === "true" || item.estado === 1 || item.activo === 1;
-          
-          const rowStyle = isActivo 
-            ? 'bg-emerald-50/60 hover:bg-emerald-50/90 border-l-4 border-l-emerald-500 shadow-2xs' 
+          const rowStyle = isActivo
+            ? 'bg-emerald-50/60 hover:bg-emerald-50/90 border-l-4 border-l-emerald-500 shadow-2xs'
             : 'bg-white/80 hover:bg-purple-50/30 border-l-4 border-l-slate-300';
-
           const editCostoNum = Number(editForm.costo) || 0;
           const editPrecioCalculado = editCostoNum / 0.50;
-
           return (
             <tr key={item.id} className={`transition-all ${rowStyle}`}>
-              
               <td className="py-3 px-2 text-center">
-                <input 
+                <input
                   type="checkbox"
                   checked={isSelected}
                   onChange={() => handleSelectOne(item.id)}
                   className="rounded accent-[#7C69EF] cursor-pointer w-4 h-4 shadow-xs"
                 />
               </td>
-
               <td className="py-3 px-3 font-mono text-[11px] text-slate-400 font-semibold" title={item.id}>
                 <span className="bg-purple-50 px-2 py-1 rounded-xl border border-purple-100/60">
                   {item.id ? `${item.id.substring(0, 6)}...` : 'N/A'}
                 </span>
               </td>
-
               <td className="py-3 px-3 font-extrabold text-slate-800 text-xs">
                 {isEditing ? (
-                  <input 
+                  <input
                     type="text"
                     value={editForm.nombre}
                     onChange={(e) => setEditForm({...editForm, nombre: e.target.value})}
@@ -519,10 +413,9 @@ const handleUpdateInventario = async (e) => {
                   itemName
                 )}
               </td>
-
               <td className="py-3 px-3">
                 {isEditing ? (
-                  <select 
+                  <select
                     value={editForm.categoria}
                     onChange={(e) => setEditForm({...editForm, categoria: e.target.value})}
                     className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-inner focus:outline-none"
@@ -538,10 +431,9 @@ const handleUpdateInventario = async (e) => {
                   </span>
                 )}
               </td>
-
               <td className="py-3 px-3 font-extrabold text-slate-700">
                 {isEditing ? (
-                  <input 
+                  <input
                     type="number"
                     value={editForm.costo}
                     onChange={(e) => setEditForm({...editForm, costo: e.target.value})}
@@ -551,7 +443,6 @@ const handleUpdateInventario = async (e) => {
                   `$${Number(item.costo || 0).toLocaleString()}`
                 )}
               </td>
-
               <td className="py-3 px-3 font-black text-[#7C69EF]">
                 {isEditing ? (
                   <span className="bg-purple-50 border border-purple-200 px-2.5 py-1.5 rounded-xl text-purple-600 text-xs font-black inline-block shadow-inner" title="Calculado automáticamente: Costo / 0.50">
@@ -561,10 +452,9 @@ const handleUpdateInventario = async (e) => {
                   `$${Number(item.precio || 0).toLocaleString()}`
                 )}
               </td>
-
               <td className="py-3 px-3 font-extrabold text-slate-700">
                 {isEditing ? (
-                  <input 
+                  <input
                     type="number"
                     value={editForm.stockactual}
                     onChange={(e) => setEditForm({...editForm, stockactual: e.target.value})}
@@ -576,15 +466,12 @@ const handleUpdateInventario = async (e) => {
                   </span>
                 )}
               </td>
-
               <td className="py-3 px-3 font-bold text-slate-600">
                 <span className="font-mono text-xs">{item.uingresadas ?? "0"}</span>
               </td>
-
               <td className="py-3 px-3 font-bold text-slate-600">
                 <span className="font-mono text-xs">{item.uvendidas ?? "0"}</span>
               </td>
-
               <td className="py-3 px-3 text-center">
                 <button
                   type="button"
@@ -603,18 +490,17 @@ const handleUpdateInventario = async (e) => {
                   )}
                 </button>
               </td>
-
               <td className="py-3 px-3">
                 <div className="flex items-center justify-center gap-1.5">
                   {isEditing ? (
                     <div className="flex items-center gap-1.5">
-                      <button 
+                      <button
                         onClick={() => saveEditing(item.id)}
                         className="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-1.5 rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-all"
                       >
                         OK ✓
                       </button>
-                      <button 
+                      <button
                         onClick={() => setEditingId(null)}
                         className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition-all"
                       >
@@ -630,431 +516,35 @@ const handleUpdateInventario = async (e) => {
                       >
                         👁️
                       </button>
-
-                      <button 
-                        onClick={() => startEditing(item)}
-                        className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-amber-500 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
-                        title="Editar"
-                      >
-                        ✏️
-                      </button>
-
-                      <button 
-                        onClick={() => confirmDelete(item.id, false)}
-                        className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
-                        title="Eliminar"
-                      >
-                        🗑️
-                      </button>
-
-                      {/* --- MENÚ DE 3 PUNTOS (CARGO Y DESCARGO / MOVIMIENTOS) --- */}
-                      <div className="relative">
-                        <button
-                          onClick={() => setActiveMenuId(isMenuOpen ? null : item.id)}
-                          className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-purple-600 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md font-bold text-sm"
-                          title="Más opciones"
-                        >
-                          ⋮
-                        </button>
-
-                        {isMenuOpen && (
-                          <div className="absolute right-0 mt-2 w-40 bg-white border border-purple-100 rounded-2xl shadow-xl z-50 py-1.5 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-100">
-                            <button
-                              onClick={() => {
-                                setActiveMenuId(null);
-                                setCargoyDescargoModal({ isOpen: true, item }); 
-                              }}
-                              className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#7C69EF] transition-colors flex items-center gap-2"
-                            >
-                              <span>➕➖</span> Cargo y descargo
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActiveMenuId(null);
-                                setMovimientosModal({ isOpen: true, item }); 
-                              }}
-                              className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#7C69EF] transition-colors flex items-center gap-2 border-t border-purple-50"
-                            >
-                              <span>📋</span> Movimientos
-                            </button>
-                          </div>
-                        )}
-                      </div>
-                      {/* ---------------------------------------------------- */}
-
-                    </div>
-                  )}
-                </div>
-              </td>
-
-            </tr>
-          );
-        })
-      )}
-    </tbody>
-  </table>
-
-  {/* ========================================================= */}
-  {/* MODALES CON TUS COMPONENTES EXTERNOS                      */}
-  {/* ========================================================= */}
-
-  {/* 1. MODAL DE DETALLES (👁️) */}
-  {detailModal.isOpen && detailModal.item && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-full max-w-md overflow-hidden p-6 space-y-4">
-        <div className="flex items-center justify-between border-b border-purple-50 pb-3">
-          <h3 className="font-black text-purple-800 text-base flex items-center gap-2">
-            <span>👁️</span> Detalle del Producto
-          </h3>
-          <button 
-            onClick={() => setDetailModal({ isOpen: false, item: null })}
-            className="w-8 h-8 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 flex items-center justify-center font-bold"
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div className="space-y-3 text-xs">
-          <div className="bg-purple-50/50 p-3 rounded-2xl border border-purple-100/60 space-y-2">
-            <p><strong className="text-purple-700">ID Único:</strong> <span className="font-mono text-slate-600">{detailModal.item.id}</span></p>
-            <p><strong className="text-purple-700">Nombre:</strong> <span className="text-slate-800 font-bold">{detailModal.item.nombre || detailModal.item.productos}</span></p>
-            <p><strong className="text-purple-700">Categoría:</strong> <span className="text-slate-700">{detailModal.item.categoria || "General"}</span></p>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <div className="bg-slate-50 p-3 rounded-2xl border border-slate-100">
-              <span className="block text-slate-400 text-[10px] uppercase font-bold">Costo</span>
-              <span className="font-black text-slate-700 text-sm">${Number(detailModal.item.costo || 0).toLocaleString()}</span>
-            </div>
-            <div className="bg-purple-50/70 p-3 rounded-2xl border border-purple-100">
-              <span className="block text-purple-400 text-[10px] uppercase font-bold">Precio Venta</span>
-              <span className="font-black text-[#7C69EF] text-sm">${Number(detailModal.item.precio || 0).toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="pt-2 flex justify-end">
-          <button
-            onClick={() => setDetailModal({ isOpen: false, item: null })}
-            className="w-full bg-[#7C69EF] hover:bg-purple-700 text-white font-bold py-2.5 px-4 rounded-xl text-xs transition-all shadow-md shadow-purple-500/20"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-
-  {/* 2. MODAL DE CARGO Y DESCARGO (CargoyDescargo.jsx) */}
-  {cargoyDescargoModal.isOpen && cargoyDescargoModal.item && (
-    <div className="flex-1 overflow-y-auto overflow-x-auto p-2 md:p-4 bg-gradient-to-br from-purple-50/40 via-white to-pink-50/30 relative">
-  <table className="w-full text-left border-collapse text-xs relative whitespace-nowrap">
-    <thead className="sticky top-0 z-10 bg-purple-50/90 backdrop-blur-md">
-      <tr className="border-b border-purple-100 text-purple-700 uppercase text-[10px] font-black tracking-wider">
-        <th className="py-3 px-2 w-10 text-center">
-          <input 
-            type="checkbox"
-            onChange={handleSelectAll}
-            checked={filteredInventario.length > 0 && selectedIds.length === filteredInventario.length}
-            className="rounded accent-[#7C69EF] cursor-pointer w-4 h-4 shadow-xs"
-          />
-        </th>
-        <th className="py-3 px-3">ID Único</th>
-        <th className="py-3 px-3">Producto</th>
-        <th className="py-3 px-3">Categoría</th>
-        <th className="py-3 px-3">Costo</th>
-        <th className="py-3 px-3">Precio</th>
-        <th className="py-3 px-3">Stock (Disp)</th>
-        <th className="py-3 px-3">Ingresadas</th>
-        <th className="py-3 px-3">Vendidas</th>
-        <th className="py-3 px-3 text-center">Estado</th>
-        <th className="py-3 px-3 text-center">Acciones</th>
-      </tr>
-    </thead>
-    <tbody className="divide-y divide-purple-50">
-      {filteredInventario.length === 0 ? (
-        <tr>
-          <td colSpan="11" className="text-center py-16 text-slate-400 font-semibold text-xs">
-            <div className="text-3xl mb-2">📦</div>
-            No se encontraron productos coincidentes en el inventario.
-          </td>
-        </tr>
-      ) : (
-        filteredInventario.map((item) => {
-          const itemName = item.nombre || item.productos || "";
-          const isSelected = selectedIds.includes(item.id);
-          const isEditing = editingId === item.id;
-          
-          const isMenuOpen = activeMenuId === item.id;
-
-          const isActivo = item.estado === true || item.activo === true || String(item.estado || "").toLowerCase() === "activo" || String(item.estado || "").toLowerCase() === "true" || item.estado === 1 || item.activo === 1;
-          
-          const rowStyle = isActivo 
-            ? 'bg-emerald-50/60 hover:bg-emerald-50/90 border-l-4 border-l-emerald-500 shadow-2xs' 
-            : 'bg-white/80 hover:bg-purple-50/30 border-l-4 border-l-slate-300';
-
-          const editCostoNum = Number(editForm.costo) || 0;
-          const editPrecioCalculado = editCostoNum / 0.50;
-
-          return (
-            <tr key={item.id} className={`transition-all ${rowStyle}`}>
-              
-              <td className="py-3 px-2 text-center">
-                <input 
-                  type="checkbox"
-                  checked={isSelected}
-                  onChange={() => handleSelectOne(item.id)}
-                  className="rounded accent-[#7C69EF] cursor-pointer w-4 h-4 shadow-xs"
-                />
-              </td>
-
-              <td className="py-3 px-3 font-mono text-[11px] text-slate-400 font-semibold" title={item.id}>
-                <span className="bg-purple-50 px-2 py-1 rounded-xl border border-purple-100/60">
-                  {item.id ? `${item.id.substring(0, 6)}...` : 'N/A'}
-                </span>
-              </td>
-
-              <td className="py-3 px-3 font-extrabold text-slate-800 text-xs">
-                {isEditing ? (
-                  <input 
-                    type="text"
-                    value={editForm.nombre}
-                    onChange={(e) => setEditForm({...editForm, nombre: e.target.value})}
-                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-full font-bold text-slate-800 focus:outline-none focus:ring-2 focus:ring-purple-300 shadow-inner"
-                  />
-                ) : (
-                  itemName
-                )}
-              </td>
-
-              <td className="py-3 px-3">
-                {isEditing ? (
-                  <select 
-                    value={editForm.categoria}
-                    onChange={(e) => setEditForm({...editForm, categoria: e.target.value})}
-                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-700 shadow-inner focus:outline-none"
-                  >
-                    <option value="General">General</option>
-                    {categorias.map(cat => (
-                      <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
-                    ))}
-                  </select>
-                ) : (
-                  <span className="bg-purple-100/70 text-purple-700 px-2.5 py-1 rounded-xl font-extrabold text-[10px] border border-purple-200/50 shadow-2xs">
-                    {item.categoria || "General"}
-                  </span>
-                )}
-              </td>
-
-              <td className="py-3 px-3 font-extrabold text-slate-700">
-                {isEditing ? (
-                  <input 
-                    type="number"
-                    value={editForm.costo}
-                    onChange={(e) => setEditForm({...editForm, costo: e.target.value})}
-                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-24 font-bold text-slate-700 shadow-inner focus:outline-none"
-                  />
-                ) : (
-                  `$${Number(item.costo || 0).toLocaleString()}`
-                )}
-              </td>
-
-              <td className="py-3 px-3 font-black text-[#7C69EF]">
-                {isEditing ? (
-                  <span className="bg-purple-50 border border-purple-200 px-2.5 py-1.5 rounded-xl text-purple-600 text-xs font-black inline-block shadow-inner" title="Calculado automáticamente: Costo / 0.50">
-                    ${editPrecioCalculado.toLocaleString()}
-                  </span>
-                ) : (
-                  `$${Number(item.precio || 0).toLocaleString()}`
-                )}
-              </td>
-
-              <td className="py-3 px-3 font-extrabold text-slate-700">
-                {isEditing ? (
-                  <input 
-                    type="number"
-                    value={editForm.stockactual}
-                    onChange={(e) => setEditForm({...editForm, stockactual: e.target.value})}
-                    className="bg-white border border-[#7C69EF] rounded-xl px-2.5 py-1.5 text-xs w-20 font-bold text-slate-700 shadow-inner focus:outline-none"
-                  />
-                ) : (
-                  <span className="font-mono bg-slate-100 text-slate-700 px-2.5 py-1 rounded-xl text-xs font-black">
-                    {item.udisponibles ?? item.stockactual ?? 0}
-                  </span>
-                )}
-              </td>
-
-              <td className="py-3 px-3 font-bold text-slate-600">
-                <span className="font-mono text-xs">{item.uingresadas ?? "0"}</span>
-              </td>
-
-              <td className="py-3 px-3 font-bold text-slate-600">
-                <span className="font-mono text-xs">{item.uvendidas ?? "0"}</span>
-              </td>
-
-              <td className="py-3 px-3 text-center">
-                <button
-                  type="button"
-                  onClick={() => handleToggleEstadoDirecto(item)}
-                  title="Haz clic para cambiar estado"
-                  className="transition-transform active:scale-95 focus:outline-none"
-                >
-                  {isActivo ? (
-                    <span className="inline-flex items-center gap-1.5 bg-emerald-100 hover:bg-emerald-200 text-emerald-800 px-3 py-1 rounded-full text-[10px] font-black tracking-wide shadow-2xl cursor-pointer transition-colors border border-emerald-200">
-                      <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse"></span> Activo ✨
-                    </span>
-                  ) : (
-                    <span className="inline-flex items-center gap-1.5 bg-rose-100 hover:bg-rose-200 text-rose-800 px-3 py-1 rounded-full text-[10px] font-black tracking-wide shadow-2xl cursor-pointer transition-colors border border-rose-200">
-                      <span className="w-2 h-2 rounded-full bg-rose-500"></span> Inactivo 🌙
-                    </span>
-                  )}
-                </button>
-              </td>
-
-              <td className="py-3 px-3">
-                <div className="flex items-center justify-center gap-1.5">
-                  {isEditing ? (
-                    <div className="flex items-center gap-1.5">
-                      <button 
-                        onClick={() => saveEditing(item.id)}
-                        className="bg-emerald-500 hover:bg-emerald-600 text-white font-black px-3 py-1.5 rounded-xl text-xs shadow-md shadow-emerald-500/20 transition-all"
-                      >
-                        OK ✓
-                      </button>
-                      <button 
-                        onClick={() => setEditingId(null)}
-                        className="bg-slate-200 hover:bg-slate-300 text-slate-700 font-bold px-3 py-1.5 rounded-xl text-xs transition-all"
-                      >
-                        ✕
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="flex items-center gap-1.5">
                       <button
-                        onClick={() => setDetailModal({ isOpen: true, item })}
-                        className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-sky-500 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
-                        title="Ver detalles completos"
-                      >
-                        👁️
-                      </button>
-
-                      <button 
                         onClick={() => startEditing(item)}
                         className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-amber-500 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
                         title="Editar"
                       >
                         ✏️
                       </button>
-
-                      <button 
+                      <button
                         onClick={() => confirmDelete(item.id, false)}
                         className="w-8 h-8 rounded-xl bg-rose-50 hover:bg-rose-500 text-rose-500 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md"
                         title="Eliminar"
                       >
                         🗑️
                       </button>
-
-                      {/* --- MENÚ DE 3 PUNTOS --- */}
-                      <div className="relative">
-                        <button
-                          onClick={() => setActiveMenuId(isMenuOpen ? null : item.id)}
-                          className="w-8 h-8 rounded-xl bg-purple-50 hover:bg-purple-600 text-purple-600 hover:text-white transition-all flex items-center justify-center shadow-2xs hover:shadow-md font-bold text-sm"
-                          title="Más opciones"
-                        >
-                          ⋮
-                        </button>
-
-                        {isMenuOpen && (
-                          <div className="absolute right-0 mt-2 w-40 bg-white border border-purple-100 rounded-2xl shadow-xl z-50 py-1.5 overflow-hidden text-left animate-in fade-in zoom-in-95 duration-100">
-                            <button
-                              onClick={() => {
-                                setActiveMenuId(null);
-                                setCargoyDescargoModal({ isOpen: true, item }); 
-                              }}
-                              className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#7C69EF] transition-colors flex items-center gap-2"
-                            >
-                              <span>➕➖</span> Cargo y descargo
-                            </button>
-                            <button
-                              onClick={() => {
-                                setActiveMenuId(null);
-                                setMovimientosModal({ isOpen: true, item }); 
-                              }}
-                              className="w-full text-left px-3 py-2 text-xs font-bold text-slate-700 hover:bg-purple-50 hover:text-[#7C69EF] transition-colors flex items-center gap-2 border-t border-purple-50"
-                            >
-                              <span>📋</span> Movimientos
-                            </button>
-                          </div>
-                        )}
-                      </div>
-
+                    
                     </div>
                   )}
                 </div>
               </td>
-
             </tr>
           );
         })
       )}
     </tbody>
   </table>
-
-  {/* ========================================================= */}
-  {/* MODALES GIGANTES (Abarcan casi toda la pantalla)           */}
-  {/* ========================================================= */}
-
-  {/* 1. MODAL DE DETALLES (👁️) */}
-  {detailModal.isOpen && detailModal.item && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 sm:p-6 animate-in fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-11/12 max-w-4xl h-[85vh] overflow-hidden flex flex-col relative">
-        <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100">
-          <h3 className="font-black text-purple-800 text-base flex items-center gap-2">
-            <span>👁️</span> Detalle del Producto
-          </h3>
-          <button 
-            onClick={() => setDetailModal({ isOpen: false, item: null })}
-            className="w-9 h-9 rounded-2xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-purple-100 flex items-center justify-center font-black transition-all shadow-xs"
-          >
-            ✕
-          </button>
-        </div>
-        
-        <div className="p-6 overflow-y-auto flex-1 space-y-4">
-          <div className="bg-purple-50/50 p-4 rounded-2xl border border-purple-100/60 space-y-2 text-xs">
-            <p><strong className="text-purple-700">ID Único:</strong> <span className="font-mono text-slate-600">{detailModal.item.id}</span></p>
-            <p><strong className="text-purple-700">Nombre:</strong> <span className="text-slate-800 font-bold">{detailModal.item.nombre || detailModal.item.productos}</span></p>
-            <p><strong className="text-purple-700">Categoría:</strong> <span className="text-slate-700">{detailModal.item.categoria || "General"}</span></p>
-          </div>
-          <div className="grid grid-cols-2 gap-4 text-xs">
-            <div className="bg-slate-50 p-4 rounded-2xl border border-slate-100">
-              <span className="block text-slate-400 text-[10px] uppercase font-bold">Costo</span>
-              <span className="font-black text-slate-700 text-base">${Number(detailModal.item.costo || 0).toLocaleString()}</span>
-            </div>
-            <div className="bg-purple-50/70 p-4 rounded-2xl border border-purple-100">
-              <span className="block text-purple-400 text-[10px] uppercase font-bold">Precio Venta</span>
-              <span className="font-black text-[#7C69EF] text-base">${Number(detailModal.item.precio || 0).toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-4 border-t border-purple-50 flex justify-end bg-slate-50/50">
-          <button
-            onClick={() => setDetailModal({ isOpen: false, item: null })}
-            className="bg-[#7C69EF] hover:bg-purple-700 text-white font-bold py-2.5 px-6 rounded-xl text-xs transition-all shadow-md shadow-purple-500/20"
-          >
-            Cerrar
-          </button>
-        </div>
-      </div>
-    </div>
-  )}
-
-  {/* 2. MODAL DE CARGO Y DESCARGO (Gigante, abarca casi toda la pantalla) */}
+</div>
   {cargoyDescargoModal.isOpen && cargoyDescargoModal.item && (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 sm:p-6 animate-in fade-in">
       <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-11/12 max-w-6xl h-[90vh] overflow-hidden flex flex-col relative">
-        
-        {/* Cabecera bonita del Modal */}
         <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-[#7C69EF] text-white flex items-center justify-center font-black shadow-md shadow-purple-500/20">
@@ -1067,33 +557,25 @@ const handleUpdateInventario = async (e) => {
               </p>
             </div>
           </div>
-          
-          <button 
+          <button
             onClick={() => setCargoyDescargoModal({ isOpen: false, item: null })}
             className="w-10 h-10 rounded-2xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-purple-100 flex items-center justify-center font-black transition-all shadow-xs"
           >
             ✕
           </button>
         </div>
-
-        {/* Contenido amplio con scroll interno */}
         <div className="p-6 md:p-8 overflow-y-auto flex-1">
-          <CargoyDescargo 
-            item={cargoyDescargoModal.item} 
-            onClose={() => setCargoyDescargoModal({ isOpen: false, item: null })} 
+          <CargoyDescargo
+            item={cargoyDescargoModal.item}
+            onClose={() => setCargoyDescargoModal({ isOpen: false, item: null })}
           />
         </div>
-
       </div>
     </div>
   )}
-
-  {/* 3. MODAL DE MOVIMIENTOS (Gigante, abarca casi toda la pantalla) */}
   {movimientosModal.isOpen && movimientosModal.item && (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-md p-2 sm:p-6 animate-in fade-in">
       <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-11/12 max-w-6xl h-[90vh] overflow-hidden flex flex-col relative">
-        
-        {/* Cabecera del Modal de Movimientos */}
         <div className="flex items-center justify-between px-6 py-4 bg-gradient-to-r from-purple-50 to-pink-50 border-b border-purple-100 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-10 h-10 rounded-2xl bg-purple-600 text-white flex items-center justify-center font-black shadow-md shadow-purple-500/20">
@@ -1106,59 +588,28 @@ const handleUpdateInventario = async (e) => {
               </p>
             </div>
           </div>
-          
-          <button 
+          <button
             onClick={() => setMovimientosModal({ isOpen: false, item: null })}
             className="w-10 h-10 rounded-2xl bg-white hover:bg-rose-50 text-slate-400 hover:text-rose-500 border border-purple-100 flex items-center justify-center font-black transition-all shadow-xs"
           >
             ✕
           </button>
         </div>
-
-        {/* Contenido amplio con scroll interno */}
         <div className="p-6 md:p-8 overflow-y-auto flex-1">
-          <Movimientos 
-            item={movimientosModal.item} 
-            onClose={() => setMovimientosModal({ isOpen: false, item: null })} 
+          <Movimientos
+            item={movimientosModal.item}
+            onClose={() => setMovimientosModal({ isOpen: false, item: null })}
           />
         </div>
-
       </div>
     </div>
   )}
-
-</div>
-  )}
-
-  {/* 3. MODAL DE MOVIMIENTOS (Movimientos.jsx) */}
-  {movimientosModal.isOpen && movimientosModal.item && (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 backdrop-blur-sm p-4 animate-in fade-in">
-      <div className="bg-white rounded-3xl shadow-2xl border border-purple-100 w-full max-w-lg overflow-hidden p-6 relative">
-        <button 
-          onClick={() => setMovimientosModal({ isOpen: false, item: null })}
-          className="absolute top-5 right-5 w-8 h-8 rounded-full bg-purple-50 hover:bg-purple-100 text-purple-600 flex items-center justify-center font-bold z-10"
-        >
-          ✕
-        </button>
-        <Movimientos 
-          item={movimientosModal.item} 
-          onClose={() => setMovimientosModal({ isOpen: false, item: null })} 
-        />
-      </div>
-    </div>
-  )}
-
-</div>
-
-      {/* MODAL PARA AGREGAR NUEVO PRODUCTO */}
  {isAddModalOpen && (
   <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto transition-all animate-fade-in">
   <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-7 max-w-lg w-full shadow-2xl shadow-purple-900/20 border border-purple-100 space-y-5 my-auto transition-all duration-300 ease-out transform scale-100 opacity-100">
-    
-    {/* Cabecera */}
     <div className="flex items-center justify-between border-b border-purple-100 pb-4">
       <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2.5">
-        <span className="flex items-center justify-center w-8 h-8 rounded-2xl bg-purple-100 text-purple-600 shadow-inner text-base">📦</span> 
+        <span className="flex items-center justify-center w-8 h-8 rounded-2xl bg-purple-100 text-purple-600 shadow-inner text-base">📦</span>
         Registrar Nuevo Producto
       </h3>
       <button
@@ -1169,11 +620,7 @@ const handleUpdateInventario = async (e) => {
         ✕
       </button>
     </div>
-
-    {/* Formulario */}
     <form onSubmit={handleAddInventario} className="space-y-4 text-xs">
-      
-      {/* Nombre del producto */}
       <div>
         <label className="block font-extrabold text-slate-700 mb-1.5">Nombre del producto *</label>
         <input
@@ -1185,8 +632,6 @@ const handleUpdateInventario = async (e) => {
           required
         />
       </div>
-
-      {/* Proveedor */}
       <div>
         <label className="block font-extrabold text-slate-700 mb-1.5">Proveedor *</label>
         <input
@@ -1198,8 +643,6 @@ const handleUpdateInventario = async (e) => {
           required
         />
       </div>
-
-      {/* Descripción */}
       <div>
         <label className="block font-extrabold text-slate-700 mb-1.5">Descripción</label>
         <input
@@ -1210,8 +653,6 @@ const handleUpdateInventario = async (e) => {
           className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
         />
       </div>
-
-      {/* Categoría y Stock */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block font-extrabold text-slate-700 mb-1.5">Categoría</label>
@@ -1238,8 +679,6 @@ const handleUpdateInventario = async (e) => {
           />
         </div>
       </div>
-
-      {/* Costo, Margen y Precio Final */}
       <div className="grid grid-cols-3 gap-2.5">
         <div>
           <label className="block font-extrabold text-slate-700 mb-1.5">Costo ($) *</label>
@@ -1259,8 +698,8 @@ const handleUpdateInventario = async (e) => {
             onChange={(e) => setPorcentajeGanancia(Number(e.target.value))}
             disabled={Number(costo) === 0}
             className={`w-full rounded-2xl px-2 py-2.5 text-xs font-bold focus:outline-none transition-all ${
-              Number(costo) === 0 
-                ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed" 
+              Number(costo) === 0
+                ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
                 : "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
             }`}
           >
@@ -1275,8 +714,8 @@ const handleUpdateInventario = async (e) => {
             type={Number(costo) === 0 ? "number" : "text"}
             placeholder={Number(costo) === 0 ? "Ej. 15000" : undefined}
             value={
-              Number(costo) === 0 
-                ? precioManual 
+              Number(costo) === 0
+                ? precioManual
                 : (calculatedNewPrecio ? `$${calculatedNewPrecio.toLocaleString()}` : "$0")
             }
             disabled={Number(costo) !== 0}
@@ -1286,16 +725,14 @@ const handleUpdateInventario = async (e) => {
               }
             }}
             className={`w-full rounded-2xl px-3 py-2.5 text-xs font-bold ${
-              Number(costo) === 0 
-                ? "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner" 
+              Number(costo) === 0
+                ? "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
                 : "bg-purple-100/40 border border-purple-200 text-purple-700 cursor-not-allowed shadow-inner"
             }`}
             required={Number(costo) === 0}
           />
         </div>
       </div>
-
-      {/* Descuento y Precio con Descuento */}
       <div className="grid grid-cols-2 gap-3 bg-gradient-to-r from-purple-50/80 to-pink-50/50 p-3.5 rounded-2xl border border-purple-100 items-center shadow-xs">
         <div>
           <label className="block font-extrabold text-purple-900 mb-1.5">% Descuento aplicable</label>
@@ -1321,8 +758,6 @@ const handleUpdateInventario = async (e) => {
           </div>
         </div>
       </div>
-
-      {/* Estado y Fecha */}
       <div className="grid grid-cols-2 gap-3 items-center bg-purple-50/20 p-3.5 rounded-2xl border border-purple-100">
         <div>
           <label className="block font-extrabold text-slate-700 text-[11px] mb-1.5">Estado del Producto</label>
@@ -1330,8 +765,8 @@ const handleUpdateInventario = async (e) => {
             type="button"
             onClick={() => setEstado(!estado)}
             className={`px-3.5 py-2 rounded-xl font-extrabold text-[10px] transition-all flex items-center gap-2 shadow-sm ${
-              estado 
-                ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20" 
+              estado
+                ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
                 : "bg-rose-500 hover:bg-rose-600 text-white shadow-rose-500/20"
             }`}
           >
@@ -1349,13 +784,11 @@ const handleUpdateInventario = async (e) => {
           />
         </div>
       </div>
-
-      {/* Carga de Fotos */}
       <div className="grid grid-cols-2 gap-3 pt-1">
         <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
           <label className="block font-extrabold text-slate-700 text-[11px]">Foto Principal (img) *</label>
-          <input 
-            type="file" 
+          <input
+            type="file"
             accept="image/*"
             onChange={(e) => {
               const file = e.target.files[0];
@@ -1384,8 +817,8 @@ const handleUpdateInventario = async (e) => {
         </div>
         <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
           <label className="block font-extrabold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
-          <input 
-            type="file" 
+          <input
+            type="file"
             accept="image/*"
             onChange={(e) => {
               const file = e.target.files[0];
@@ -1412,8 +845,6 @@ const handleUpdateInventario = async (e) => {
           />
         </div>
       </div>
-
-      {/* Botones de Acción */}
       <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-purple-100">
         <button
           type="button"
@@ -1430,21 +861,16 @@ const handleUpdateInventario = async (e) => {
           {isUploading ? "Subiendo fotos y guardando..." : "Guardar Producto ✨"}
         </button>
       </div>
-
     </form>
   </div>
 </div>
 )}
-
-      {/* MODAL PARA EDITAR PRODUCTO */}
     {isEditModalOpen && editingItemData && (
  <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-all animate-fade-in">
   <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-7 max-w-lg w-full shadow-2xl shadow-purple-900/20 border border-purple-100 space-y-5 my-auto max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform scale-100 opacity-100">
-    
-    {/* Cabecera */}
     <div className="flex items-center justify-between border-b border-purple-100 pb-4">
       <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2.5">
-        <span className="flex items-center justify-center w-8 h-8 rounded-2xl bg-purple-100 text-purple-600 shadow-inner text-base">✏️</span> 
+        <span className="flex items-center justify-center w-8 h-8 rounded-2xl bg-purple-100 text-purple-600 shadow-inner text-base">✏️</span>
         Editar Producto en Inventario
       </h3>
       <button
@@ -1455,11 +881,7 @@ const handleUpdateInventario = async (e) => {
         ✕
       </button>
     </div>
-
-    {/* Formulario */}
     <form onSubmit={handleUpdateInventario} className="space-y-4 text-xs">
-      
-      {/* Nombre del producto */}
       <div>
         <label className="block font-extrabold text-slate-700 mb-1.5">Nombre del producto *</label>
         <input
@@ -1470,8 +892,6 @@ const handleUpdateInventario = async (e) => {
           required
         />
       </div>
-
-      {/* Proveedor */}
       <div>
         <label className="block font-extrabold text-slate-700 mb-1.5">Proveedor *</label>
         <input
@@ -1482,8 +902,6 @@ const handleUpdateInventario = async (e) => {
           required
         />
       </div>
-
-      {/* Descripción */}
       <div>
         <label className="block font-extrabold text-slate-700 mb-1.5">Descripción</label>
         <textarea
@@ -1493,8 +911,6 @@ const handleUpdateInventario = async (e) => {
           rows="2"
         />
       </div>
-
-      {/* Categoría y Stock */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block font-extrabold text-slate-700 mb-1.5">Categoría</label>
@@ -1519,8 +935,6 @@ const handleUpdateInventario = async (e) => {
           />
         </div>
       </div>
-
-      {/* Selector de Costo, Margen de Porcentaje y Precio Final */}
       <div className="grid grid-cols-3 gap-2.5">
         <div>
           <label className="block font-extrabold text-slate-700 mb-1.5">Costo ($) *</label>
@@ -1530,7 +944,7 @@ const handleUpdateInventario = async (e) => {
             onChange={(e) => {
               const nuevoCosto = e.target.value;
               setEditingItemData({
-                ...editingItemData, 
+                ...editingItemData,
                 costo: nuevoCosto,
                 precio: Number(nuevoCosto) === 0 ? (editingItemData.precio || "") : editingItemData.precio
               });
@@ -1546,8 +960,8 @@ const handleUpdateInventario = async (e) => {
             onChange={(e) => setEditingItemData({...editingItemData, porcentajeGanancia: Number(e.target.value)})}
             disabled={Number(editingItemData.costo) === 0}
             className={`w-full rounded-2xl px-2 py-2.5 text-xs font-bold focus:outline-none transition-all ${
-              Number(editingItemData.costo) === 0 
-                ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed" 
+              Number(editingItemData.costo) === 0
+                ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
                 : "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
             }`}
           >
@@ -1561,12 +975,12 @@ const handleUpdateInventario = async (e) => {
           <input
             type={Number(editingItemData.costo) === 0 ? "number" : "text"}
             value={
-              Number(editingItemData.costo) === 0 
-                ? (editingItemData.precio ?? "") 
+              Number(editingItemData.costo) === 0
+                ? (editingItemData.precio ?? "")
                 : (() => {
                     const costoNum = Number(editingItemData.costo) || 0;
                     const porc = Number(editingItemData.porcentajeGanancia) || 50;
-                    const divisor = 1 - (porc / 100); 
+                    const divisor = 1 - (porc / 100);
                     const precioFinal = divisor > 0 ? costoNum / divisor : costoNum;
                     return precioFinal ? Math.round(precioFinal) : 0;
                   })()
@@ -1578,16 +992,14 @@ const handleUpdateInventario = async (e) => {
               }
             }}
             className={`w-full rounded-2xl px-3.5 py-2.5 text-xs font-bold ${
-              Number(editingItemData.costo) === 0 
-                ? "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner" 
+              Number(editingItemData.costo) === 0
+                ? "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
                 : "bg-purple-100/40 border border-purple-200 text-purple-700 cursor-not-allowed shadow-inner"
             }`}
             required={Number(editingItemData.costo) === 0}
           />
         </div>
       </div>
-
-      {/* Campo % Descuento y visualización del precio con descuento */}
       <div className="grid grid-cols-2 gap-3 bg-gradient-to-r from-purple-50/80 to-pink-50/50 p-3.5 rounded-2xl border border-purple-100 items-center shadow-xs">
         <div>
           <label className="block font-extrabold text-purple-900 mb-1.5">% Descuento aplicable</label>
@@ -1605,12 +1017,12 @@ const handleUpdateInventario = async (e) => {
           <label className="block font-extrabold text-purple-900 mb-1.5">Precio con Descuento</label>
           <div className="w-full bg-white border border-purple-200/80 rounded-xl px-3 py-2 text-xs font-black text-[#7C69EF] flex items-center shadow-2xs">
             {(() => {
-              const precioBase = Number(editingItemData.costo) === 0 
-                ? (Number(editingItemData.precio) || 0) 
+              const precioBase = Number(editingItemData.costo) === 0
+                ? (Number(editingItemData.precio) || 0)
                 : (() => {
                     const costoNum = Number(editingItemData.costo) || 0;
                     const porc = Number(editingItemData.porcentajeGanancia) || 50;
-                    const divisor = 1 - (porc / 100); 
+                    const divisor = 1 - (porc / 100);
                     return divisor > 0 ? costoNum / divisor : costoNum;
                   })();
               const desc = Number(editingItemData.porcentajeDescuento) || 0;
@@ -1620,8 +1032,6 @@ const handleUpdateInventario = async (e) => {
           </div>
         </div>
       </div>
-
-      {/* Botón Switch de Estado (Encendido / Apagado) */}
       <div className="bg-purple-50/20 p-3.5 rounded-2xl border border-purple-100 space-y-1.5">
         <label className="block font-extrabold text-slate-700 text-[11px]">Estado del Producto</label>
         <button
@@ -1630,7 +1040,7 @@ const handleUpdateInventario = async (e) => {
             setEditingItemData({ ...editingItemData, estado: !editingItemData.estado });
           }}
           className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-extrabold transition-all shadow-sm ${
-            editingItemData.estado 
+            editingItemData.estado
               ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 text-white shadow-emerald-500/20"
               : "bg-rose-500 hover:bg-rose-600 border-rose-600 text-white shadow-rose-500/20"
           }`}
@@ -1646,14 +1056,12 @@ const handleUpdateInventario = async (e) => {
           </span>
         </button>
       </div>
-
-      {/* Imágenes */}
       <div className="grid grid-cols-2 gap-3 pt-1">
         <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
           <label className="block font-extrabold text-slate-700 text-[11px]">Foto Principal (img)</label>
           {editingItemData.img && <img src={editingItemData.img} alt="Actual" className="w-12 h-12 object-cover rounded-xl mb-1.5 border border-purple-200 shadow-xs" />}
-          <input 
-            type="file" 
+          <input
+            type="file"
             accept="image/*"
             onChange={(e) => {
               const file = e.target.files[0];
@@ -1682,8 +1090,8 @@ const handleUpdateInventario = async (e) => {
         <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
           <label className="block font-extrabold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
           {editingItemData.img1 && <img src={editingItemData.img1} alt="Actual 1" className="w-12 h-12 object-cover rounded-xl mb-1.5 border border-purple-200 shadow-xs" />}
-          <input 
-            type="file" 
+          <input
+            type="file"
             accept="image/*"
             onChange={(e) => {
               const file = e.target.files[0];
@@ -1710,8 +1118,6 @@ const handleUpdateInventario = async (e) => {
           />
         </div>
       </div>
-
-      {/* Botones de Acción */}
       <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-purple-100">
         <button
           type="button"
@@ -1728,20 +1134,13 @@ const handleUpdateInventario = async (e) => {
           {isUploading ? "Actualizando..." : "Guardar Cambios ✨"}
         </button>
       </div>
-
     </form>
   </div>
 </div>
 )}
-
-      {/* MODAL DETALLES (ESTILO ANTERIOR + SCROLL Y ALTURA MÁXIMA PARA EVITAR RECORTE) */}
-     {/* MODAL DETALLES CORREGIDO */}
-    {/* MODAL DETALLES DEFINITIVO */}
       {detailModal.isOpen && detailModal.item && (
        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">
   <div className="bg-white rounded-3xl p-5 max-w-sm w-full shadow-2xl border border-slate-100 space-y-3 animate-fadeIn my-auto">
-    
-    {/* Cabecera del Modal */}
     <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
       <div className="flex items-center gap-2">
         <span className="p-1.5 bg-indigo-50 text-[#7C69EF] rounded-xl text-xs font-black">📦</span>
@@ -1757,28 +1156,23 @@ const handleUpdateInventario = async (e) => {
           </p>
         </div>
       </div>
-      <button 
+      <button
         onClick={() => setDetailModal({ isOpen: false, item: null })}
         className="text-slate-400 hover:text-slate-700 font-bold text-xs p-1.5 rounded-xl bg-slate-50 hover:bg-slate-100 transition-all cursor-pointer"
       >
         ✕
       </button>
     </div>
-
-    {/* Contenido principal compacto */}
     <div className="space-y-2.5 text-xs">
-      
-      {/* Carrusel o Mensaje de Sin Imágenes */}
       {(() => {
         const images = [detailModal.item.img, detailModal.item.img1].filter(Boolean);
-        
         if (images.length > 0) {
           return (
             <div className="bg-slate-50 p-2 rounded-2xl border border-slate-100 flex items-center gap-3">
               <div className="w-16 h-16 rounded-xl overflow-hidden border-2 border-white shadow-xs bg-white flex items-center justify-center shrink-0">
-                <img 
-                  src={images[detailImgIndex] || images[0]} 
-                  alt="Vista previa" 
+                <img
+                  src={images[detailImgIndex] || images[0]}
+                  alt="Vista previa"
                   className="w-full h-full object-contain"
                   loading="lazy"
                   onError={(e) => { e.target.style.display = 'none'; }}
@@ -1813,8 +1207,6 @@ const handleUpdateInventario = async (e) => {
           );
         }
       })()}
-
-      {/* Nombre y Categoría */}
       <div className="bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-100 flex items-center justify-between">
         <div>
           <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">Producto</span>
@@ -1824,65 +1216,53 @@ const handleUpdateInventario = async (e) => {
           {detailModal.item.categoria || "General"}
         </span>
       </div>
-
-      {/* Descripción del producto */}
       <div className="bg-slate-50/80 px-3 py-2 rounded-xl border border-slate-100">
         <span className="text-[9px] font-extrabold uppercase tracking-wider text-slate-400 block">Descripción</span>
         <p className="text-[11px] font-medium text-slate-700 mt-0.5">
           {detailModal.item.descripcion || "bueno producto"}
         </p>
       </div>
-
-      {/* Métricas en Grid de 2x2 */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-emerald-50/60 border border-emerald-100 p-2 rounded-xl">
           <span className="text-[9px] font-bold uppercase tracking-wider text-emerald-600/80 block">Costo</span>
           <p className="font-extrabold text-emerald-700 text-xs">${Number(detailModal.item.costo || 0).toLocaleString()}</p>
         </div>
-
         <div className="bg-indigo-50/60 border border-indigo-100 p-2 rounded-xl">
           <span className="text-[9px] font-bold uppercase tracking-wider text-[#7C69EF]/80 block">Precio Venta</span>
           <p className="font-extrabold text-[#7C69EF] text-xs">${Number(detailModal.item.precio || 0).toLocaleString()}</p>
         </div>
-
         <div className="bg-sky-50/60 border border-sky-100 p-2 rounded-xl">
           <span className="text-[9px] font-bold uppercase tracking-wider text-sky-600/80 block">Stock Disponible</span>
           <p className="font-extrabold text-sky-700 text-xs">{detailModal.item.udisponibles ?? detailModal.item.stockactual ?? 0} unids</p>
         </div>
-
         <div className="bg-amber-50/60 border border-amber-100 p-2 rounded-xl">
           <span className="text-[9px] font-bold uppercase tracking-wider text-amber-600/80 block">Vendidas</span>
           <p className="font-extrabold text-amber-700 text-xs">{detailModal.item.uvendidas ?? "0"} unids</p>
         </div>
       </div>
-
-      {/* Estado y Porcentaje de Ganancia */}
       <div className="grid grid-cols-2 gap-2">
         <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 flex items-center justify-between">
           <div>
             <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block">Estado</span>
             <span className={`inline-flex items-center gap-1 font-extrabold text-[10px] ${
-              String(detailModal.item.estado) === "true" || detailModal.item.estado === true 
-                ? "text-emerald-600" 
+              String(detailModal.item.estado) === "true" || detailModal.item.estado === true
+                ? "text-emerald-600"
                 : "text-rose-600"
             }`}>
               <span className={`w-1.5 h-1.5 rounded-full ${
-                String(detailModal.item.estado) === "true" || detailModal.item.estado === true 
-                  ? "bg-emerald-500 animate-pulse" 
+                String(detailModal.item.estado) === "true" || detailModal.item.estado === true
+                  ? "bg-emerald-500 animate-pulse"
                   : "bg-rose-500"
               }`}></span>
               {String(detailModal.item.estado) === "true" || detailModal.item.estado === true ? "Activo" : "Inactivo"}
             </span>
           </div>
         </div>
-
         <div className="bg-slate-50 p-2 rounded-xl border border-slate-100">
           <span className="text-[8px] font-bold uppercase tracking-wider text-slate-400 block">% Ganancia</span>
           <strong className="text-slate-700 text-xs">{detailModal.item.porcentajeGanancia ?? 50}%</strong>
         </div>
       </div>
-
-      {/* Fechas e Ingresos */}
       <div className="bg-slate-50 p-2 rounded-xl border border-slate-100 grid grid-cols-3 text-center text-[10px]">
         <div>
           <span className="block text-[8px] font-bold uppercase tracking-wider text-slate-400">Ingresadas</span>
@@ -1897,21 +1277,16 @@ const handleUpdateInventario = async (e) => {
           <strong className="text-slate-700">{detailModal.item.fsalida ?? "--"}</strong>
         </div>
       </div>
-
-      {/* Botón Cerrar */}
       <button
         onClick={() => setDetailModal({ isOpen: false, item: null })}
         className="w-full bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold py-2 rounded-xl text-xs transition-all cursor-pointer mt-1"
       >
         Cerrar Ventana
       </button>
-
     </div>
   </div>
 </div>
       )}
-
-      {/* MODAL DE CONFIRMACIÓN DE ELIMINACIÓN */}
       {deleteModal.isOpen && (
        <div className="fixed inset-0 z-50 bg-black/45 backdrop-blur-xs flex items-center justify-center p-4">
           <div className="bg-white rounded-3xl p-6 max-w-xs w-full shadow-2xl border border-[#E4E8F0] space-y-4 text-center animate-fadeIn">
@@ -1954,7 +1329,6 @@ const handleUpdateInventario = async (e) => {
           </div>
         </div>
       )}
-
     </div>
   );
 }

@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
 import { collection, onSnapshot, query, orderBy } from 'firebase/firestore';
 import { db } from '../../firebase';
-import { History, Search, ArrowUpRight, ArrowDownRight, Sparkles, FileText } from 'lucide-react';
+import { Search, Sparkles, FileText, X } from 'lucide-react';
 
-export default function Movimientos() {
+export default function Movimientos({ productoSeleccionado, onLimpiarFiltroProducto }) {
   const [movimientos, setMovimientos] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -12,7 +12,7 @@ export default function Movimientos() {
   useEffect(() => {
     const q = query(collection(db, "historial_movimientos"), orderBy("fecha", "desc"));
     const unsubscribe = onSnapshot(q, (snapshot) => {
-      setMovimientos(snapshot.docs.map(d => ({ id: d.id, ...d.data() })));
+      setMovimientos(snapshot.docs.map(d => ({ idFirebase: d.id, ...d.data() })));
       setIsLoading(false);
     }, (error) => {
       console.error("Error al cargar movimientos:", error);
@@ -21,73 +21,120 @@ export default function Movimientos() {
     return () => unsubscribe();
   }, []);
 
-  const movimientosFiltrados = useMemo(() => {
+  const nombreProductoActual = useMemo(() => {
+    if (!productoSeleccionado) return '';
+    return String(
+      productoSeleccionado.nombre || 
+      productoSeleccionado.productos || 
+      productoSeleccionado.titulo || 
+      productoSeleccionado.nombreProducto || ''
+    ).toLowerCase().trim();
+  }, [productoSeleccionado]);
+
+  const idProductoActual = useMemo(() => {
+    if (!productoSeleccionado) return '';
+    return String(
+      productoSeleccionado.id || 
+      productoSeleccionado._id || 
+      productoSeleccionado.idProducto || 
+      productoSeleccionado.productoId || ''
+    ).trim();
+  }, [productoSeleccionado]);
+
+  const movimientosDelProducto = useMemo(() => {
+    if (!productoSeleccionado) return movimientos;
+
     return movimientos.filter(m => {
-      const matchesSearch = (m.productoNombre || '').toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
+      const movimientoId = String(
+        m.productoId || 
+        m.idProducto || 
+        m.id || 
+        m._id || 
+        m.producto_id || ''
+      ).trim();
+
+      const movimientoNombre = String(
+        m.productoNombre || 
+        m.nombreProducto || 
+        m.nombre || 
+        m.producto || ''
+      ).toLowerCase().trim();
+
+      const coincideId = idProductoActual !== '' && movimientoId !== '' && movimientoId === idProductoActual;
+      const coincideNombre = nombreProductoActual !== '' && movimientoNombre !== '' && movimientoNombre === nombreProductoActual;
+
+      return coincideId || coincideNombre;
+    });
+  }, [movimientos, productoSeleccionado, idProductoActual, nombreProductoActual]);
+
+  const movimientosFiltrados = useMemo(() => {
+    return movimientosDelProducto.filter(m => {
+      const matchesSearch = (m.productoNombre || m.nombre || '').toLowerCase().includes(searchQuery.toLowerCase().trim()) ||
                             (m.categoria || '').toLowerCase().includes(searchQuery.toLowerCase().trim());
       const matchesTipo = filtroTipo === 'todos' || m.tipo === filtroTipo;
+      
       return matchesSearch && matchesTipo;
     });
-  }, [movimientos, searchQuery, filtroTipo]);
+  }, [movimientosDelProducto, searchQuery, filtroTipo]);
 
   const formatearFecha = (timestamp) => {
-    if (!timestamp || !timestamp.toDate) return 'Fecha reciente';
+    if (!timestamp || !timestamp.toDate) return 'Reciente';
     return timestamp.toDate().toLocaleString('es-CO', {
-      day: '2-digit', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit'
+      day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit'
     });
   };
 
   if (isLoading) {
     return (
-      <div className="flex h-96 items-center justify-center">
+      <div className="flex h-full w-full min-h-[300px] items-center justify-center bg-slate-50">
         <div className="flex flex-col items-center gap-2">
-          <div className="w-6 h-6 border-2 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-[10px] font-bold text-pink-600 uppercase">Cargando historial...</p>
+          <div className="w-5 h-5 border-2 border-purple-600 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-[10px] font-semibold text-purple-600 uppercase tracking-wider">Cargando...</p>
         </div>
       </div>
     );
   }
 
+  const nombreVisual = productoSeleccionado ? (productoSeleccionado.nombre || productoSeleccionado.productos || productoSeleccionado.titulo || 'Producto') : '';
+
   return (
-    <div className="w-full m-0 p-0 text-slate-800 font-sans flex-1 overflow-y-auto space-y-2">
+    <div className="w-full h-[calc(100vh-140px)] min-h-[500px] flex flex-col bg-slate-50/60 font-sans overflow-hidden m-0 p-0">
       
-      {/* ENCABEZADO */}
-      <div className="bg-gradient-to-r from-purple-600 via-pink-500 to-indigo-600 rounded-2xl p-4 text-white shadow-md relative overflow-hidden">
-        <div className="flex items-center gap-2 mb-1">
-          <div className="p-1.5 bg-white/25 backdrop-blur-md rounded-xl">
-            <History className="w-4 h-4 text-yellow-300" />
+      {/* BARRA SUPERIOR FIJA */}
+      <div className="flex-shrink-0 bg-white border-b border-slate-200 px-3 py-2 flex flex-col sm:flex-row items-center justify-between gap-2 z-10 w-full shadow-2xs">
+        <div className="flex items-center gap-2 w-full sm:w-auto">
+          <div className="relative flex-1 sm:w-64">
+            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3 h-3 text-slate-400" />
+            <input 
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Buscar movimiento..."
+              className="w-full bg-slate-50 border border-slate-200 rounded-lg pl-7 pr-2.5 py-1 text-[11px] font-medium text-slate-800 placeholder-slate-400 focus:outline-none focus:border-purple-600 transition-all"
+            />
           </div>
-          <span className="text-[9px] font-black uppercase tracking-wider bg-white/20 px-2 py-0.5 rounded-full text-pink-100">
-            Logística & Trazabilidad 🌸
-          </span>
-        </div>
-        <h1 className="text-base sm:text-lg font-black tracking-tight mb-0.5">Historial de Movimientos ✨</h1>
-        <p className="text-[10px] text-pink-100">Visualiza todas las entradas y salidas de stock registradas en tiempo real.</p>
-      </div>
 
-      {/* FILTROS Y BUSCADOR */}
-      <div className="flex flex-col sm:flex-row items-center justify-between gap-2 bg-white p-2.5 rounded-xl border border-pink-100 shadow-xs">
-        <div className="relative w-full sm:w-72">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-slate-400" />
-          <input 
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Buscar por producto..."
-            className="w-full bg-pink-50/40 border border-pink-100 rounded-lg pl-8 pr-3 py-1.5 text-[10px] font-bold text-slate-800 focus:outline-none focus:border-pink-500"
-          />
+          {productoSeleccionado && onLimpiarFiltroProducto && (
+            <button
+              onClick={onLimpiarFiltroProducto}
+              className="flex items-center gap-1 bg-purple-50 hover:bg-purple-100 text-purple-700 border border-purple-200 px-2 py-1 rounded-lg text-[11px] font-bold transition-all active:scale-95 flex-shrink-0"
+              title={`Filtro activo: ${nombreVisual}`}
+            >
+              <X className="w-3 h-3" /> <span className="hidden md:inline">Quitar filtro</span>
+            </button>
+          )}
         </div>
 
-        <div className="flex items-center gap-1.5 w-full sm:w-auto">
+        <div className="flex items-center gap-1.5 w-full sm:w-auto overflow-x-auto pb-0.5 sm:pb-0">
           {[
-            { id: 'todos', label: `Todos (${movimientos.length})`, active: 'bg-purple-600 text-white', def: 'bg-slate-100 text-slate-600' },
-            { id: 'carga', label: 'Cargas (+)', active: 'bg-emerald-600 text-white', def: 'bg-emerald-50 text-emerald-700' },
-            { id: 'descargo', label: 'Descargos (-)', active: 'bg-amber-600 text-white', def: 'bg-amber-50 text-amber-700' }
+            { id: 'todos', label: `Todos (${movimientosDelProducto.length})`, active: 'bg-purple-600 text-white shadow-xs', def: 'bg-slate-100 text-slate-600 hover:bg-slate-200' },
+            { id: 'carga', label: 'Cargas (+)', active: 'bg-emerald-600 text-white shadow-xs', def: 'bg-slate-100 text-slate-600 hover:bg-slate-200' },
+            { id: 'descargo', label: 'Descargos (-)', active: 'bg-amber-600 text-white shadow-xs', def: 'bg-slate-100 text-slate-600 hover:bg-slate-200' }
           ].map(f => (
             <button
               key={f.id}
               onClick={() => setFiltroTipo(f.id)}
-              className={`flex-1 sm:flex-none px-2.5 py-1.5 rounded-lg text-[10px] font-extrabold transition-all ${filtroTipo === f.id ? f.active : f.def}`}
+              className={`px-2 py-1 rounded-lg text-[10px] font-bold transition-all duration-200 whitespace-nowrap active:scale-95 ${filtroTipo === f.id ? f.active : f.def}`}
             >
               {f.label}
             </button>
@@ -95,69 +142,81 @@ export default function Movimientos() {
         </div>
       </div>
 
-      {/* LISTADO DE MOVIMIENTOS */}
-      <div className="space-y-2">
-        {movimientosFiltrados.map((mov) => {
-          const esCarga = mov.tipo === 'carga';
-          return (
-            <div 
-              key={mov.id} 
-              className="bg-white border border-pink-100 rounded-xl p-2.5 flex flex-col gap-1.5 shadow-xs"
-            >
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-                <div className="flex items-center gap-2.5 min-w-0">
-                  <div className={`w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 ${
-                    esCarga ? 'bg-emerald-100 text-emerald-600' : 'bg-amber-100 text-amber-600'
-                  }`}>
-                    {esCarga ? <ArrowUpRight className="w-4 h-4" /> : <ArrowDownRight className="w-4 h-4" />}
-                  </div>
+      {/* CONTENEDOR CON SCROLL Y 2 COLUMNAS EN MÓVIL / 3 EN PC */}
+      <div className="flex-1 w-full overflow-y-auto overflow-x-hidden p-2.5">
+        {productoSeleccionado && movimientosDelProducto.length === 0 ? (
+          <div className="flex flex-col items-center justify-center py-12 bg-white border border-slate-200 rounded-xl text-center shadow-2xs w-full">
+            <Sparkles className="w-5 h-5 text-purple-400 mb-1.5 animate-bounce" />
+            <p className="text-xs font-bold text-slate-800 mb-0.5">Sin registros</p>
+            <p className="text-[10px] text-slate-500">No hay movimientos asociados a este producto.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-2 lg:grid-cols-3 gap-2 w-full">
+            {movimientosFiltrados.map((mov) => {
+              const esCarga = mov.tipo === 'carga';
+              return (
+                <div 
+                  key={mov.idFirebase} 
+                  className="group bg-white hover:bg-purple-50/20 border border-slate-200 hover:border-purple-300 rounded-lg p-1.5 transition-all duration-200 hover:shadow-2xs relative overflow-hidden flex flex-col justify-between"
+                >
+                  {/* Barra lateral indicadora */}
+                  <div className={`absolute left-0 top-0 bottom-0 w-0.5 ${esCarga ? 'bg-emerald-500' : 'bg-amber-500'}`} />
 
-                  <div className="min-w-0">
-                    <div className="flex items-center gap-2 mb-0.5 flex-wrap">
-                      <span className={`text-[8px] font-black uppercase px-1.5 py-0.2 rounded-full ${
-                        esCarga ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                  <div>
+                    {/* Cabecera ultra compacta */}
+                    <div className="flex items-center justify-between gap-1 mb-0.5 pl-1">
+                      <span className={`text-[7px] font-black uppercase px-1 py-0.2 rounded truncate ${
+                        esCarga ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
                       }`}>
-                        {esCarga ? '✨ Carga' : '🌸 Descargo'}
+                        {esCarga ? '+ Carga' : '- Descargo'}
                       </span>
-                      <span className="text-[9px] font-bold text-slate-400">{formatearFecha(mov.fecha)}</span>
+                      <span className="text-[7.5px] text-slate-400 font-medium truncate">{formatearFecha(mov.fecha)}</span>
                     </div>
 
-                    <h3 className="font-black text-[11px] text-slate-900 truncate">{mov.productoNombre}</h3>
-                    <p className="text-[9px] font-bold text-slate-500">Categoría: <span className="text-pink-600">{mov.categoria}</span></p>
+                    {/* Nombre y datos */}
+                    <div className="pl-1 mb-1">
+                      <h3 className="font-bold text-[10px] text-slate-900 truncate group-hover:text-purple-700 transition-colors">
+                        {mov.productoNombre || mov.nombre || 'Producto sin nombre'}
+                      </h3>
+                      <div className="flex items-center justify-between text-[8.5px] text-slate-500 mt-0.2 gap-1">
+                        <span className="truncate">Cat: <strong className="text-slate-700">{mov.categoria || 'General'}</strong></span>
+                        <span className="text-slate-600 font-semibold flex-shrink-0">
+                          {mov.stockAnterior ?? 0} ➔ <strong className="text-purple-600">{mov.stockNuevo ?? 0}</strong>
+                        </span>
+                      </div>
+                    </div>
                   </div>
-                </div>
 
-                <div className="flex items-center gap-4 w-full sm:w-auto justify-between sm:justify-end border-t sm:border-t-0 pt-1.5 sm:pt-0 border-pink-50">
-                  <div className="text-right">
-                    <div className={`text-[11px] font-black ${esCarga ? 'text-emerald-600' : 'text-amber-600'}`}>
+                  {/* Cantidad */}
+                  <div className="flex items-center justify-between mt-0.5 pl-1 pt-0.5 border-t border-slate-100">
+                    <span className="text-[8.5px] text-slate-400 font-medium">Cant:</span>
+                    <span className={`text-[9px] font-black px-1.5 py-0.2 rounded ${
+                      esCarga ? 'bg-emerald-50 text-emerald-700 border border-emerald-200' : 'bg-amber-50 text-amber-700 border border-amber-200'
+                    }`}>
                       {esCarga ? `+${mov.cantidad}` : `-${mov.cantidad}`} un.
-                    </div>
-                    <div className="text-[8px] font-bold text-slate-400">
-                      Ant: {mov.stockAnterior} ➔ <strong className="text-slate-700">Nuevo: {mov.stockNuevo}</strong>
-                    </div>
-                  </div>
-                </div>
-              </div>
-
-              {mov.justificacion && (
-                <div className="bg-pink-50/50 border border-pink-100 rounded-lg px-2 py-1 flex items-start gap-1.5">
-                  <FileText className="w-3 h-3 text-pink-500 flex-shrink-0 mt-0.5" />
-                  <div className="text-[10px] text-slate-700 flex-1">
-                    <span className="font-black text-slate-900 uppercase tracking-wider text-[8px] mr-1">
-                      {esCarga ? 'Justificación:' : 'Motivo:'}
                     </span>
-                    <span className="font-bold text-slate-600">{mov.justificacion}</span>
                   </div>
-                </div>
-              )}
-            </div>
-          );
-        })}
 
-        {movimientosFiltrados.length === 0 && (
-          <div className="text-center py-8 bg-white rounded-xl border border-pink-100 shadow-xs">
-            <Sparkles className="w-6 h-6 text-pink-300 mx-auto mb-1 animate-bounce" />
-            <p className="text-[10px] font-bold text-slate-700">No se encontraron movimientos con esos filtros.</p>
+                  {/* Justificación ultra compacta */}
+                  {mov.justificacion && (
+                    <div className="bg-slate-50 border border-slate-100 rounded p-1 flex items-start gap-1 mt-1 ml-1">
+                      <FileText className="w-2.5 h-2.5 text-purple-600 flex-shrink-0 mt-0.2" />
+                      <p className="text-[8px] text-slate-600 leading-tight line-clamp-1">
+                        <strong className="text-slate-700 uppercase text-[7px] mr-0.5">Motivo:</strong>
+                        {mov.justificacion}
+                      </p>
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+
+        {productoSeleccionado && movimientosDelProducto.length > 0 && movimientosFiltrados.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-10 bg-white border border-slate-200 rounded-xl text-center shadow-2xs w-full">
+            <Sparkles className="w-4 h-4 text-purple-400 mb-1 animate-bounce" />
+            <p className="text-[11px] font-bold text-slate-700">No se encontraron movimientos con los filtros actuales.</p>
           </div>
         )}
       </div>
