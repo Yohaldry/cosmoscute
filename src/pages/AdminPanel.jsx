@@ -7,7 +7,6 @@ import Visitas from "./estadisticas_web/View";
 import BannersPromociones from './bannerspromociones/BannersPromociones';
 import { PanelDePedidos } from './Pedidos/PanelDePedidos';
 import CargoyDescargo  from './cargoydescargo/CargoyDescargo';
-import Movimientos from './movimientos/Movimientos';
 
 
 export default function AdminPanel() {

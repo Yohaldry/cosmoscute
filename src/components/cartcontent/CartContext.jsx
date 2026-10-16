@@ -5,9 +5,6 @@ const CartContext = createContext();
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
 
-  // Costo fijo del domicilio
-  const SHIPPING_COST = 15000;
-
   // Añadir producto o combo
   const addToCart = (product) => {
     setCartItems(prev => {
@@ -40,12 +37,12 @@ export function CartProvider({ children }) {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
-  // Cálculos automáticos
+  // Cálculos automáticos (Solo valor de los productos)
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const productsPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
   
-  // Total final sumando los productos + los 15.000 COP de domicilio (solo si hay productos en el carrito)
-  const totalPrice = cartItems.length > 0 ? productsPrice + SHIPPING_COST : 0;
+  // Total final únicamente con el precio de los productos
+  const totalPrice = productsPrice;
 
   return (
     <CartContext.Provider value={{ 
@@ -55,7 +52,7 @@ export function CartProvider({ children }) {
       deleteItem, 
       totalItems, 
       productsPrice,
-      shippingCost: SHIPPING_COST,
+      shippingCost: 0,
       totalPrice 
     }}>
       {children}
