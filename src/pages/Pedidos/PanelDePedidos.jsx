@@ -648,3 +648,5 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
     </div>
   );
 };
+
+
