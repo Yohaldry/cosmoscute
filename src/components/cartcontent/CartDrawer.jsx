@@ -5,7 +5,6 @@ import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 
 export default function CartDrawer({ isOpen, onClose }) {
-  // Ajustado: quitamos clearCart ya que no viene en el contexto
   const { cartItems, addToCart, removeFromCart, deleteItem, totalItems, productsPrice, shippingCost, totalPrice } = useCart();
   
   // Estados para vistas y alertas
@@ -32,14 +31,59 @@ export default function CartDrawer({ isOpen, onClose }) {
     });
   };
 
-  // Guardar en Firebase (Colección: "pedidos")
+  // Función para enviar el correo electrónico al cliente
+  const enviarCorreoCliente = async (datosOrden) => {
+    try {
+      // NOTA: Puedes integrar aquí tu servicio de correo favorito (Ej: EmailJS, Resend o tu backend)
+      // Ejemplo de estructura de datos que se enviaría al servicio de correo:
+      const detalleProductos = datosOrden.productos
+        .map(p => `- ${p.quantity}x ${p.name} ($${p.price.toLocaleString()} COP)`)
+        .join('\n');
+
+      const contenidoCorreo = {
+        to: datosOrden.correo,
+        subject: '¡Hemos recibido tu pedido en CosmosCute! 🛍️',
+        message: `
+          Hola ${datosOrden.nombre} ${datosOrden.apellido},
+          
+          ¡Gracias por tu compra en CosmosCute! Aquí están los detalles de tu pedido:
+          
+          ${detalleProductos}
+          
+          -----------------------------------
+          Total a pagar: $${datosOrden.precio.toLocaleString()} COP
+          Dirección de entrega: ${datosOrden.direccion}, ${datosOrden.barrio} (${datosOrden.ciudad})
+          
+          Pronto nos pondremos en contacto contigo para coordinar el envío.
+          
+          ¡Te invitamos a descubrir más productos increíbles y novedades que tenemos disponibles para ti ingresando en: https://www.cosmoscute.com !
+        `
+      };
+
+      console.log("Simulando envío de correo electrónico al cliente:", contenidoCorreo);
+      
+      // Si usas EmailJS, por ejemplo, harías algo así:
+      // await emailjs.send('tu_service_id', 'tu_template_id', {
+      //   to_email: datosOrden.correo,
+      //   to_name: datosOrden.nombre,
+      //   order_details: detalleProductos,
+      //   total_price: datosOrden.precio.toLocaleString(),
+      //   web_url: 'https://www.cosmoscute.com'
+      // }, 'tu_user_id');
+
+    } catch (error) {
+      console.error("Error al enviar el correo electrónico:", error);
+    }
+  };
+
+  // Guardar en Firebase (Colección: "pedidos") y disparar correo
   const handleFinalizeOrder = async (e) => {
     e.preventDefault();
     setIsLoading(true);
 
     const nuevaOrden = {
       id: Date.now(),
-      fechaCreacion: serverTimestamp(), // Guarda la fecha y hora exacta del servidor de Firebase
+      fechaCreacion: serverTimestamp(),
       fecha: new Date().toLocaleDateString('es-CO'),
       nombre: formData.nombre,
       apellido: formData.apellido,
@@ -49,7 +93,6 @@ export default function CartDrawer({ isOpen, onClose }) {
       barrio: formData.barrio,
       ciudad: formData.ciudad,
       quienrecibe: formData.quienrecibe,
-      // Array de productos con nombre, cantidad y precio para mostrar en el panel de administración
       productos: cartItems.map(item => ({
         name: item.name.toUpperCase(),
         quantity: item.quantity || 1,
@@ -64,17 +107,19 @@ export default function CartDrawer({ isOpen, onClose }) {
     try {
       // 🚀 CONEXIÓN REAL A FIREBASE (Colección: "pedidos")
       await addDoc(collection(db, "pedidos"), nuevaOrden);
-      
       console.log("Pedido subido exitosamente a Firebase:", nuevaOrden);
 
+      // 📧 DISPARAR ENVÍO DE CORREO AL CLIENTE
+      await enviarCorreoCliente(nuevaOrden);
+
       setIsLoading(false);
-      setSuccessAlert(true); // Muestra la alerta "cosmoscute"
+      setSuccessAlert(true);
       
       // Vaciar el carrito eliminando cada ítem mediante su id
       cartItems.forEach(item => deleteItem(item.id));
 
     } catch (error) {
-      console.error("Error al subir el pedido a Firebase:", error);
+      console.error("Error al procesar el pedido:", error);
       setIsLoading(false);
       alert("Hubo un error al procesar tu pedido. Inténtalo de nuevo.");
     }
@@ -122,7 +167,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                 ¡Pedido Exitoso! <Sparkles className="w-4 h-4 text-pink-400 animate-pulse" />
               </h3>
               <p className="text-xs sm:text-sm text-purple-200/90 mt-2 max-w-xs leading-relaxed">
-                Tu pedido ha sido procesado con éxito. Pronto un asesor se comunicará contigo para finalizar la entrega.
+                Tu pedido ha sido procesado con éxito. Hemos enviado un correo electrónico con los detalles y un enlace para que sigas explorando <a href="https://www.cosmoscute.com" target="_blank" rel="noopener noreferrer" className="text-pink-400 font-bold underline">www.cosmoscute.com</a>.
               </p>
               <button
                 type="button"
