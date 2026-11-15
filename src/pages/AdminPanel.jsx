@@ -31,6 +31,8 @@ const [isExpanded, setIsExpanded] = useState(false);
   const [prodPrecio, setProdPrecio] = useState("");
   const [prodStockActual, setProdStockActual] = useState("");
   const [prodPortada, setProdPortada] = useState("");
+
+  
   
   // Estados para Categorías (Crear / Editar / Buscar)
   const [catNombre, setCatNombre] = useState("");
@@ -39,7 +41,9 @@ const [isExpanded, setIsExpanded] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [successAlert, setSuccessAlert] = useState({ isOpen: false, message: "" });
   const [errorAlert, setErrorAlert] = useState({ isOpen: false, message: "" });
-
+// Agrega estos estados al inicio de tu función AdminPanel
+const [catImageFile, setCatImageFile] = useState(null);
+const [catImagePreview, setCatImagePreview] = useState('');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: null, id: null, name: "", isMultiple: false });
 
   const triggerSuccessAlert = (message) => {
@@ -62,6 +66,23 @@ const [isExpanded, setIsExpanded] = useState(false);
       setAuthInput("");
     }
   };
+
+  const fetchCategorias = async () => {
+  try {
+    const querySnapshot = await getDocs(collection(db, 'categorias'));
+    const lista = querySnapshot.docs.map(doc => ({
+      id: doc.id,
+      ...doc.data()
+    }));
+    setCategorias(lista);
+  } catch (error) {
+    console.error("Error al cargar categorías:", error);
+  }
+};
+
+useEffect(() => {
+  fetchCategorias();
+}, []);
 
   const handleLock = () => {
     setIsAuthenticated(false);
@@ -161,28 +182,68 @@ const [isExpanded, setIsExpanded] = useState(false);
     }
   };
 
-  const handleSaveCategory = async (e) => {
-    e.preventDefault();
-    if (!catNombre.trim()) return;
-    try {
-      if (editingCategory) {
-        await updateDoc(doc(db, "categorias", editingCategory.id), { nombre: catNombre });
-        triggerSuccessAlert("Categoría actualizada con éxito");
-      } else {
-        await addDoc(collection(db, "categorias"), { nombre: catNombre });
-        triggerSuccessAlert("Categoría creada con éxito");
+const handleSaveCategory = async (e) => {
+  e.preventDefault();
+  try {
+    let imageUrl = catImagePreview; // Toma la vista previa actual por defecto
+
+    // Si seleccionaste una foto nueva desde el dispositivo, súbela a Cloudinary
+    if (catImageFile) {
+      const formData = new FormData();
+      formData.append("file", catImageFile);
+      formData.append("upload_preset", "TU_UPLOAD_PRESET"); // Reemplaza con tu preset si aplica
+
+      const res = await fetch("https://api.cloudinary.com/v1_1/DTKIRMTFQ/image/upload", {
+        method: "POST",
+        body: formData
+      });
+      const data = await res.json();
+      if (data.secure_url) {
+        imageUrl = data.secure_url;
       }
-      setCatNombre("");
-      setEditingCategory(null);
-    } catch (error) {
-      console.error("Error al guardar categoría:", error);
-      triggerErrorAlert("No se pudo guardar la categoría");
     }
-  };
+
+    // 🔥 VALOR DE RESPALDO POR SI imageUrl SIGUE VACÍO O UNDEFINED
+    const finalImageUrl = imageUrl && imageUrl.trim() !== '' 
+      ? imageUrl 
+      : 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg';
+
+    const categoryData = {
+      nombre: catNombre.trim().toUpperCase(),
+      image: finalImageUrl, // 👈 Ahora siempre será un string válido y nunca undefined
+      subtitle: 'Colección Exclusiva'
+    };
+
+    if (editingCategory) {
+      // Editar existente
+      const categoryRef = doc(db, 'categorias', editingCategory.id);
+      await updateDoc(categoryRef, categoryData);
+    } else {
+      // Crear nueva
+      await addDoc(collection(db, 'categorias'), categoryData);
+    }
+
+    // Limpiar formulario
+    setCatNombre('');
+    setCatImageFile(null);
+    setCatImagePreview('');
+    setEditingCategory(null);
+    setIsCategoryModalOpen(false);
+
+    // Recargar lista
+    fetchCategorias(); 
+
+  } catch (error) {
+    console.error("Error al guardar la categoría con foto:", error);
+    alert("Hubo un error al guardar la categoría.");
+  }
+};
 
   const handleEditCategoryClick = (cat) => {
-    setEditingCategory(cat);
-    setCatNombre(cat.nombre);
+   setEditingCategory(cat);
+  setCatNombre(cat.nombre || '');
+  setCatImagePreview(cat.image || '');
+  setCatImageFile(null);
   };
 
   const handleCancelCategoryEdit = () => {
@@ -735,100 +796,138 @@ const [isExpanded, setIsExpanded] = useState(false);
 
       {/* MODAL CATEGORÍA */}
       {isCategoryModalOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
-          <div className="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3 max-h-[90vh] flex flex-col">
-            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
-              <div className="flex items-center gap-1.5">
-                <span className="text-xs">🏷️</span>
-                <h3 className="text-xs font-black text-[#2D3142]">Gestión de Categorías</h3>
-              </div>
-              <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold hover:text-[#2D3142]">✕</button>
-            </div>
+      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
+  <div className="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3 max-h-[90vh] flex flex-col">
+    <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
+      <div className="flex items-center gap-1.5">
+        <span className="text-xs">🏷️</span>
+        <h3 className="text-xs font-black text-[#2D3142]">Gestión de Categorías</h3>
+      </div>
+      <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold hover:text-[#2D3142]">✕</button>
+    </div>
 
-            <form onSubmit={handleSaveCategory} className="bg-[#F4F5FB] p-3 rounded-xl border border-[#E4E8F0] space-y-2">
-              <div className="flex justify-between items-center">
-                <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#7C69EF]">
-                  {editingCategory ? "✏️ Editando Categoría" : "✨ Nueva Categoría"}
-                </label>
-                {editingCategory && (
-                  <button type="button" onClick={handleCancelCategoryEdit} className="text-[8px] font-bold text-rose-500 hover:underline">
-                    Cancelar edición
-                  </button>
-                )}
-              </div>
-              <div className="flex gap-1.5">
-                <input 
-                  type="text" 
-                  value={catNombre} 
-                  onChange={(e) => setCatNombre(e.target.value)}
-                  placeholder="Nombre de la categoría..."
-                  className="flex-1 bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-                  required
-                />
-                <button 
-                  type="submit" 
-                  className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-extrabold px-3 py-1.5 rounded-xl text-[9px] shadow-sm transition-all shrink-0"
-                >
-                  {editingCategory ? "Actualizar" : "Guardar"}
-                </button>
-              </div>
-            </form>
+    <form onSubmit={handleSaveCategory} className="bg-[#F4F5FB] p-3 rounded-xl border border-[#E4E8F0] space-y-2.5">
+      <div className="flex justify-between items-center">
+        <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#7C69EF]">
+          {editingCategory ? "✏️ Editando Categoría" : "✨ Nueva Categoría"}
+        </label>
+        {editingCategory && (
+          <button type="button" onClick={handleCancelCategoryEdit} className="text-[8px] font-bold text-rose-500 hover:underline">
+            Cancelar edición
+          </button>
+        )}
+      </div>
 
-            <div className="relative">
-              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#9EA2B3]">🔍</span>
-              <input 
-                type="text"
-                value={catSearch}
-                onChange={(e) => setCatSearch(e.target.value)}
-                placeholder="Buscar categoría..."
-                className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl pl-7 pr-3 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+      <div className="space-y-2">
+        {/* Input de Nombre */}
+        <input 
+          type="text" 
+          value={catNombre} 
+          onChange={(e) => setCatNombre(e.target.value)}
+          placeholder="Nombre de la categoría..."
+          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+          required
+        />
+
+        {/* Input para Subir Foto desde el Dispositivo */}
+        <div className="flex items-center gap-2 bg-white border border-[#E4E8F0] rounded-xl p-1.5">
+          <div className="w-8 h-8 rounded-lg bg-[#F4F5FB] border border-[#E4E8F0] overflow-hidden flex items-center justify-center shrink-0">
+            {catImagePreview ? (
+              <img src={catImagePreview} alt="Preview" className="w-full h-full object-cover" />
+            ) : (
+              <span className="text-xs">📷</span>
+            )}
+          </div>
+          <div className="flex-1 overflow-hidden">
+            <label className="block text-[8px] font-bold text-[#9EA2B3] truncate">
+              {catImageFile ? catImageFile.name : "Seleccionar foto del dispositivo..."}
+            </label>
+            <input 
+              type="file" 
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (file) {
+                  setCatImageFile(file);
+                  setCatImagePreview(URL.createObjectURL(file));
+                }
+              }}
+              className="w-full text-[8px] text-[#2D3142] file:mr-2 file:py-0.5 file:px-2 file:rounded-md file:border-0 file:text-[8px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF] hover:file:bg-[#7C69EF]/20 cursor-pointer"
+            />
+          </div>
+        </div>
+
+        <button 
+          type="submit" 
+          className="w-full bg-[#7C69EF] hover:bg-[#6c59db] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-sm transition-all"
+        >
+          {editingCategory ? "Actualizar Categoría" : "Guardar Categoría"}
+        </button>
+      </div>
+    </form>
+
+    <div className="relative">
+      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#9EA2B3]">🔍</span>
+      <input 
+        type="text"
+        value={catSearch}
+        onChange={(e) => setCatSearch(e.target.value)}
+        placeholder="Buscar categoría..."
+        className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl pl-7 pr-3 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+      />
+    </div>
+
+    <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-44">
+      <p className="text-[8px] font-black uppercase tracking-wider text-[#9EA2B3] px-1">
+        Resultados ({filteredCategorias.length} de {categorias.length})
+      </p>
+      {filteredCategorias.length === 0 ? (
+        <div className="p-4 text-center text-[#9EA2B3] bg-[#F4F5FB]/50 rounded-xl text-[9px]">
+          {catSearch ? "No se encontraron categorías con ese nombre." : "No hay categorías registradas todavía."}
+        </div>
+      ) : (
+        filteredCategorias.map((cat) => (
+          <div key={cat.id} className="flex items-center justify-between bg-white border border-[#E4E8F0] p-2 rounded-xl shadow-2xs hover:border-[#7C69EF]/50 transition-all">
+            <div className="flex items-center gap-2 overflow-hidden">
+              <img 
+                src={cat.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg'} 
+                alt={cat.nombre} 
+                className="w-7 h-7 rounded-lg object-cover border border-[#E4E8F0] shrink-0" 
               />
+              <span className="text-[9px] font-bold text-[#2D3142] truncate max-w-[140px]">{cat.nombre}</span>
             </div>
-
-            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-44">
-              <p className="text-[8px] font-black uppercase tracking-wider text-[#9EA2B3] px-1">
-                Resultados ({filteredCategorias.length} de {categorias.length})
-              </p>
-              {filteredCategorias.length === 0 ? (
-                <div className="p-4 text-center text-[#9EA2B3] bg-[#F4F5FB]/50 rounded-xl text-[9px]">
-                  {catSearch ? "No se encontraron categorías con ese nombre." : "No hay categorías registradas todavía."}
-                </div>
-              ) : (
-                filteredCategorias.map((cat) => (
-                  <div key={cat.id} className="flex items-center justify-between bg-white border border-[#E4E8F0] p-2 rounded-xl shadow-2xs hover:border-[#7C69EF]/50 transition-all">
-                    <span className="text-[9px] font-bold text-[#2D3142] truncate max-w-[180px]">{cat.nombre}</span>
-                    <div className="flex items-center gap-1">
-                      <button 
-                        type="button" 
-                        onClick={() => handleEditCategoryClick(cat)}
-                        className="bg-[#7C69EF]/10 hover:bg-[#7C69EF]/20 text-[#7C69EF] font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
-                      >
-                        Editar
-                      </button>
-                      <button 
-                        type="button" 
-                        onClick={() => handleDeleteCategoryRequest(cat.id)}
-                        className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
-                      >
-                        Eliminar
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-
-            <div className="flex justify-end pt-2 border-t border-[#E4E8F0]">
+            <div className="flex items-center gap-1 shrink-0">
               <button 
                 type="button" 
-                onClick={() => setIsCategoryModalOpen(false)} 
-                className="w-full bg-[#7C69EF] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20"
+                onClick={() => handleEditCategoryClick(cat)}
+                className="bg-[#7C69EF]/10 hover:bg-[#7C69EF]/20 text-[#7C69EF] font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
               >
-                Cerrar Ventana
+                Editar
+              </button>
+              <button 
+                type="button" 
+                onClick={() => handleDeleteCategoryRequest(cat.id)}
+                className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
+              >
+                Eliminar
               </button>
             </div>
           </div>
-        </div>
+        ))
+      )}
+    </div>
+
+    <div className="flex justify-end pt-2 border-t border-[#E4E8F0]">
+      <button 
+        type="button" 
+        onClick={() => setIsCategoryModalOpen(false)} 
+        className="w-full bg-[#7C69EF] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20"
+      >
+        Cerrar Ventana
+      </button>
+    </div>
+  </div>
+</div>
       )}
 
       {/* MODAL ELIMINAR */}
