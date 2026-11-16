@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Rocket, ShoppingBag, ChevronRight, Search, ArrowLeft } from 'lucide-react';
+import { Rocket, ShoppingBag, ChevronRight, Search, ArrowLeft, Sparkles, Flame } from 'lucide-react';
 import { useNavigate, Link } from 'react-router-dom';
 import { db } from '../firebase'; 
 import { collection, getDocs } from 'firebase/firestore';
@@ -43,7 +43,7 @@ export default function CategoriasTotales() {
 
   return (
     <div className="min-h-screen bg-[#f8f7fc] text-gray-800 font-sans selection:bg-pink-500 selection:text-white p-3 sm:p-6">
-      <div className="max-w-6xl mx-auto space-y-5">
+      <div className="max-w-6xl mx-auto space-y-4 sm:space-y-5">
         
         {/* Cabecera con Botón de Regreso y Título */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-purple-100 shadow-xs">
@@ -86,45 +86,93 @@ export default function CategoriasTotales() {
             No se encontraron categorías con el nombre "<span className="font-bold text-gray-600">{busqueda}</span>".
           </div>
         ) : (
-          <div className="grid grid-cols-3 lg:grid-cols-5 gap-2.5">
-            {categoriasFiltradas.map((cat, i) => {
-              const s = PALETTES[i % PALETTES.length];
-              return (
-                <div 
-                  key={cat.id || i} 
-                  onClick={() => navigate(`/categoria/${encodeURIComponent(cat.nombre)}`)}
-                  className={`group relative rounded-xl p-[1px] bg-white border-2 ${s.b} shadow-xs transition-all duration-300 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:shadow-md`}
-                >
-                  <div className="p-2 flex flex-col justify-between h-full space-y-1">
-                    <div className="flex items-center justify-between gap-1">
-                      <span className={`text-[8px] font-black uppercase px-1.5 py-0.2 rounded border truncate ${s.bg}`}>DISPONIBLE</span>
-                    </div>
-                    <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-gray-100">
-                      <img 
-                        src={cat.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg'} 
-                        alt={cat.nombre} 
-                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
-                      />
-                      <div className="absolute bottom-1 right-1 p-1 rounded bg-gray-900 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-xs">
-                        <ShoppingBag className="w-2.5 h-2.5" />
-                      </div>
-                    </div>
-                    <div className="space-y-0.2">
-                      <h3 className="text-[11px] font-black text-gray-900 group-hover:text-purple-600 transition-colors leading-tight line-clamp-1 uppercase">
-                        {cat.nombre}
-                      </h3>
-                      <p className="text-[9px] text-gray-500 leading-tight line-clamp-1">
-                        {cat.subtitle || 'Exclusivo'}
+          <div className="space-y-3">
+            
+            {/* 🌟 PÓSTER DE PROMOCIONES (Adaptado perfectamente para móviles y PC) */}
+            {categoriasFiltradas.some(cat => {
+              const n = (cat.nombre || cat.idpersonalizado || '').toUpperCase();
+              return n.includes('PROMOCION') || n.includes('PROMOCIONES');
+            }) && (
+              <div>
+                {categoriasFiltradas.filter(cat => {
+                  const n = (cat.nombre || cat.idpersonalizado || '').toUpperCase();
+                  return n.includes('PROMOCION') || n.includes('PROMOCIONES');
+                }).map((cat, i) => (
+                  <div 
+                    key={cat.id || i}
+                    onClick={() => navigate(`/categoria/${encodeURIComponent(cat.nombre || 'PROMOCIONES')}`)}
+                    className="group relative overflow-hidden bg-gradient-to-r from-pink-600 via-purple-600 to-indigo-600 rounded-2xl sm:rounded-3xl p-5 sm:p-7 text-white shadow-lg shadow-pink-500/20 border border-pink-300/40 cursor-pointer hover:scale-[1.01] transition-all duration-300 flex flex-col sm:flex-row items-center justify-between gap-4 sm:gap-6"
+                  >
+                    <div className="absolute -right-10 -bottom-10 w-32 h-32 bg-white/10 rounded-full blur-2xl pointer-events-none" />
+                    
+                    <div className="relative z-10 space-y-1.5 text-center sm:text-left">
+                      <span className="inline-flex items-center gap-1 bg-white/20 backdrop-blur-md text-[9px] sm:text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full text-pink-100 border border-white/20 shadow-xs">
+                        <Sparkles className="w-3 h-3 text-amber-300 animate-spin" /> Sección Especial
+                      </span>
+                      <h2 className="text-lg sm:text-2xl font-black tracking-tight uppercase leading-snug">
+                        {cat.nombre || 'PROMOCIONES'} ✨
+                      </h2>
+                      <p className="text-[11px] sm:text-sm text-purple-100 font-medium max-w-xl leading-relaxed">
+                        ¡Disfruta de nuestros productos en descuentos! Explora la colección completa con precios especiales. 💖
                       </p>
                     </div>
-                    <div className={`pt-1 flex items-center justify-between text-[9px] font-bold ${s.text} border-t border-gray-100`}>
-                      <span>Ver productos</span>
-                      <ChevronRight className="w-2.5 h-2.5" />
+
+                    <div className="relative z-10 flex-shrink-0 w-full sm:w-auto">
+                      <span className="w-full sm:w-auto px-4 py-2.5 rounded-xl sm:rounded-2xl bg-white text-purple-700 font-black text-xs sm:text-sm shadow-md flex items-center justify-center gap-2 group-hover:bg-pink-50 transition-all">
+                        <Flame className="w-4 h-4 text-pink-600 fill-pink-600" />
+                        Ver Descuentos <ChevronRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
+                      </span>
                     </div>
                   </div>
-                </div>
-              );
-            })}
+                ))}
+              </div>
+            )}
+
+            {/* Grid estándar para las demás categorías */}
+            <div className="grid grid-cols-3 lg:grid-cols-5 gap-2.5 pt-1">
+              {categoriasFiltradas.filter(cat => {
+                const n = (cat.nombre || cat.idpersonalizado || '').toUpperCase();
+                return !n.includes('PROMOCION') && !n.includes('PROMOCIONES');
+              }).map((cat, i) => {
+                const s = PALETTES[i % PALETTES.length];
+                return (
+                  <div 
+                    key={cat.id || i} 
+                    onClick={() => navigate(`/categoria/${encodeURIComponent(cat.nombre)}`)}
+                    className={`group relative rounded-xl p-[1px] bg-white border-2 ${s.b} shadow-xs transition-all duration-300 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:shadow-md`}
+                  >
+                    <div className="p-2 flex flex-col justify-between h-full space-y-1">
+                      <div className="flex items-center justify-between gap-1">
+                        <span className={`text-[8px] font-black uppercase px-1.5 py-0.2 rounded border truncate ${s.bg}`}>DISPONIBLE</span>
+                      </div>
+                      <div className="relative aspect-square w-full rounded-lg overflow-hidden bg-gray-100">
+                        <img 
+                          src={cat.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg'} 
+                          alt={cat.nombre} 
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" 
+                        />
+                        <div className="absolute bottom-1 right-1 p-1 rounded bg-gray-900 text-white opacity-0 group-hover:opacity-100 transition-opacity shadow-xs">
+                          <ShoppingBag className="w-2.5 h-2.5" />
+                        </div>
+                      </div>
+                      <div className="space-y-0.2">
+                        <h3 className="text-[11px] font-black text-gray-900 group-hover:text-purple-600 transition-colors leading-tight line-clamp-1 uppercase">
+                          {cat.nombre}
+                        </h3>
+                        <p className="text-[9px] text-gray-500 leading-tight line-clamp-1">
+                          {cat.subtitle || 'Exclusivo'}
+                        </p>
+                      </div>
+                      <div className={`pt-1 flex items-center justify-between text-[9px] font-bold ${s.text} border-t border-gray-100`}>
+                        <span>Ver productos</span>
+                        <ChevronRight className="w-2.5 h-2.5" />
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+
           </div>
         )}
 

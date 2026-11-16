@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { collection, addDoc, updateDoc, deleteDoc, doc } from "firebase/firestore";
+import { collection, addDoc, updateDoc, deleteDoc, doc, setDoc } from "firebase/firestore";
 import { db } from "../firebase";
 import CargoyDescargo from '../pages/cargoydescargo/CargoyDescargo';
 import Movimientos from '../pages/movimientos/Movimientos';
@@ -211,19 +211,24 @@ const handleUpdateInventario = async (e) => {
       descripcion: editingItemData.descripcion || "",
       costo: costoNum,
       
-      // 🎯 AQUÍ ESTÁ EL AJUSTE: Guarda el valor monetario del precio con descuento en "descuento"
+      // Guarda el valor monetario del precio con descuento en "descuento"
       descuento: precioConDescuentoCalculado, 
 
       porcentajeGanancia: costoNum === 0 ? 0 : Number(editingItemData.porcentajeGanancia),
       precio: precioFinalParaGuardar,
-      estado: estadoBooleano, // <--- Guardado limpiamente como true o false
+      estado: estadoBooleano, // Guardado limpiamente como true o false
+      
+      // Garantiza que se guarde como "true" o "false" para la categoría Promociones
+      promocion: editingItemData.promocion === "true" || editingItemData.promocion === true ? "true" : "false",
+
       // Si seleccionaste una foto nueva la usa, de lo contrario mantiene la existente
       img: editFileImg ? editFileImg : (editingItemData.img || ""),
       img1: editFileImg1 ? editFileImg1 : (editingItemData.img1 || "")
     };
 
+    // Usamos setDoc con { merge: true } para que si el campo 'promocion' no existía, lo cree automáticamente
     const productoRef = doc(db, "inventario", editingItemData.id);
-    await updateDoc(productoRef, datosActualizados);
+    await setDoc(productoRef, datosActualizados, { merge: true });
 
     setIsEditModalOpen(false);
     
@@ -231,9 +236,15 @@ const handleUpdateInventario = async (e) => {
     if (typeof setEditFileImg === 'function') setEditFileImg(null);
     if (typeof setEditFileImg1 === 'function') setEditFileImg1(null);
 
-    // Opcional: recargar tu lista de inventario si no usas onSnapshot
+    // Recargar tu lista de inventario si tienes la función disponible
+    if (typeof fetchInventario === 'function') {
+      fetchInventario();
+    }
+
+    alert("¡Producto actualizado con éxito! ✨");
   } catch (error) {
     console.error("Error al actualizar producto:", error);
+    alert("Hubo un error al actualizar el producto.");
   } finally {
     setIsUploading(false);
   }
@@ -866,277 +877,305 @@ const handleUpdateInventario = async (e) => {
 </div>
 )}
     {isEditModalOpen && editingItemData && (
- <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-all animate-fade-in">
-  <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-7 max-w-lg w-full shadow-2xl shadow-purple-900/20 border border-purple-100 space-y-5 my-auto max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform scale-100 opacity-100">
-    <div className="flex items-center justify-between border-b border-purple-100 pb-4">
-      <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2.5">
-        <span className="flex items-center justify-center w-8 h-8 rounded-2xl bg-purple-100 text-purple-600 shadow-inner text-base">✏️</span>
-        Editar Producto en Inventario
-      </h3>
-      <button
-        type="button"
-        onClick={() => setIsEditModalOpen(false)}
-        className="w-8 h-8 rounded-2xl bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-600 font-bold text-xs flex items-center justify-center transition-all"
-      >
-        ✕
-      </button>
-    </div>
-    <form onSubmit={handleUpdateInventario} className="space-y-4 text-xs">
-      <div>
-        <label className="block font-extrabold text-slate-700 mb-1.5">Nombre del producto *</label>
-        <input
-          type="text"
-          value={editingItemData.nombre || ""}
-          onChange={(e) => setEditingItemData({...editingItemData, nombre: e.target.value})}
-          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
-          required
-        />
+<div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4 transition-all animate-fade-in">
+    <div className="bg-white/95 backdrop-blur-md rounded-3xl p-6 md:p-7 max-w-lg w-full shadow-2xl shadow-purple-900/20 border border-purple-100 space-y-5 my-auto max-h-[90vh] overflow-y-auto transition-all duration-300 ease-out transform scale-100 opacity-100">
+      <div className="flex items-center justify-between border-b border-purple-100 pb-4">
+        <h3 className="text-sm font-black text-slate-800 uppercase tracking-wider flex items-center gap-2.5">
+          <span className="flex items-center justify-center w-8 h-8 rounded-2xl bg-purple-100 text-purple-600 shadow-inner text-base">✏️</span>
+          Editar Producto en Inventario
+        </h3>
+        <button
+          type="button"
+          onClick={() => setIsEditModalOpen(false)}
+          className="w-8 h-8 rounded-2xl bg-slate-100 hover:bg-rose-100 text-slate-400 hover:text-rose-600 font-bold text-xs flex items-center justify-center transition-all"
+        >
+          ✕
+        </button>
       </div>
-      <div>
-        <label className="block font-extrabold text-slate-700 mb-1.5">Proveedor *</label>
-        <input
-          type="text"
-          value={editingItemData.proveedor || ""}
-          onChange={(e) => setEditingItemData({...editingItemData, proveedor: e.target.value})}
-          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
-          required
-        />
-      </div>
-      <div>
-        <label className="block font-extrabold text-slate-700 mb-1.5">Descripción</label>
-        <textarea
-          value={editingItemData.descripcion || ""}
-          onChange={(e) => setEditingItemData({...editingItemData, descripcion: e.target.value})}
-          className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all resize-none"
-          rows="2"
-        />
-      </div>
-      <div className="grid grid-cols-2 gap-3">
+      <form onSubmit={handleUpdateInventario} className="space-y-4 text-xs">
         <div>
-          <label className="block font-extrabold text-slate-700 mb-1.5">Categoría</label>
-          <select
-            value={editingItemData.categoria || "General"}
-            onChange={(e) => setEditingItemData({...editingItemData, categoria: e.target.value})}
-            className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
-          >
-            <option value="General">General</option>
-            {categorias.map(cat => (
-              <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block font-extrabold text-slate-400 mb-1.5">Stock Disponible (No editable)</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Nombre del producto *</label>
           <input
-            type="number"
-            value={editingItemData.udisponibles ?? ""}
-            disabled
-            className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-400 cursor-not-allowed shadow-inner"
-          />
-        </div>
-      </div>
-      <div className="grid grid-cols-3 gap-2.5">
-        <div>
-          <label className="block font-extrabold text-slate-700 mb-1.5">Costo ($) *</label>
-          <input
-            type="number"
-            value={editingItemData.costo ?? ""}
-            onChange={(e) => {
-              const nuevoCosto = e.target.value;
-              setEditingItemData({
-                ...editingItemData,
-                costo: nuevoCosto,
-                precio: Number(nuevoCosto) === 0 ? (editingItemData.precio || "") : editingItemData.precio
-              });
-            }}
+            type="text"
+            value={editingItemData.nombre || ""}
+            onChange={(e) => setEditingItemData({...editingItemData, nombre: e.target.value})}
             className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
             required
           />
         </div>
         <div>
-          <label className="block font-extrabold text-slate-700 mb-1.5">% Margen</label>
-          <select
-            value={editingItemData.porcentajeGanancia || 50}
-            onChange={(e) => setEditingItemData({...editingItemData, porcentajeGanancia: Number(e.target.value)})}
-            disabled={Number(editingItemData.costo) === 0}
-            className={`w-full rounded-2xl px-2 py-2.5 text-xs font-bold focus:outline-none transition-all ${
-              Number(editingItemData.costo) === 0
-                ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
-                : "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
-            }`}
-          >
-            {Array.from({ length: 19 }, (_, i) => (i + 1) * 5).map((p) => (
-              <option key={p} value={p}>{p}%</option>
-            ))}
-          </select>
-        </div>
-        <div>
-          <label className="block font-extrabold text-slate-700 mb-1.5">Precio Final *</label>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Proveedor *</label>
           <input
-            type={Number(editingItemData.costo) === 0 ? "number" : "text"}
-            value={
-              Number(editingItemData.costo) === 0
-                ? (editingItemData.precio ?? "")
-                : (() => {
-                    const costoNum = Number(editingItemData.costo) || 0;
-                    const porc = Number(editingItemData.porcentajeGanancia) || 50;
-                    const divisor = 1 - (porc / 100);
-                    const precioFinal = divisor > 0 ? costoNum / divisor : costoNum;
-                    return precioFinal ? Math.round(precioFinal) : 0;
-                  })()
-            }
-            disabled={Number(editingItemData.costo) !== 0}
-            onChange={(e) => {
-              if (Number(editingItemData.costo) === 0) {
-                setEditingItemData({ ...editingItemData, precio: e.target.value });
-              }
-            }}
-            className={`w-full rounded-2xl px-3.5 py-2.5 text-xs font-bold ${
-              Number(editingItemData.costo) === 0
-                ? "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
-                : "bg-purple-100/40 border border-purple-200 text-purple-700 cursor-not-allowed shadow-inner"
-            }`}
-            required={Number(editingItemData.costo) === 0}
+            type="text"
+            value={editingItemData.proveedor || ""}
+            onChange={(e) => setEditingItemData({...editingItemData, proveedor: e.target.value})}
+            className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
+            required
           />
         </div>
-      </div>
-      <div className="grid grid-cols-2 gap-3 bg-gradient-to-r from-purple-50/80 to-pink-50/50 p-3.5 rounded-2xl border border-purple-100 items-center shadow-xs">
         <div>
-          <label className="block font-extrabold text-purple-900 mb-1.5">% Descuento aplicable</label>
-          <select
-            value={editingItemData.porcentajeDescuento || 0}
-            onChange={(e) => setEditingItemData({...editingItemData, porcentajeDescuento: Number(e.target.value)})}
-            className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] shadow-2xs"
-          >
-            {Array.from({ length: 21 }, (_, i) => i * 5).map((p) => (
-              <option key={p} value={p}>{p}% {p === 0 ? "(Sin desc.)" : ""}</option>
-            ))}
-          </select>
+          <label className="block font-extrabold text-slate-700 mb-1.5">Descripción</label>
+          <textarea
+            value={editingItemData.descripcion || ""}
+            onChange={(e) => setEditingItemData({...editingItemData, descripcion: e.target.value})}
+            className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all resize-none"
+            rows="2"
+          />
         </div>
-        <div>
-          <label className="block font-extrabold text-purple-900 mb-1.5">Precio con Descuento</label>
-          <div className="w-full bg-white border border-purple-200/80 rounded-xl px-3 py-2 text-xs font-black text-[#7C69EF] flex items-center shadow-2xs">
-            {(() => {
-              const precioBase = Number(editingItemData.costo) === 0
-                ? (Number(editingItemData.precio) || 0)
-                : (() => {
-                    const costoNum = Number(editingItemData.costo) || 0;
-                    const porc = Number(editingItemData.porcentajeGanancia) || 50;
-                    const divisor = 1 - (porc / 100);
-                    return divisor > 0 ? costoNum / divisor : costoNum;
-                  })();
-              const desc = Number(editingItemData.porcentajeDescuento) || 0;
-              const precioConDesc = precioBase * (1 - desc / 100);
-              return `$${Math.round(precioConDesc).toLocaleString()}`;
-            })()}
+        <div className="grid grid-cols-2 gap-3">
+          <div>
+            <label className="block font-extrabold text-slate-700 mb-1.5">Categoría</label>
+            <select
+              value={editingItemData.categoria || "General"}
+              onChange={(e) => setEditingItemData({...editingItemData, categoria: e.target.value})}
+              className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
+            >
+              <option value="General">General</option>
+              {categorias.map(cat => (
+                <option key={cat.id} value={cat.nombre}>{cat.nombre}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-extrabold text-slate-400 mb-1.5">Stock Disponible (No editable)</label>
+            <input
+              type="number"
+              value={editingItemData.udisponibles ?? ""}
+              disabled
+              className="w-full bg-slate-100 border border-slate-200 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-400 cursor-not-allowed shadow-inner"
+            />
           </div>
         </div>
-      </div>
-      <div className="bg-purple-50/20 p-3.5 rounded-2xl border border-purple-100 space-y-1.5">
-        <label className="block font-extrabold text-slate-700 text-[11px]">Estado del Producto</label>
-        <button
-          type="button"
-          onClick={() => {
-            setEditingItemData({ ...editingItemData, estado: !editingItemData.estado });
-          }}
-          className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-extrabold transition-all shadow-sm ${
-            editingItemData.estado
-              ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 text-white shadow-emerald-500/20"
-              : "bg-rose-500 hover:bg-rose-600 border-rose-600 text-white shadow-rose-500/20"
-          }`}
-        >
-          <span className="flex items-center gap-2">
-            <span className={`w-2.5 h-2.5 rounded-full ${
-              editingItemData.estado ? "bg-white animate-pulse" : "bg-white/70"
-            }`}></span>
-            {editingItemData.estado ? "🟢 Activo (Encendido)" : "🔴 Inactivo (Apagado)"}
-          </span>
-          <span className="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-[10px] text-white transition-all">
-            Click para cambiar 🔄
-          </span>
-        </button>
-      </div>
-      <div className="grid grid-cols-2 gap-3 pt-1">
-        <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
-          <label className="block font-extrabold text-slate-700 text-[11px]">Foto Principal (img)</label>
-          {editingItemData.img && <img src={editingItemData.img} alt="Actual" className="w-12 h-12 object-cover rounded-xl mb-1.5 border border-purple-200 shadow-xs" />}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              if (!file) return;
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                  const canvas = document.createElement('canvas');
-                  const MAX = 500;
-                  let w = img.width, h = img.height;
-                  if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
-                  else { if (h > MAX) { w *= MAX / h; h = MAX; } }
-                  canvas.width = w; canvas.height = h;
-                  const ctx = canvas.getContext('2d');
-                  ctx.drawImage(img, 0, 0, w, h);
-                  setEditFileImg(canvas.toDataURL('image/jpeg', 0.5));
-                };
-              };
-              reader.readAsDataURL(file);
-            }}
-            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
-          />
+        <div className="grid grid-cols-3 gap-2.5">
+          <div>
+            <label className="block font-extrabold text-slate-700 mb-1.5">Costo ($) *</label>
+            <input
+              type="number"
+              value={editingItemData.costo ?? ""}
+              onChange={(e) => {
+                const nuevoCosto = e.target.value;
+                setEditingItemData({
+                  ...editingItemData,
+                  costo: nuevoCosto,
+                  precio: Number(nuevoCosto) === 0 ? (editingItemData.precio || "") : editingItemData.precio
+                });
+              }}
+              className="w-full bg-purple-50/30 border border-purple-200/80 rounded-2xl px-3.5 py-2.5 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner transition-all"
+              required
+            />
+          </div>
+          <div>
+            <label className="block font-extrabold text-slate-700 mb-1.5">% Margen</label>
+            <select
+              value={editingItemData.porcentajeGanancia || 50}
+              onChange={(e) => setEditingItemData({...editingItemData, porcentajeGanancia: Number(e.target.value)})}
+              disabled={Number(editingItemData.costo) === 0}
+              className={`w-full rounded-2xl px-2 py-2.5 text-xs font-bold focus:outline-none transition-all ${
+                Number(editingItemData.costo) === 0
+                  ? "bg-slate-100 border border-slate-200 text-slate-400 cursor-not-allowed"
+                  : "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
+              }`}
+            >
+              {Array.from({ length: 19 }, (_, i) => (i + 1) * 5).map((p) => (
+                <option key={p} value={p}>{p}%</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-extrabold text-slate-700 mb-1.5">Precio Final *</label>
+            <input
+              type={Number(editingItemData.costo) === 0 ? "number" : "text"}
+              value={
+                Number(editingItemData.costo) === 0
+                  ? (editingItemData.precio ?? "")
+                  : (() => {
+                      const costoNum = Number(editingItemData.costo) || 0;
+                      const porc = Number(editingItemData.porcentajeGanancia) || 50;
+                      const divisor = 1 - (porc / 100);
+                      const precioFinal = divisor > 0 ? costoNum / divisor : costoNum;
+                      return precioFinal ? Math.round(precioFinal) : 0;
+                    })()
+              }
+              disabled={Number(editingItemData.costo) !== 0}
+              onChange={(e) => {
+                if (Number(editingItemData.costo) === 0) {
+                  setEditingItemData({ ...editingItemData, precio: e.target.value });
+                }
+              }}
+              className={`w-full rounded-2xl px-3.5 py-2.5 text-xs font-bold ${
+                Number(editingItemData.costo) === 0
+                  ? "bg-purple-50/30 border border-purple-200/80 text-slate-800 focus:outline-none focus:border-[#7C69EF] focus:ring-2 focus:ring-purple-200 shadow-inner"
+                  : "bg-purple-100/40 border border-purple-200 text-purple-700 cursor-not-allowed shadow-inner"
+              }`}
+              required={Number(editingItemData.costo) === 0}
+            />
+          </div>
         </div>
-        <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
-          <label className="block font-extrabold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
-          {editingItemData.img1 && <img src={editingItemData.img1} alt="Actual 1" className="w-12 h-12 object-cover rounded-xl mb-1.5 border border-purple-200 shadow-xs" />}
-          <input
-            type="file"
-            accept="image/*"
-            onChange={(e) => {
-              const file = e.target.files[0];
-              if (!file) return;
-              const reader = new FileReader();
-              reader.onload = (event) => {
-                const img = new Image();
-                img.src = event.target.result;
-                img.onload = () => {
-                  const canvas = document.createElement('canvas');
-                  const MAX = 500;
-                  let w = img.width, h = img.height;
-                  if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
-                  else { if (h > MAX) { w *= MAX / h; h = MAX; } }
-                  canvas.width = w; canvas.height = h;
-                  const ctx = canvas.getContext('2d');
-                  ctx.drawImage(img, 0, 0, w, h);
-                  setEditFileImg1(canvas.toDataURL('image/jpeg', 0.5));
-                };
-              };
-              reader.readAsDataURL(file);
-            }}
-            className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
-          />
+        <div className="grid grid-cols-2 gap-3 bg-gradient-to-r from-purple-50/80 to-pink-50/50 p-3.5 rounded-2xl border border-purple-100 items-center shadow-xs">
+          <div>
+            <label className="block font-extrabold text-purple-900 mb-1.5">% Descuento aplicable</label>
+            <select
+              value={editingItemData.porcentajeDescuento || 0}
+              onChange={(e) => setEditingItemData({...editingItemData, porcentajeDescuento: Number(e.target.value)})}
+              className="w-full bg-white border border-purple-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-800 focus:outline-none focus:border-[#7C69EF] shadow-2xs"
+            >
+              {Array.from({ length: 21 }, (_, i) => i * 5).map((p) => (
+                <option key={p} value={p}>{p}% {p === 0 ? "(Sin desc.)" : ""}</option>
+              ))}
+            </select>
+          </div>
+          <div>
+            <label className="block font-extrabold text-purple-900 mb-1.5">Precio con Descuento</label>
+            <div className="w-full bg-white border border-purple-200/80 rounded-xl px-3 py-2 text-xs font-black text-[#7C69EF] flex items-center shadow-2xs">
+              {(() => {
+                const precioBase = Number(editingItemData.costo) === 0
+                  ? (Number(editingItemData.precio) || 0)
+                  : (() => {
+                      const costoNum = Number(editingItemData.costo) || 0;
+                      const porc = Number(editingItemData.porcentajeGanancia) || 50;
+                      const divisor = 1 - (porc / 100);
+                      return divisor > 0 ? costoNum / divisor : costoNum;
+                    })();
+                const desc = Number(editingItemData.porcentajeDescuento) || 0;
+                const precioConDesc = precioBase * (1 - desc / 100);
+                return `$${Math.round(precioConDesc).toLocaleString()}`;
+              })()}
+            </div>
+          </div>
         </div>
-      </div>
-      <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-purple-100">
-        <button
-          type="button"
-          onClick={() => setIsEditModalOpen(false)}
-          className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-2xs"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          disabled={isUploading}
-          className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-black px-6 py-2.5 rounded-2xl text-xs shadow-lg shadow-[#7C69EF]/30 transition-all disabled:opacity-50 active:scale-95"
-        >
-          {isUploading ? "Actualizando..." : "Guardar Cambios ✨"}
-        </button>
-      </div>
-    </form>
+
+        {/* 🌟 NUEVO: Botón de Encender / Apagar Promoción */}
+        <div className="bg-pink-50/20 p-3.5 rounded-2xl border border-pink-100 space-y-1.5">
+          <label className="block font-extrabold text-slate-700 text-[11px]">Estado de Promoción ✨</label>
+          <button
+            type="button"
+            onClick={() => {
+              const estadoActual = editingItemData.promocion === "true" || editingItemData.promocion === true;
+              setEditingItemData({ ...editingItemData, promocion: !estadoActual ? "true" : "false" });
+            }}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-extrabold transition-all shadow-sm ${
+              editingItemData.promocion === "true" || editingItemData.promocion === true
+                ? "bg-pink-600 hover:bg-pink-700 border-pink-700 text-white shadow-pink-500/20"
+                : "bg-slate-200 hover:bg-slate-300 border-slate-300 text-slate-600 shadow-slate-200/20"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${
+                editingItemData.promocion === "true" || editingItemData.promocion === true ? "bg-white animate-pulse" : "bg-slate-400"
+              }`}></span>
+              {editingItemData.promocion === "true" || editingItemData.promocion === true ? "🔥 En Promoción (Encendido)" : "💤 Sin Promoción (Apagado)"}
+            </span>
+            <span className="bg-black/10 hover:bg-black/20 px-2.5 py-1 rounded-lg text-[10px] text-white transition-all">
+              Click para cambiar 🔄
+            </span>
+          </button>
+        </div>
+
+        <div className="bg-purple-50/20 p-3.5 rounded-2xl border border-purple-100 space-y-1.5">
+          <label className="block font-extrabold text-slate-700 text-[11px]">Estado del Producto</label>
+          <button
+            type="button"
+            onClick={() => {
+              setEditingItemData({ ...editingItemData, estado: !editingItemData.estado });
+            }}
+            className={`w-full flex items-center justify-between px-3.5 py-2.5 rounded-xl border text-xs font-extrabold transition-all shadow-sm ${
+              editingItemData.estado
+                ? "bg-emerald-500 hover:bg-emerald-600 border-emerald-600 text-white shadow-emerald-500/20"
+                : "bg-rose-500 hover:bg-rose-600 border-rose-600 text-white shadow-rose-500/20"
+            }`}
+          >
+            <span className="flex items-center gap-2">
+              <span className={`w-2.5 h-2.5 rounded-full ${
+                editingItemData.estado ? "bg-white animate-pulse" : "bg-white/70"
+              }`}></span>
+              {editingItemData.estado ? "🟢 Activo (Encendido)" : "🔴 Inactivo (Apagado)"}
+            </span>
+            <span className="bg-white/20 hover:bg-white/30 px-2.5 py-1 rounded-lg text-[10px] text-white transition-all">
+              Click para cambiar 🔄
+            </span>
+          </button>
+        </div>
+        <div className="grid grid-cols-2 gap-3 pt-1">
+          <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
+            <label className="block font-extrabold text-slate-700 text-[11px]">Foto Principal (img)</label>
+            {editingItemData.img && <img src={editingItemData.img} alt="Actual" className="w-12 h-12 object-cover rounded-xl mb-1.5 border border-purple-200 shadow-xs" />}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  const img = new Image();
+                  img.src = event.target.result;
+                  img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX = 500;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+                    else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    setEditFileImg(canvas.toDataURL('image/jpeg', 0.5));
+                  };
+                };
+                reader.readAsDataURL(file);
+              }}
+              className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
+            />
+          </div>
+          <div className="bg-purple-50/30 p-3 rounded-2xl border border-purple-100 space-y-1.5">
+            <label className="block font-extrabold text-slate-700 text-[11px]">Segunda Foto (img1)</label>
+            {editingItemData.img1 && <img src={editingItemData.img1} alt="Actual 1" className="w-12 h-12 object-cover rounded-xl mb-1.5 border border-purple-200 shadow-xs" />}
+            <input
+              type="file"
+              accept="image/*"
+              onChange={(e) => {
+                const file = e.target.files[0];
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                  const img = new Image();
+                  img.src = event.target.result;
+                  img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    const MAX = 500;
+                    let w = img.width, h = img.height;
+                    if (w > h) { if (w > MAX) { h *= MAX / w; w = MAX; } }
+                    else { if (h > MAX) { w *= MAX / h; h = MAX; } }
+                    canvas.width = w; canvas.height = h;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, w, h);
+                    setEditFileImg1(canvas.toDataURL('image/jpeg', 0.5));
+                  };
+                };
+                reader.readAsDataURL(file);
+              }}
+              className="w-full text-[10px] text-slate-500 file:mr-2 file:py-1.5 file:px-2.5 file:rounded-xl file:border-0 file:text-[10px] file:font-black file:bg-purple-100 file:text-purple-700 hover:file:bg-purple-200 transition-all cursor-pointer"
+            />
+          </div>
+        </div>
+        <div className="flex items-center justify-end gap-2.5 pt-4 border-t border-purple-100">
+          <button
+            type="button"
+            onClick={() => setIsEditModalOpen(false)}
+            className="bg-slate-100 hover:bg-slate-200 text-slate-700 font-extrabold px-4 py-2.5 rounded-2xl text-xs transition-all shadow-2xs"
+          >
+            Cancelar
+          </button>
+          <button
+            type="submit"
+            disabled={isUploading}
+            className="bg-[#7C69EF] hover:bg-[#6c59db] text-white font-black px-6 py-2.5 rounded-2xl text-xs shadow-lg shadow-[#7C69EF]/30 transition-all disabled:opacity-50 active:scale-95"
+          >
+            {isUploading ? "Actualizando..." : "Guardar Cambios ✨"}
+          </button>
+        </div>
+      </form>
+    </div>
   </div>
-</div>
 )}
       {detailModal.isOpen && detailModal.item && (
        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 overflow-y-auto">

@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Flame, Search, Plus, Check } from 'lucide-react';
 import ModalPedido from '../components/ModalPedido';
 
-// Importamos el Contexto del Carrito (ajusta la ruta si está dentro de src/cartcontent)
+// Importamos el Contexto del Carrito
 import { useCart } from './cartcontent/CartContext'; 
 
 import { db } from '../firebase';
@@ -29,25 +29,42 @@ export default function VistaCategoria() {
   // Estado para llevar el registro temporal de qué tarjetas muestran la intermitencia verde y el texto "AGREGADO"
   const [animatingItems, setAnimatingItems] = useState({});
 
-  useEffect(() => {
+useEffect(() => {
     async function fetchProductosPorCategoria() {
       try {
         setLoading(true);
-        // Consultamos la colección 'inventario' filtrando por el campo 'categoria'
-        const q = query(
-          collection(db, 'inventario'),
-          where('categoria', '==', categoriaNombre)
-        );
+        let q;
+
+        // Si es PROMOCIONES, traemos todo el inventario para filtrarlo de manera flexible en JS
+        if (categoriaNombre === 'PROMOCIONES' || categoriaNombre === 'PROMOCION') {
+          q = query(collection(db, 'inventario'));
+        } else {
+          // Consulta normal por categoría
+          q = query(
+            collection(db, 'inventario'),
+            where('categoria', '==', categoriaNombre)
+          );
+        }
 
         const querySnapshot = await getDocs(q);
-        const lista = querySnapshot.docs.map(doc => ({
+        let lista = querySnapshot.docs.map(doc => ({
           id: doc.id,
           ...doc.data()
         }));
 
+        // Si es la vista de promociones, filtramos localmente para capturar cualquier variante (true booleano, "true" string, etc.)
+        if (categoriaNombre === 'PROMOCIONES' || categoriaNombre === 'PROMOCION') {
+          lista = lista.filter(item => 
+            item.promocion === true || 
+            item.promocion === 'true' || 
+            item.promocion === 'TRUE' ||
+            item.promocion === 1
+          );
+        }
+
         setProductos(lista);
       } catch (error) {
-        console.error("Error al cargar los productos de la categoría:", error);
+        console.error("Error al cargar los productos:", error);
       } finally {
         setLoading(false);
       }
