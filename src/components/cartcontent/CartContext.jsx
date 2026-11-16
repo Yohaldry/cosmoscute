@@ -4,21 +4,39 @@ const CartContext = createContext();
 
 export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
+  const [isCartOpen, setIsCartOpen] = useState(false);
 
-  // Añadir producto o combo
+  // Añadir producto o combo con sus datos normalizados
   const addToCart = (product) => {
+    // Priorizamos 'precio', luego 'price' y por último 'costo' para que tome el valor correcto de venta
+    const precioFinal = Number(product.precio ?? product.price ?? product.costo ?? 0);
+    const nombreFinal = product.nombre || product.title || product.name || 'Producto';
+    const imagenFinal = product.img || product.image || '';
+
+    const productoNormalizado = {
+      id: product.id || Date.now().toString(),
+      nombre: nombreFinal,
+      name: nombreFinal, // Por compatibilidad con vistas anteriores
+      price: precioFinal,
+      image: imagenFinal,
+      img: imagenFinal,
+      descripcion: product.descripcion || ''
+    };
+
     setCartItems(prev => {
-      const existing = prev.find(item => item.id === product.id);
+      const existing = prev.find(item => item.id === productoNormalizado.id);
       if (existing) {
         return prev.map(item => 
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          item.id === productoNormalizado.id ? { ...item, quantity: item.quantity + 1 } : item
         );
       }
-      return [...prev, { ...product, quantity: 1 }];
+      return [...prev, { ...productoNormalizado, quantity: 1 }];
     });
+
+    // Abre el carrito automáticamente al presionar el botón +
+    setIsCartOpen(true);
   };
 
-  // Restar o eliminar producto si llega a 0
   const removeFromCart = (id) => {
     setCartItems(prev => {
       const existing = prev.find(item => item.id === id);
@@ -32,16 +50,12 @@ export function CartProvider({ children }) {
     });
   };
 
-  // Eliminar por completo un ítem sin importar la cantidad
   const deleteItem = (id) => {
     setCartItems(prev => prev.filter(item => item.id !== id));
   };
 
-  // Cálculos automáticos (Solo valor de los productos)
   const totalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const productsPrice = cartItems.reduce((sum, item) => sum + (item.price * item.quantity), 0);
-  
-  // Total final únicamente con el precio de los productos
   const totalPrice = productsPrice;
 
   return (
@@ -53,7 +67,9 @@ export function CartProvider({ children }) {
       totalItems, 
       productsPrice,
       shippingCost: 0,
-      totalPrice 
+      totalPrice,
+      isCartOpen,
+      setIsCartOpen
     }}>
       {children}
     </CartContext.Provider>

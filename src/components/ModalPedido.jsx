@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import emailjs from '@emailjs/browser';
 import { collection, addDoc } from 'firebase/firestore';
-import { db } from '../firebase'; // Asegúrate de que la ruta a tu firebaseConfig sea correcta
+import { db } from '../firebase';
+import { Sparkles, X, Heart, ShoppingBag, CheckCircle2, AlertCircle } from 'lucide-react';
 
 const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
   const [cantidad, setCantidad] = useState(1);
@@ -42,7 +43,6 @@ const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-
     let processedValue = value;
 
     if (name === 'whatsapp') {
@@ -78,7 +78,6 @@ const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
     setErrorValidacion('');
     setLoading(true);
 
-    // Cálculo exacto del precio según la promoción: 1 = 68.000 c/u, 2 o más = 65.000 c/u
     const precioUnitario = cantidad >= 2 ? 65000 : 68000;
     const precioTotal = cantidad * precioUnitario;
     const detallePartidas = `- ${cantidad}x Partida(s) de Bingo Galáctico [Categoría: ${formData.categoria}] ($${precioUnitario.toLocaleString()} c/u) = $${precioTotal.toLocaleString()} COP`;
@@ -119,16 +118,13 @@ const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
       const TEMPLATE_CLIENTE = "template_w2hvo5m"; 
       const PUBLIC_KEY = "gJ7hwekEH8jm6KLye";
 
-      // 1. Envía los correos mediante EmailJS
       await emailjs.send(SERVICE_ID, TEMPLATE_INTERNO, templateParams, PUBLIC_KEY);
       await emailjs.send(SERVICE_ID, TEMPLATE_CLIENTE, templateParams, PUBLIC_KEY);
 
-      // 2. Separar nombre y apellido de forma segura para la base de datos
       const partesNombre = formData.nombreApellido.trim().split(' ');
       const nombre = partesNombre[0] || '';
       const apellido = partesNombre.slice(1).join(' ') || '';
 
-      // 3. Guardar el pedido en Firestore en la colección "pedidos" con todos los campos sincronizados
       await addDoc(collection(db, "pedidos"), {
         id: orderId,
         nombre: nombre,
@@ -151,7 +147,6 @@ const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
         onConfirm({ ...formData, cantidad, precioTotal });
       }
 
-      // 4. Mostramos la alerta de éxito
       setShowSuccessAlert(true);
     } catch (error) {
       console.error("Error al procesar el pedido:", error);
@@ -167,74 +162,84 @@ const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-xs p-2 sm:p-4 overflow-y-auto">
-      <div className="bg-[#FFF5F7] border-4 border-[#FFD1DC] w-full max-w-md rounded-3xl p-4 sm:p-6 shadow-xl text-[#6B5B6E] relative my-auto max-h-[90vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-pink-950/20 backdrop-blur-xs p-3 sm:p-4 overflow-y-auto">
+      {/* Contenedor principal con tonos pasteles claros, luminosos y coloridos */}
+      <div className="bg-gradient-to-br from-white via-pink-50/70 to-purple-50/80 border-2 border-pink-300 w-full max-w-lg rounded-3xl p-5 sm:p-7 shadow-2xl text-gray-800 relative my-auto max-h-[92vh] flex flex-col">
         
-        {/* ALERTA DE ÉXITO ESTILO COSMOSCUTE */}
+        {/* ALERTA DE ÉXITO */}
         {showSuccessAlert && (
-          <div className="absolute inset-0 bg-[#FFF5F7]/95 backdrop-blur-sm z-30 rounded-3xl p-6 flex flex-col items-center justify-center text-center animate-fadeIn">
-            <div className="w-16 h-16 bg-[#FFE5EC] border-2 border-[#FFD1DC] rounded-full flex items-center justify-center text-3xl mb-3 shadow-inner">
-              💌
+          <div className="absolute inset-0 bg-white/95 backdrop-blur-md z-30 rounded-3xl p-6 flex flex-col items-center justify-center text-center animate-fadeIn">
+            <div className="w-20 h-20 bg-gradient-to-tr from-pink-400 to-purple-500 rounded-3xl flex items-center justify-center text-white text-4xl mb-4 shadow-lg shadow-pink-500/30 animate-bounce">
+              <CheckCircle2 className="w-10 h-10" />
             </div>
-            <h3 className="text-xl font-extrabold text-[#D87093] mb-2 tracking-wide">
-              ¡Pedido Realizado con Éxito! ✨
+            <h3 className="text-xl font-black text-purple-900 mb-2 tracking-wide flex items-center gap-2">
+              ¡Pedido Realizado con Éxito! <Sparkles className="w-5 h-5 text-pink-500 animate-pulse" />
             </h3>
-            <p className="text-xs sm:text-sm text-[#7D6B7F] mb-6 leading-relaxed">
-              Hemos enviado los detalles de tu compra a tu correo electrónico y registrado tu pedido. 
+            <p className="text-xs sm:text-sm text-gray-600 mb-6 max-w-sm leading-relaxed">
+              Hemos enviado los detalles de tu compra a tu correo electrónico y registrado tu pedido con éxito. 
               <br/><br/>
-              🔍 <strong className="text-[#D87093]">Revisa tu bandeja principal</strong> y si no lo ves allí, por favor <strong className="text-[#D87093]">revisa la carpeta de SPAM</strong>.
+              🔍 <strong className="text-pink-600">Revisa tu bandeja principal</strong> y si no lo ves allí, por favor <strong className="text-pink-600">revisa la carpeta de SPAM</strong>.
             </p>
             <button
               type="button"
               onClick={handleFinalizarExito}
-              className="px-6 py-2.5 rounded-2xl font-bold bg-gradient-to-r from-[#FFB7B2] to-[#FF9AA2] text-white shadow-md hover:from-[#FFA09A] hover:to-[#FF858F] transition-all transform hover:-translate-y-0.5 cursor-pointer text-xs sm:text-sm"
+              className="px-8 py-3 rounded-2xl font-black bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/30 hover:opacity-95 transition-all transform hover:scale-105 cursor-pointer text-xs sm:text-sm tracking-wide uppercase"
             >
               ¡Entendido, gracias! 🌸
             </button>
           </div>
         )}
 
-        <div className="absolute top-3 right-3 sm:top-4 sm:right-4 flex items-center gap-2 z-10">
- 
-
+        {/* BOTÓN CERRAR */}
+        <div className="absolute top-4 right-4 z-15">
           <button 
             type="button"
             onClick={onClose}
-            className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#FFE5EC] hover:bg-[#FFD1DC] text-[#D87093] font-bold flex items-center justify-center transition-all shadow-sm cursor-pointer text-xs sm:text-sm"
+            className="w-8 h-8 rounded-full bg-pink-100 hover:bg-pink-200 text-pink-600 font-bold flex items-center justify-center transition-all shadow-xs cursor-pointer"
           >
-            ✕
+            <X className="w-4 h-4 stroke-[3]" />
           </button>
         </div>
 
-        <div className="text-center mb-3 sm:mb-4 pr-12 flex-shrink-0">
-          <span className="text-2xl sm:text-3xl">🌸</span>
-          <h2 className="text-xl sm:text-2xl font-extrabold text-[#D87093] mt-0.5 tracking-wide">
-            ¡Completar Pedido!
+        {/* CABECERA CLARA Y COLORIDA */}
+        <div className="text-center mb-4 pr-6 flex-shrink-0">
+          <div className="w-12 h-12 mx-auto mb-2 rounded-2xl bg-gradient-to-tr from-pink-400 to-purple-400 flex items-center justify-center text-white shadow-md shadow-pink-200">
+            <ShoppingBag className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl sm:text-2xl font-black text-purple-950 tracking-tight flex items-center justify-center gap-2">
+            ¡Completar Pedido! <Heart className="w-5 h-5 text-pink-500 fill-pink-500 animate-pulse" />
           </h2>
-          <p className="text-[11px] sm:text-xs text-[#9B889E] mt-0.5">
+          <p className="text-xs font-bold text-pink-600 mt-0.5 uppercase tracking-wide">
             Ingresa tus datos para recibir tu partida y confirmación ✨
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-3 overflow-y-auto pr-1 flex-1" noValidate>
+        {/* FORMULARIO CON FONDOS BLANCOS Y BORDES CLAROS */}
+        <form onSubmit={handleSubmit} className="space-y-3.5 overflow-y-auto pr-1 flex-1" noValidate>
           
-          <div className="bg-white/80 border-2 border-[#FCE4EC] rounded-2xl p-3 shadow-xs text-center space-y-0.5">
-            <span className="block font-bold text-[11px] sm:text-xs text-[#D87093] uppercase tracking-wider">Detalle de Precios 🏷️</span>
-            <p className="text-[11px] sm:text-xs text-[#7D6B7F]">
-              La partida vale <strong className="text-[#D87093]">68.000 COP</strong>. Si compras 2 o más, cada partida te queda en <strong className="text-[#D87093]">65.000 COP</strong>.
+          {/* CAJA DE PRECIOS */}
+          <div className="bg-gradient-to-r from-pink-100/70 via-purple-100/60 to-pink-100/70 border border-pink-300 rounded-2xl p-3.5 text-center space-y-1 shadow-xs">
+            <span className="block font-black text-[11px] text-pink-600 uppercase tracking-widest flex items-center justify-center gap-1">
+              <Sparkles className="w-3.5 h-3.5" /> Detalle de Promoción 🏷️
+            </span>
+            <p className="text-xs text-purple-950 font-medium">
+              La partida vale <strong className="text-pink-600 font-bold">68.000 COP</strong>. Si compras 2 o más, cada una te queda en <strong className="text-purple-700 font-bold">65.000 COP</strong>.
             </p>
           </div>
 
+          {/* ALERTA DE ERROR */}
           {errorValidacion && (
-            <div className="bg-[#FFEBEE] border-2 border-[#FFCDD2] rounded-xl p-2.5 text-center">
-              <p className="text-[11px] sm:text-xs font-bold text-[#C62828]">⚠️ {errorValidacion}</p>
+            <div className="bg-red-50 border-2 border-red-200 rounded-2xl p-3 text-center flex items-center justify-center gap-2">
+              <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
+              <p className="text-xs font-bold text-red-600">{errorValidacion}</p>
             </div>
           )}
 
-          <div className="space-y-2.5 bg-white/60 p-3 sm:p-4 rounded-2xl border border-[#FCE4EC]">
+          {/* CAMPOS */}
+          <div className="space-y-3 bg-white p-4 rounded-3xl border border-pink-200/60 shadow-sm">
             
             <div>
-              <label className="block text-[11px] sm:text-xs font-bold text-[#7D6B7F] mb-1">¿Cuántas partidas quieres?</label>
+              <label className="block text-[11px] font-extrabold text-purple-900 mb-1 uppercase tracking-wider">¿Cuántas partidas quieres? *</label>
               <input 
                 type="number"
                 min="1"
@@ -252,79 +257,79 @@ const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
                 onBlur={() => {
                   if (!cantidad || cantidad < 1) setCantidad(1);
                 }}
-                className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/40 border border-pink-200 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] sm:text-xs font-bold text-[#7D6B7F] mb-1">Nombre y Apellido</label>
+              <label className="block text-[11px] font-extrabold text-purple-900 mb-1 uppercase tracking-wider">Nombre y Apellido *</label>
               <input 
                 type="text"
                 name="nombreApellido"
                 value={formData.nombreApellido}
                 onChange={handleChange}
                 placeholder="EJ. SOFIA GOMEZ"
-                className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093] uppercase"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/40 border border-pink-200 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all uppercase placeholder-purple-300"
               />
             </div>
 
             <div>
-              <label className="block text-[11px] sm:text-xs font-bold text-[#7D6B7F] mb-1">Correo Electrónico (para tu confirmación)</label>
+              <label className="block text-[11px] font-extrabold text-purple-900 mb-1 uppercase tracking-wider">Correo Electrónico (para confirmación) *</label>
               <input 
                 type="email"
                 name="email"
                 value={formData.email}
                 onChange={handleChange}
-                placeholder="Ej. sofia@gmail.com"
-                className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093]"
+                placeholder="EJ. SOFIA@GMAIL.COM"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/40 border border-pink-200 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all uppercase placeholder-purple-300"
               />
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-[#7D6B7F] mb-1">Dirección de entrega</label>
+                <label className="block text-[11px] font-extrabold text-purple-900 mb-1 uppercase tracking-wider">Dirección de entrega *</label>
                 <input 
                   type="text"
                   name="direccion"
                   value={formData.direccion}
                   onChange={handleChange}
                   placeholder="EJ. CALLE 123 #45-67"
-                  className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093] uppercase"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/40 border border-pink-200 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all uppercase placeholder-purple-300"
                 />
               </div>
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-[#7D6B7F] mb-1">Barrio</label>
+                <label className="block text-[11px] font-extrabold text-purple-900 mb-1 uppercase tracking-wider">Barrio *</label>
                 <input 
                   type="text"
                   name="barrio"
                   value={formData.barrio}
                   onChange={handleChange}
                   placeholder="EJ. ROSALES"
-                  className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093] uppercase"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/40 border border-pink-200 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all uppercase placeholder-purple-300"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-[#7D6B7F] mb-1">Ciudad</label>
+                <label className="block text-[11px] font-extrabold text-purple-900 mb-1 uppercase tracking-wider">Ciudad *</label>
                 <input 
                   type="text"
                   name="ciudad"
                   value={formData.ciudad}
                   onChange={handleChange}
                   placeholder="EJ. BOGOTA"
-                  className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093] uppercase"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/40 border border-pink-200 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all uppercase placeholder-purple-300"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-[#D87093] mb-1">Categoría 🧸</label>
+                <label className="block text-[11px] font-extrabold text-pink-600 mb-1 uppercase tracking-wider">Categoría 🧸 *</label>
                 <select
                   name="categoria"
                   value={formData.categoria}
                   onChange={handleChange}
-                  className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093] cursor-pointer"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-pink-100/60 border border-pink-300 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all cursor-pointer"
                 >
                   <option value="">Selecciona...</option>
                   <option value="NIÑO">👦 NIÑO</option>
@@ -333,49 +338,50 @@ const ModalPedido = ({ isOpen, onClose, onConfirm }) => {
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-[#7D6B7F] mb-1">¿Quién recibe?</label>
+                <label className="block text-[11px] font-extrabold text-purple-900 mb-1 uppercase tracking-wider">¿Quién recibe? *</label>
                 <input 
                   type="text"
                   name="quienRecibe"
                   value={formData.quienRecibe}
                   onChange={handleChange}
-                  placeholder="EJ. ELLA MISMA / JUAN"
-                  className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093] uppercase"
+                  placeholder="EJ. ELLA MISMA"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/40 border border-pink-200 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all uppercase placeholder-purple-300"
                 />
               </div>
               <div>
-                <label className="block text-[11px] sm:text-xs font-bold text-[#7D6B7F] mb-1">Número de WhatsApp</label>
+                <label className="block text-[11px] font-extrabold text-purple-900 mb-1 uppercase tracking-wider">WhatsApp *</label>
                 <input 
                   type="tel"
                   name="whatsapp"
                   value={formData.whatsapp}
                   onChange={handleChange}
-                  placeholder="Ej. 3001234567"
+                  placeholder="3001234567"
                   maxLength="10"
-                  className="w-full px-3 py-1.5 sm:py-2 rounded-xl bg-white border border-[#FFD1DC] text-xs sm:text-sm text-[#6B5B6E] focus:outline-none focus:ring-2 focus:ring-[#D87093]"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-pink-50/40 border border-pink-200 text-xs sm:text-sm font-bold text-purple-950 focus:outline-none focus:border-pink-500 focus:ring-2 focus:ring-pink-200 transition-all placeholder-purple-300"
                 />
               </div>
             </div>
 
           </div>
 
-          <div className="flex gap-2.5 pt-1 flex-shrink-0">
+          {/* BOTONES */}
+          <div className="flex gap-3 pt-2 flex-shrink-0">
             <button 
               type="button"
               onClick={onClose}
               disabled={loading}
-              className="flex-1 py-2.5 sm:py-3 rounded-2xl font-bold bg-[#F3E5F5] text-[#9C7BB0] hover:bg-[#E8D7F1] transition-all shadow-xs cursor-pointer text-xs sm:text-sm"
+              className="flex-1 py-3 rounded-2xl font-black bg-pink-100 text-pink-700 hover:bg-pink-200 transition-all shadow-xs cursor-pointer text-xs uppercase tracking-wider"
             >
               Cancelar
             </button>
             <button 
               type="submit"
               disabled={loading}
-              className="flex-1 py-2.5 sm:py-3 rounded-2xl font-bold bg-gradient-to-r from-[#FFB7B2] to-[#FF9AA2] text-white shadow-md hover:from-[#FFA09A] hover:to-[#FF858F] transition-all transform hover:-translate-y-0.5 cursor-pointer text-xs sm:text-sm disabled:opacity-50"
+              className="flex-1 py-3 rounded-2xl font-black bg-gradient-to-r from-pink-500 to-purple-600 text-white shadow-lg shadow-pink-500/30 hover:opacity-95 transition-all transform hover:-translate-y-0.5 cursor-pointer text-xs uppercase tracking-wider disabled:opacity-50 flex items-center justify-center gap-1.5"
             >
-              {loading ? 'Procesando...' : '¡Confirmar Pedido 🎮!'}
+              <span>{loading ? 'Procesando...' : '¡Confirmar Pedido 🎮!'}</span>
             </button>
           </div>
 

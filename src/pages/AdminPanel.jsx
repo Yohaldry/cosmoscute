@@ -185,56 +185,57 @@ useEffect(() => {
 const handleSaveCategory = async (e) => {
   e.preventDefault();
   try {
-    let imageUrl = catImagePreview; // Toma la vista previa actual por defecto
+    let imageUrl = editingCategory?.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg';
 
-    // Si seleccionaste una foto nueva desde el dispositivo, súbela a Cloudinary
+    // 1. SI SE SELECCIONÓ UN ARCHIVO NUEVO, SÚBELO A CLOUDINARY
     if (catImageFile) {
       const formData = new FormData();
       formData.append("file", catImageFile);
-      formData.append("upload_preset", "TU_UPLOAD_PRESET"); // Reemplaza con tu preset si aplica
+      formData.append("upload_preset", "cosmos_preset"); // ⚠️ Asegúrate de que sea tu preset real de Cloudinary
 
       const res = await fetch("https://api.cloudinary.com/v1_1/DTKIRMTFQ/image/upload", {
         method: "POST",
         body: formData
       });
+
       const data = await res.json();
+
+      // Si Cloudinary rechaza la petición, mostrará el motivo exacto en la consola
+      if (!res.ok) {
+        console.error("Error detallado de Cloudinary:", data);
+        alert(`Error al subir la imagen: ${data.error?.message || 'Bad Request'}`);
+        return; 
+      }
+
       if (data.secure_url) {
         imageUrl = data.secure_url;
       }
     }
 
-    // 🔥 VALOR DE RESPALDO POR SI imageUrl SIGUE VACÍO O UNDEFINED
-    const finalImageUrl = imageUrl && imageUrl.trim() !== '' 
-      ? imageUrl 
-      : 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg';
-
+    // 2. DATOS LIMPIOS PARA FIREBASE (Nunca será blob ni undefined)
     const categoryData = {
       nombre: catNombre.trim().toUpperCase(),
-      image: finalImageUrl, // 👈 Ahora siempre será un string válido y nunca undefined
+      image: imageUrl,
       subtitle: 'Colección Exclusiva'
     };
 
     if (editingCategory) {
-      // Editar existente
       const categoryRef = doc(db, 'categorias', editingCategory.id);
       await updateDoc(categoryRef, categoryData);
     } else {
-      // Crear nueva
       await addDoc(collection(db, 'categorias'), categoryData);
     }
 
-    // Limpiar formulario
+    // 3. LIMPIAR Y RECARGAR
     setCatNombre('');
     setCatImageFile(null);
     setCatImagePreview('');
     setEditingCategory(null);
     setIsCategoryModalOpen(false);
-
-    // Recargar lista
     fetchCategorias(); 
 
   } catch (error) {
-    console.error("Error al guardar la categoría con foto:", error);
+    console.error("Error al guardar la categoría:", error);
     alert("Hubo un error al guardar la categoría.");
   }
 };

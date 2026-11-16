@@ -5,8 +5,8 @@ import { db } from '../../firebase';
 import { collection, addDoc, serverTimestamp } from 'firebase/firestore';
 import emailjs from '@emailjs/browser';
 
-export default function CartDrawer({ isOpen, onClose }) {
-  const { cartItems, addToCart, removeFromCart, deleteItem, totalItems, productsPrice } = useCart();
+export default function CartDrawer() {
+  const { cartItems, addToCart, removeFromCart, deleteItem, totalItems, productsPrice, isCartOpen, setIsCartOpen } = useCart();
   
   // Estados para vistas, alertas y tipo de entrega ('envio' o 'tienda')
   const [tipoEntrega, setTipoEntrega] = useState('envio'); // Por defecto envío
@@ -61,13 +61,12 @@ export default function CartDrawer({ isOpen, onClose }) {
         web_url: 'https://www.cosmoscute.com'
       };
 
-// ✉️ ENVÍO A EMAILJS
       const response = await emailjs.send(
-        'service_qkvvba6',   // ID del servicio Gmail[cite: 6]
-        'template_zw4j7lg',   // ID de la plantilla[cite: 3]
+        'service_qkvvba6',   // ID del servicio Gmail
+        'template_zw4j7lg',   // ID de la plantilla
         templateParams,
         {
-          publicKey: 'kPMeA1fNIYKxqISZB', // Reemplaza aquí
+          publicKey: 'kPMeA1fNIYKxqISZB',
         }
       );
 
@@ -89,7 +88,7 @@ export default function CartDrawer({ isOpen, onClose }) {
       id: Date.now(),
       fechaCreacion: serverTimestamp(),
       fecha: new Date().toLocaleDateString('es-CO'),
-      tipoEntrega: tipoEntrega, // 'envio' o 'tienda'
+      tipoEntrega: tipoEntrega,
       costoEnvio: shippingCost,
       nombre: formData.nombre,
       apellido: formData.apellido,
@@ -100,7 +99,7 @@ export default function CartDrawer({ isOpen, onClose }) {
       ciudad: tipoEntrega === 'envio' ? formData.ciudad : 'RECOGE EN TIENDA',
       quienrecibe: formData.quienrecibe,
       productos: cartItems.map(item => ({
-        name: item.name.toUpperCase(),
+        name: (item.nombre || item.name || '').toUpperCase(),
         quantity: item.quantity || 1,
         price: item.price || 0
       })),
@@ -111,17 +110,12 @@ export default function CartDrawer({ isOpen, onClose }) {
     };
 
     try {
-      // 1. Guardar pedido en Firebase
       await addDoc(collection(db, "pedidos"), nuevaOrden);
-      console.log("Pedido subido exitosamente a Firebase:", nuevaOrden);
-
-      // 2. Enviar correo al cliente usando EmailJS
       await enviarCorreoCliente(nuevaOrden);
 
       setIsLoading(false);
       setSuccessAlert(true);
       
-      // Vaciar el carrito
       cartItems.forEach(item => deleteItem(item.id));
 
     } catch (error) {
@@ -134,22 +128,22 @@ export default function CartDrawer({ isOpen, onClose }) {
   const handleCloseSuccess = () => {
     setSuccessAlert(false);
     setShowCheckoutForm(false);
-    onClose();
+    setIsCartOpen(false);
   };
 
   const handleClose = () => {
     if (!successAlert) {
       setShowCheckoutForm(false);
-      onClose();
+      setIsCartOpen(false);
     }
   };
 
   return (
-    <div className={`fixed inset-0 z-50 overflow-hidden transition-opacity duration-300 ${isOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
+    <div className={`fixed inset-0 z-50 overflow-hidden transition-opacity duration-300 ${isCartOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'}`}>
       <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={handleClose} />
 
       <div className={`absolute inset-x-0 bottom-0 sm:inset-x-auto sm:inset-y-0 sm:right-0 sm:bottom-auto w-full sm:w-screen sm:max-w-md h-[60vh] sm:h-[calc(100vh-1rem)] sm:my-2 sm:mr-2 flex transform transition-transform duration-300 ease-out ${
-        isOpen ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'
+        isCartOpen ? 'translate-y-0 sm:translate-x-0' : 'translate-y-full sm:translate-y-0 sm:translate-x-full'
       }`}>
         <div className="w-full h-full bg-[#181022]/95 backdrop-blur-2xl border-t sm:border-t-0 sm:border-l border-purple-500/20 text-white shadow-2xl flex flex-col rounded-t-3xl sm:rounded-l-3xl sm:rounded-tr-none overflow-hidden relative">
           
@@ -178,7 +172,7 @@ export default function CartDrawer({ isOpen, onClose }) {
           <div className="flex items-center justify-between px-4 py-2.5 sm:px-6 sm:py-4 border-b border-purple-500/20 bg-purple-950/40 backdrop-blur-md flex-shrink-0">
             <div className="flex items-center gap-2">
               {showCheckoutForm && !successAlert && (
-                <button type="button" onClick={() => setShowCheckoutForm(false)} className="p-1 rounded-lg bg-purple-500/20 text-purple-200 hover:text-white transition-colors mr-1">
+                <button type="button" onClick={() => setShowCheckoutForm(false)} className="p-1 rounded-lg bg-purple-500/20 text-purple-200 hover:text-white transition-colors mr-1 cursor-pointer">
                   <ArrowLeft className="w-4 h-4" />
                 </button>
               )}
@@ -194,7 +188,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                 </span>
               </div>
             </div>
-            <button type="button" onClick={handleClose} className="p-1.5 sm:p-2 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 hover:text-white transition-colors border border-purple-500/20">
+            <button type="button" onClick={handleClose} className="p-1.5 sm:p-2 rounded-full bg-purple-500/10 hover:bg-purple-500/20 text-purple-200 hover:text-white transition-colors border border-purple-500/20 cursor-pointer">
               <X className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
             </button>
           </div>
@@ -220,7 +214,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                         <button
                           type="button"
                           onClick={() => setTipoEntrega('envio')}
-                          className={`py-2 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all border ${
+                          className={`py-2 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all border cursor-pointer ${
                             tipoEntrega === 'envio'
                               ? 'bg-gradient-to-r from-pink-500 to-purple-600 border-pink-400 text-white shadow-lg shadow-pink-500/20'
                               : 'bg-purple-950/40 border-purple-500/20 text-purple-300 hover:bg-purple-900/40'
@@ -231,7 +225,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                         <button
                           type="button"
                           onClick={() => setTipoEntrega('tienda')}
-                          className={`py-2 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all border ${
+                          className={`py-2 px-2 rounded-xl text-[11px] font-bold flex items-center justify-center gap-1.5 transition-all border cursor-pointer ${
                             tipoEntrega === 'tienda'
                               ? 'bg-gradient-to-r from-pink-500 to-purple-600 border-pink-400 text-white shadow-lg shadow-pink-500/20'
                               : 'bg-purple-950/40 border-purple-500/20 text-purple-300 hover:bg-purple-900/40'
@@ -245,18 +239,18 @@ export default function CartDrawer({ isOpen, onClose }) {
                     {cartItems.map((item) => (
                       <div key={item.id} className="flex items-center gap-2.5 sm:gap-3.5 bg-purple-900/25 backdrop-blur-md p-2.5 sm:p-3 rounded-xl sm:rounded-2xl border border-purple-500/20 shadow-md">
                         <div className="w-12 h-12 sm:w-16 sm:h-16 rounded-lg sm:rounded-xl overflow-hidden bg-purple-950/50 border border-purple-500/20 flex-shrink-0">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                          <img src={item.img || item.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg'} alt={item.nombre || item.name} className="w-full h-full object-cover" />
                         </div>
                         <div className="flex-1 min-w-0">
-                          <h4 className="text-[11px] sm:text-xs font-bold text-white truncate uppercase">{item.name}</h4>
+                          <h4 className="text-[11px] sm:text-xs font-bold text-white truncate uppercase">{item.nombre || item.name}</h4>
                           <p className="text-pink-300 text-[11px] sm:text-xs font-black mt-0.5">${(item.price * item.quantity).toLocaleString()}</p>
                           <div className="flex items-center gap-2 mt-1.5">
-                            <button type="button" onClick={() => removeFromCart(item.id)} className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-purple-500/20 border border-purple-400/20 flex items-center justify-center text-purple-200 hover:bg-purple-500/40">-</button>
+                            <button type="button" onClick={() => removeFromCart(item.id)} className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-purple-500/20 border border-purple-400/20 flex items-center justify-center text-purple-200 hover:bg-purple-500/40 cursor-pointer">-</button>
                             <span className="text-[11px] sm:text-xs font-extrabold text-white px-1">{item.quantity}</span>
-                            <button type="button" onClick={() => addToCart(item)} className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-purple-500/20 border border-purple-400/20 flex items-center justify-center text-purple-200 hover:bg-purple-500/40">+</button>
+                            <button type="button" onClick={() => addToCart(item)} className="w-5 h-5 sm:w-6 sm:h-6 rounded-md bg-purple-500/20 border border-purple-400/20 flex items-center justify-center text-purple-200 hover:bg-purple-500/40 cursor-pointer">+</button>
                           </div>
                         </div>
-                        <button type="button" onClick={() => deleteItem(item.id)} className="text-purple-400/60 hover:text-red-400 p-1.5">
+                        <button type="button" onClick={() => deleteItem(item.id)} className="text-purple-400/60 hover:text-red-400 p-1.5 cursor-pointer">
                           <Trash2 className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                         </button>
                       </div>
@@ -285,7 +279,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                   <button
                     type="button"
                     onClick={() => setShowCheckoutForm(true)}
-                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black tracking-wide shadow-lg shadow-pink-500/25 transition-all flex items-center justify-center gap-2 mt-1 uppercase"
+                    className="w-full bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700 text-white py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black tracking-wide shadow-lg shadow-pink-500/25 transition-all flex items-center justify-center gap-2 mt-1 uppercase cursor-pointer"
                   >
                     <span>Siguiente</span> <Sparkles className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                   </button>
@@ -296,7 +290,6 @@ export default function CartDrawer({ isOpen, onClose }) {
             <form onSubmit={handleFinalizeOrder} className="flex-1 flex flex-col overflow-hidden">
               <div className="flex-1 overflow-y-auto p-3 sm:p-6 space-y-3 text-xs">
                 
-                {/* Indicador del método seleccionado en el formulario */}
                 <div className="bg-purple-900/30 border border-purple-500/30 p-2.5 rounded-xl flex items-center justify-between">
                   <span className="text-[10px] text-purple-300 font-bold uppercase">Método elegido:</span>
                   <span className="text-[11px] font-black text-pink-300 uppercase">
@@ -326,7 +319,6 @@ export default function CartDrawer({ isOpen, onClose }) {
                   </div>
                 </div>
 
-                {/* Si elige envío, pedimos dirección exacta, barrio y ciudad */}
                 {tipoEntrega === 'envio' ? (
                   <>
                     <div>
@@ -361,7 +353,7 @@ export default function CartDrawer({ isOpen, onClose }) {
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black tracking-wide shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 uppercase disabled:opacity-50"
+                  className="w-full bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-600 hover:to-green-700 text-white py-2.5 sm:py-3.5 rounded-xl sm:rounded-2xl text-[11px] sm:text-xs font-black tracking-wide shadow-lg shadow-emerald-500/25 transition-all flex items-center justify-center gap-2 uppercase disabled:opacity-50 cursor-pointer"
                 >
                   <span>{isLoading ? 'PROCESANDO...' : 'FINALIZAR PEDIDO'}</span> <Sparkles className="w-3.5 h-3.5" />
                 </button>

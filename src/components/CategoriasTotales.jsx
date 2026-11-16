@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Rocket, ShoppingBag, ChevronRight, Search, ArrowLeft } from 'lucide-react';
+import { useNavigate, Link } from 'react-router-dom';
 import { db } from '../firebase'; 
 import { collection, getDocs } from 'firebase/firestore';
 
@@ -15,6 +16,7 @@ export default function CategoriasTotales() {
   const [cats, setCats] = useState([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function fetchCategorias() {
@@ -54,12 +56,12 @@ export default function CategoriasTotales() {
             </h1>
           </div>
 
-          <a 
-            href="/" 
+          <Link 
+            to="/" 
             className="px-3.5 py-2 rounded-xl bg-purple-50 hover:bg-purple-100 border border-purple-200 text-purple-700 font-bold text-xs transition-all flex items-center gap-1.5"
           >
             <ArrowLeft className="w-3.5 h-3.5" /> Volver al Inicio
-          </a>
+          </Link>
         </div>
 
         {/* Barra de Búsqueda Minimalista */}
@@ -90,6 +92,7 @@ export default function CategoriasTotales() {
               return (
                 <div 
                   key={cat.id || i} 
+                  onClick={() => navigate(`/categoria/${encodeURIComponent(cat.nombre)}`)}
                   className={`group relative rounded-xl p-[1px] bg-white border-2 ${s.b} shadow-xs transition-all duration-300 cursor-pointer flex flex-col justify-between hover:-translate-y-1 hover:shadow-md`}
                 >
                   <div className="p-2 flex flex-col justify-between h-full space-y-1">
@@ -115,7 +118,7 @@ export default function CategoriasTotales() {
                       </p>
                     </div>
                     <div className={`pt-1 flex items-center justify-between text-[9px] font-bold ${s.text} border-t border-gray-100`}>
-                      <span>Ver</span>
+                      <span>Ver productos</span>
                       <ChevronRight className="w-2.5 h-2.5" />
                     </div>
                   </div>
