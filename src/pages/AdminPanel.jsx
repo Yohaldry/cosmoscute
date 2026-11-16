@@ -21,7 +21,7 @@ const [isExpanded, setIsExpanded] = useState(false);
   const [productos, setProductos] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [categorias, setCategorias] = useState([]);
-
+const [catCustomId, setCatCustomId] = useState('');
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   
@@ -187,11 +187,10 @@ const handleSaveCategory = async (e) => {
   try {
     let imageUrl = editingCategory?.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg';
 
-    // 1. SI SE SELECCIONÓ UN ARCHIVO NUEVO, SÚBELO A CLOUDINARY
     if (catImageFile) {
       const formData = new FormData();
       formData.append("file", catImageFile);
-      formData.append("upload_preset", "cosmos_preset"); // ⚠️ Asegúrate de que sea tu preset real de Cloudinary
+      formData.append("upload_preset", "cosmos_preset");
 
       const res = await fetch("https://api.cloudinary.com/v1_1/DTKIRMTFQ/image/upload", {
         method: "POST",
@@ -199,10 +198,7 @@ const handleSaveCategory = async (e) => {
       });
 
       const data = await res.json();
-
-      // Si Cloudinary rechaza la petición, mostrará el motivo exacto en la consola
       if (!res.ok) {
-        console.error("Error detallado de Cloudinary:", data);
         alert(`Error al subir la imagen: ${data.error?.message || 'Bad Request'}`);
         return; 
       }
@@ -212,11 +208,11 @@ const handleSaveCategory = async (e) => {
       }
     }
 
-    // 2. DATOS LIMPIOS PARA FIREBASE (Nunca será blob ni undefined)
     const categoryData = {
       nombre: catNombre.trim().toUpperCase(),
       image: imageUrl,
-      subtitle: 'Colección Exclusiva'
+      subtitle: 'Colección Exclusiva',
+      idpersonalizado: catCustomId.trim().toUpperCase() // 👈 Se guarda o edita el campo adicional
     };
 
     if (editingCategory) {
@@ -226,8 +222,9 @@ const handleSaveCategory = async (e) => {
       await addDoc(collection(db, 'categorias'), categoryData);
     }
 
-    // 3. LIMPIAR Y RECARGAR
+    // Limpiar y recargar
     setCatNombre('');
+    setCatCustomId('');
     setCatImageFile(null);
     setCatImagePreview('');
     setEditingCategory(null);
@@ -244,12 +241,16 @@ const handleSaveCategory = async (e) => {
    setEditingCategory(cat);
   setCatNombre(cat.nombre || '');
   setCatImagePreview(cat.image || '');
+  setCatCustomId(cat.idpersonalizado || '');
   setCatImageFile(null);
   };
 
   const handleCancelCategoryEdit = () => {
-    setEditingCategory(null);
-    setCatNombre("");
+   setEditingCategory(false);
+  setCatNombre('');
+  setCatCustomId(''); // 👈 Limpia el input
+  setCatImagePreview('');
+  setCatImageFile(null);
   };
 
   const handleDeleteCategoryRequest = (id) => {
@@ -797,7 +798,7 @@ const handleSaveCategory = async (e) => {
 
       {/* MODAL CATEGORÍA */}
       {isCategoryModalOpen && (
-      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
+     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
   <div className="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3 max-h-[90vh] flex flex-col">
     <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
       <div className="flex items-center gap-1.5">
@@ -820,15 +821,31 @@ const handleSaveCategory = async (e) => {
       </div>
 
       <div className="space-y-2">
+        {/* Input para el ID Único de la Categoría */}
+        <div>
+          <label className="block text-[8px] font-extrabold text-[#9EA2B3] mb-0.5 uppercase">ID Único / Código de la Categoría</label>
+          <input 
+            type="text" 
+            value={catCustomId} 
+            onChange={(e) => setCatCustomId(e.target.value)}
+            placeholder="Ej. nino, nina, papeleria..."
+            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            required
+          />
+        </div>
+
         {/* Input de Nombre */}
-        <input 
-          type="text" 
-          value={catNombre} 
-          onChange={(e) => setCatNombre(e.target.value)}
-          placeholder="Nombre de la categoría..."
-          className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-          required
-        />
+        <div>
+          <label className="block text-[8px] font-extrabold text-[#9EA2B3] mb-0.5 uppercase">Nombre de la Categoría</label>
+          <input 
+            type="text" 
+            value={catNombre} 
+            onChange={(e) => setCatNombre(e.target.value)}
+            placeholder="Nombre de la categoría..."
+            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+            required
+          />
+        </div>
 
         {/* Input para Subir Foto desde el Dispositivo */}
         <div className="flex items-center gap-2 bg-white border border-[#E4E8F0] rounded-xl p-1.5">
@@ -895,7 +912,10 @@ const handleSaveCategory = async (e) => {
                 alt={cat.nombre} 
                 className="w-7 h-7 rounded-lg object-cover border border-[#E4E8F0] shrink-0" 
               />
-              <span className="text-[9px] font-bold text-[#2D3142] truncate max-w-[140px]">{cat.nombre}</span>
+              <div className="overflow-hidden">
+                <span className="block text-[9px] font-bold text-[#2D3142] truncate max-w-[140px]">{cat.nombre}</span>
+                <span className="block text-[7px] text-[#9EA2B3] font-mono">ID: {cat.id}</span>
+              </div>
             </div>
             <div className="flex items-center gap-1 shrink-0">
               <button 
