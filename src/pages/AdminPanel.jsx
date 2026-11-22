@@ -8,43 +8,110 @@ import BannersPromociones from './bannerspromociones/BannersPromociones';
 import { PanelDePedidos } from './Pedidos/PanelDePedidos';
 import CargoyDescargo  from './cargoydescargo/CargoyDescargo';
 
+const AUTH_STORAGE_KEY = "cosmos_admin_auth_v1";
+const TAB_STORAGE_KEY = "cosmos_admin_active_tab_v1";
+const DRAFT_STORAGE_KEY = "cosmos_admin_draft_v1";
+const ADMIN_ACCESS_CODE = import.meta.env.VITE_ADMIN_ACCESS_CODE;
+
+const getSavedDraft = () => {
+  try {
+    const raw = localStorage.getItem(DRAFT_STORAGE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+};
 
 export default function AdminPanel() {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const savedDraft = useMemo(() => getSavedDraft(), []);
+
+  const [isAuthenticated, setIsAuthenticated] = useState(() => {
+    try {
+      return localStorage.getItem(AUTH_STORAGE_KEY) === "true";
+    } catch {
+      return false;
+    }
+  });
   const [authInput, setAuthInput] = useState("");
   const [authError, setAuthError] = useState(false);
-const [isSuccessAnim, setIsSuccessAnim] = useState(false);
+  const [isSuccessAnim, setIsSuccessAnim] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("bingo-productos");
+  const [activeTab, setActiveTab] = useState(() => {
+    try {
+      return localStorage.getItem(TAB_STORAGE_KEY) || "bingo-productos";
+    } catch {
+      return "bingo-productos";
+    }
+  });
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-const [isExpanded, setIsExpanded] = useState(false);
+  const [isExpanded, setIsExpanded] = useState(false);
   const [productos, setProductos] = useState([]);
   const [inventario, setInventario] = useState([]);
   const [categorias, setCategorias] = useState([]);
-const [catCustomId, setCatCustomId] = useState('');
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
+  const [catCustomId, setCatCustomId] = useState(savedDraft.catCustomId || '');
+  const [isProductModalOpen, setIsProductModalOpen] = useState(Boolean(savedDraft.isProductModalOpen));
+  const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(Boolean(savedDraft.isCategoryModalOpen));
   
-  const [prodNombre, setProdNombre] = useState("");
-  const [prodCodigo, setProdCodigo] = useState("");
-  const [prodCategoria, setProdCategoria] = useState("General");
-  const [prodPrecio, setProdPrecio] = useState("");
-  const [prodStockActual, setProdStockActual] = useState("");
-  const [prodPortada, setProdPortada] = useState("");
+  const [prodNombre, setProdNombre] = useState(savedDraft.prodNombre || "");
+  const [prodCodigo, setProdCodigo] = useState(savedDraft.prodCodigo || "");
+  const [prodCategoria, setProdCategoria] = useState(savedDraft.prodCategoria || "General");
+  const [prodPrecio, setProdPrecio] = useState(savedDraft.prodPrecio || "");
+  const [prodStockActual, setProdStockActual] = useState(savedDraft.prodStockActual || "");
+  const [prodPortada, setProdPortada] = useState(savedDraft.prodPortada || "");
 
-  
-  
   // Estados para Categorías (Crear / Editar / Buscar)
-  const [catNombre, setCatNombre] = useState("");
-  const [catSearch, setCatSearch] = useState("");
-  const [editingCategory, setEditingCategory] = useState(null);
+  const [catNombre, setCatNombre] = useState(savedDraft.catNombre || "");
+  const [catSearch, setCatSearch] = useState(savedDraft.catSearch || "");
+  const [editingCategory, setEditingCategory] = useState(savedDraft.editingCategory || null);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const [successAlert, setSuccessAlert] = useState({ isOpen: false, message: "" });
   const [errorAlert, setErrorAlert] = useState({ isOpen: false, message: "" });
-// Agrega estos estados al inicio de tu función AdminPanel
-const [catImageFile, setCatImageFile] = useState(null);
-const [catImagePreview, setCatImagePreview] = useState('');
+  // Agrega estos estados al inicio de tu función AdminPanel
+  const [catImageFile, setCatImageFile] = useState(null);
+  const [catImagePreview, setCatImagePreview] = useState(savedDraft.catImagePreview || '');
   const [deleteModal, setDeleteModal] = useState({ isOpen: false, type: null, id: null, name: "", isMultiple: false });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(TAB_STORAGE_KEY, activeTab);
+    } catch {}
+  }, [activeTab]);
+
+  useEffect(() => {
+    try {
+      const draftToSave = {
+        isProductModalOpen,
+        isCategoryModalOpen,
+        prodNombre,
+        prodCodigo,
+        prodCategoria,
+        prodPrecio,
+        prodStockActual,
+        prodPortada,
+        catNombre,
+        catCustomId,
+        catSearch,
+        editingCategory,
+        catImagePreview: catImageFile ? "" : catImagePreview
+      };
+      localStorage.setItem(DRAFT_STORAGE_KEY, JSON.stringify(draftToSave));
+    } catch {}
+  }, [
+    isProductModalOpen,
+    isCategoryModalOpen,
+    prodNombre,
+    prodCodigo,
+    prodCategoria,
+    prodPrecio,
+    prodStockActual,
+    prodPortada,
+    catNombre,
+    catCustomId,
+    catSearch,
+    editingCategory,
+    catImageFile,
+    catImagePreview
+  ]);
 
   const triggerSuccessAlert = (message) => {
     setSuccessAlert({ isOpen: true, message });
@@ -58,7 +125,10 @@ const [catImagePreview, setCatImagePreview] = useState('');
 
   const handleLogin = (e) => {
     e.preventDefault();
-    if (authInput === "270523") {
+    if (ADMIN_ACCESS_CODE && authInput === ADMIN_ACCESS_CODE) {
+      try {
+        localStorage.setItem(AUTH_STORAGE_KEY, "true");
+      } catch {}
       setIsAuthenticated(true);
       setAuthError(false);
     } else {
@@ -68,23 +138,31 @@ const [catImagePreview, setCatImagePreview] = useState('');
   };
 
   const fetchCategorias = async () => {
-  try {
-    const querySnapshot = await getDocs(collection(db, 'categorias'));
-    const lista = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data()
-    }));
-    setCategorias(lista);
-  } catch (error) {
-    console.error("Error al cargar categorías:", error);
-  }
-};
+    try {
+      const querySnapshot = await getDocs(collection(db, 'categorias'));
+      const lista = querySnapshot.docs.map(doc => ({
+        id: doc.id,
+        ...doc.data()
+      }));
+      setCategorias(lista);
+    } catch (error) {
+      console.error("Error al cargar categorías:", error);
+    }
+  };
 
-useEffect(() => {
-  fetchCategorias();
-}, []);
+  useEffect(() => {
+    fetchCategorias();
+  }, []);
 
   const handleLock = () => {
+    setIsAuthenticated(false);
+    setAuthInput("");
+  };
+
+  const handleLogout = () => {
+    try {
+      localStorage.removeItem(AUTH_STORAGE_KEY);
+    } catch {}
     setIsAuthenticated(false);
     setAuthInput("");
   };
@@ -182,75 +260,75 @@ useEffect(() => {
     }
   };
 
-const handleSaveCategory = async (e) => {
-  e.preventDefault();
-  try {
-    let imageUrl = editingCategory?.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg';
+  const handleSaveCategory = async (e) => {
+    e.preventDefault();
+    try {
+      let imageUrl = editingCategory?.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg';
 
-    if (catImageFile) {
-      const formData = new FormData();
-      formData.append("file", catImageFile);
-      formData.append("upload_preset", "cosmos_preset");
+      if (catImageFile) {
+        const formData = new FormData();
+        formData.append("file", catImageFile);
+        formData.append("upload_preset", "cosmos_preset");
 
-      const res = await fetch("https://api.cloudinary.com/v1_1/DTKIRMTFQ/image/upload", {
-        method: "POST",
-        body: formData
-      });
+        const res = await fetch("https://api.cloudinary.com/v1_1/DTKIRMTFQ/image/upload", {
+          method: "POST",
+          body: formData
+        });
 
-      const data = await res.json();
-      if (!res.ok) {
-        alert(`Error al subir la imagen: ${data.error?.message || 'Bad Request'}`);
-        return; 
+        const data = await res.json();
+        if (!res.ok) {
+          alert(`Error al subir la imagen: ${data.error?.message || 'Bad Request'}`);
+          return; 
+        }
+
+        if (data.secure_url) {
+          imageUrl = data.secure_url;
+        }
       }
 
-      if (data.secure_url) {
-        imageUrl = data.secure_url;
+      const categoryData = {
+        nombre: catNombre.trim().toUpperCase(),
+        image: imageUrl,
+        subtitle: 'Colección Exclusiva',
+        idpersonalizado: catCustomId.trim().toUpperCase()
+      };
+
+      if (editingCategory) {
+        const categoryRef = doc(db, 'categorias', editingCategory.id);
+        await updateDoc(categoryRef, categoryData);
+      } else {
+        await addDoc(collection(db, 'categorias'), categoryData);
       }
+
+      // Limpiar y recargar
+      setCatNombre('');
+      setCatCustomId('');
+      setCatImageFile(null);
+      setCatImagePreview('');
+      setEditingCategory(null);
+      setIsCategoryModalOpen(false);
+      fetchCategorias(); 
+
+    } catch (error) {
+      console.error("Error al guardar la categoría:", error);
+      alert("Hubo un error al guardar la categoría.");
     }
-
-    const categoryData = {
-      nombre: catNombre.trim().toUpperCase(),
-      image: imageUrl,
-      subtitle: 'Colección Exclusiva',
-      idpersonalizado: catCustomId.trim().toUpperCase() // 👈 Se guarda o edita el campo adicional
-    };
-
-    if (editingCategory) {
-      const categoryRef = doc(db, 'categorias', editingCategory.id);
-      await updateDoc(categoryRef, categoryData);
-    } else {
-      await addDoc(collection(db, 'categorias'), categoryData);
-    }
-
-    // Limpiar y recargar
-    setCatNombre('');
-    setCatCustomId('');
-    setCatImageFile(null);
-    setCatImagePreview('');
-    setEditingCategory(null);
-    setIsCategoryModalOpen(false);
-    fetchCategorias(); 
-
-  } catch (error) {
-    console.error("Error al guardar la categoría:", error);
-    alert("Hubo un error al guardar la categoría.");
-  }
-};
+  };
 
   const handleEditCategoryClick = (cat) => {
-   setEditingCategory(cat);
-  setCatNombre(cat.nombre || '');
-  setCatImagePreview(cat.image || '');
-  setCatCustomId(cat.idpersonalizado || '');
-  setCatImageFile(null);
+    setEditingCategory(cat);
+    setCatNombre(cat.nombre || '');
+    setCatImagePreview(cat.image || '');
+    setCatCustomId(cat.idpersonalizado || '');
+    setCatImageFile(null);
   };
 
   const handleCancelCategoryEdit = () => {
-   setEditingCategory(false);
-  setCatNombre('');
-  setCatCustomId(''); // 👈 Limpia el input
-  setCatImagePreview('');
-  setCatImageFile(null);
+    setEditingCategory(false);
+    setCatNombre('');
+    setCatCustomId('');
+    setCatImagePreview('');
+    setCatImageFile(null);
   };
 
   const handleDeleteCategoryRequest = (id) => {
@@ -288,113 +366,113 @@ const handleSaveCategory = async (e) => {
 
   if (!isAuthenticated) {
     return (
-     <div className="relative flex h-screen items-center justify-center bg-gradient-to-tr from-[#f3e8ff] via-[#e0e7ff] to-[#fce7f3] font-sans text-[10px] overflow-hidden select-none">
+      <div className="relative flex h-screen items-center justify-center bg-gradient-to-tr from-[#f3e8ff] via-[#e0e7ff] to-[#fce7f3] font-sans text-[10px] overflow-hidden select-none">
   
-  <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-300/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }}></div>
-  <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-300/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s' }}></div>
-  <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-indigo-200/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '7s' }}></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-300/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }}></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-300/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s' }}></div>
+        <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-indigo-200/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '7s' }}></div>
 
-  <div className={`relative bg-white/40 backdrop-blur-2xl p-7 rounded-3xl shadow-2xl shadow-purple-900/10 border border-white/60 max-w-xs w-full space-y-5 text-center transition-all duration-500 transform ${isSuccessAnim ? 'scale-105 shadow-pink-500/20 border-pink-300' : 'scale-100'}`}>
-    
-    <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] flex items-center justify-center text-white font-black text-xl mx-auto shadow-lg shadow-purple-500/30 transition-all duration-500 ${isSuccessAnim ? 'rotate-[360deg] scale-110 from-emerald-400 to-teal-500 shadow-emerald-500/30' : 'animate-bounce'}`}>
-      {isSuccessAnim ? '✨' : '🌸'}
-    </div>
-
-    <div className="space-y-1.5">
-      <h1 className="text-sm font-black bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent uppercase tracking-wider">
-        {isSuccessAnim ? "¡Acceso Concedido!" : "Cosmos Secure"}
-      </h1>
-      <p className="text-[10px] text-slate-600 font-medium">
-        {isSuccessAnim ? "Entrando al universo de administración..." : "Ingresa tu clave secreta para continuar."}
-      </p>
-    </div>
-
-    {isSuccessAnim ? (
-      <div className="py-6 space-y-3 animate-fade-in">
-        <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
-        <p className="text-[11px] font-extrabold text-emerald-600 animate-pulse">Verificando estrellas... 🌟</p>
-      </div>
-    ) : (
-      <form onSubmit={handleLogin} className="space-y-4">
-        <div className="relative group">
-          <input
-            type="password"
-            value={authInput}
-            onChange={(e) => setAuthInput(e.target.value)}
-            placeholder="Escribe tu clave..."
-            className={`w-full bg-white/50 backdrop-blur-md border-2 ${authError ? 'border-rose-400 bg-rose-50/40 animate-shake' : 'border-purple-100/60 group-hover:border-purple-300'} rounded-2xl px-4 py-3 text-xs font-bold text-center text-slate-700 tracking-widest focus:outline-none focus:border-[#7C69EF] focus:bg-white/80 transition-all shadow-inner`}
-            autoFocus
-            required
-          />
+        <div className={`relative bg-white/40 backdrop-blur-2xl p-7 rounded-3xl shadow-2xl shadow-purple-900/10 border border-white/60 max-w-xs w-full space-y-5 text-center transition-all duration-500 transform ${isSuccessAnim ? 'scale-105 shadow-pink-500/20 border-pink-300' : 'scale-100'}`}>
           
-          <div className="flex justify-center gap-1.5 mt-2">
-            {[...Array(6)].map((_, i) => (
-              <div 
-                key={i} 
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  i < authInput.length 
-                    ? 'w-4 bg-gradient-to-r from-[#7C69EF] to-[#FF59B3] shadow-xs' 
-                    : 'w-1.5 bg-slate-300/60'
-                }`}
-              ></div>
-            ))}
+          <div className={`w-14 h-14 rounded-2xl bg-gradient-to-tr from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] flex items-center justify-center text-white font-black text-xl mx-auto shadow-lg shadow-purple-500/30 transition-all duration-500 ${isSuccessAnim ? 'rotate-[360deg] scale-110 from-emerald-400 to-teal-500 shadow-emerald-500/30' : 'animate-bounce'}`}>
+            {isSuccessAnim ? '✨' : '🌸'}
+          </div>
+
+          <div className="space-y-1.5">
+            <h1 className="text-sm font-black bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent uppercase tracking-wider">
+              {isSuccessAnim ? "¡Acceso Concedido!" : "Cosmos Secure"}
+            </h1>
+            <p className="text-[10px] text-slate-600 font-medium">
+              {isSuccessAnim ? "Entrando al universo de administración..." : "Ingresa tu clave secreta para continuar."}
+            </p>
+          </div>
+
+          {isSuccessAnim ? (
+            <div className="py-6 space-y-3 animate-fade-in">
+              <div className="w-8 h-8 border-3 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+              <p className="text-[11px] font-extrabold text-emerald-600 animate-pulse">Verificando estrellas... 🌟</p>
+            </div>
+          ) : (
+            <form onSubmit={handleLogin} className="space-y-4">
+              <div className="relative group">
+                <input
+                  type="password"
+                  value={authInput}
+                  onChange={(e) => setAuthInput(e.target.value)}
+                  placeholder="Escribe tu clave..."
+                  className={`w-full bg-white/50 backdrop-blur-md border-2 ${authError ? 'border-rose-400 bg-rose-50/40 animate-shake' : 'border-purple-100/60 group-hover:border-purple-300'} rounded-2xl px-4 py-3 text-xs font-bold text-center text-slate-700 tracking-widest focus:outline-none focus:border-[#7C69EF] focus:bg-white/80 transition-all shadow-inner`}
+                  autoFocus
+                  required
+                />
+                
+                <div className="flex justify-center gap-1.5 mt-2">
+                  {[...Array(6)].map((_, i) => (
+                    <div 
+                      key={i} 
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        i < authInput.length 
+                          ? 'w-4 bg-gradient-to-r from-[#7C69EF] to-[#FF59B3] shadow-xs' 
+                          : 'w-1.5 bg-slate-300/60'
+                      }`}
+                    ></div>
+                  ))}
+                </div>
+              </div>
+
+              {authError && (
+                <p className="text-[9px] font-bold text-rose-500 animate-bounce">❌ Clave incorrecta. ¡Inténtalo de nuevo!</p>
+              )}
+
+              <button
+                type="submit"
+                className="w-full bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] hover:opacity-95 text-white font-extrabold py-3 rounded-2xl text-xs shadow-lg shadow-purple-500/20 transition-all transform active:scale-95"
+              >
+                🚀 Verificar Identidad
+              </button>
+            </form>
+          )}
+
+          <div className="pt-1 text-[8px] text-slate-500 font-semibold tracking-wide">
+            Carolina Torres • Admin Panel 🌸
           </div>
         </div>
-
-        {authError && (
-          <p className="text-[9px] font-bold text-rose-500 animate-bounce">❌ Clave incorrecta. ¡Inténtalo de nuevo!</p>
-        )}
-
-        <button
-          type="submit"
-          className="w-full bg-gradient-to-r from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] hover:opacity-95 text-white font-extrabold py-3 rounded-2xl text-xs shadow-lg shadow-purple-500/20 transition-all transform active:scale-95"
-        >
-          🚀 Verificar Identidad
-        </button>
-      </form>
-    )}
-
-    <div className="pt-1 text-[8px] text-slate-500 font-semibold tracking-wide">
-      Carolina Torres • Admin Panel 🌸
-    </div>
-  </div>
-</div>
+      </div>
     );
   }
 
   if (isLoading) {
     return (
-  <div className="relative flex h-screen items-center justify-center bg-gradient-to-tr from-[#f3e8ff] via-[#e0e7ff] to-[#fce7f3] font-sans text-[10px] overflow-hidden select-none">
+      <div className="relative flex h-screen items-center justify-center bg-gradient-to-tr from-[#f3e8ff] via-[#e0e7ff] to-[#fce7f3] font-sans text-[10px] overflow-hidden select-none">
   
-  <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-300/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }}></div>
-  <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-300/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s' }}></div>
-  <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-indigo-200/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '7s' }}></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-purple-300/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '6s' }}></div>
+        <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-pink-300/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '5s' }}></div>
+        <div className="absolute top-1/2 right-1/3 w-72 h-72 bg-indigo-200/40 rounded-full blur-3xl animate-pulse" style={{ animationDuration: '7s' }}></div>
 
-  <div className="relative bg-white/40 backdrop-blur-2xl p-8 rounded-3xl shadow-2xl shadow-purple-900/10 border border-white/60 flex flex-col items-center gap-4 max-w-xs w-full mx-4 text-center transform transition-all animate-fade-in">
-    
-    <div className="relative w-14 h-14 flex items-center justify-center">
-      <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#7C69EF] to-[#FF59B3] opacity-40 blur-md animate-pulse"></div>
-      <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
-        <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+        <div className="relative bg-white/40 backdrop-blur-2xl p-8 rounded-3xl shadow-2xl shadow-purple-900/10 border border-white/60 flex flex-col items-center gap-4 max-w-xs w-full mx-4 text-center transform transition-all animate-fade-in">
+          
+          <div className="relative w-14 h-14 flex items-center justify-center">
+            <div className="absolute inset-0 rounded-2xl bg-gradient-to-tr from-[#7C69EF] to-[#FF59B3] opacity-40 blur-md animate-pulse"></div>
+            <div className="relative w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#7C69EF] via-[#9B8AFB] to-[#FF59B3] flex items-center justify-center text-white shadow-lg shadow-purple-500/20">
+              <div className="w-6 h-6 border-2 border-white border-t-transparent rounded-full animate-spin"></div>
+            </div>
+          </div>
+
+          <div className="space-y-2 w-full">
+            <h2 className="text-xs font-black bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent uppercase tracking-widest animate-pulse">
+              Cargando Universo
+            </h2>
+            
+            <div className="w-full h-1 bg-purple-200/50 rounded-full overflow-hidden p-0.5">
+              <div className="h-full bg-gradient-to-r from-[#7C69EF] to-[#FF59B3] rounded-full animate-[shimmer_2s_infinite]"></div>
+            </div>
+
+            <p className="text-[10px] text-slate-500 font-semibold tracking-wide pt-1">
+              Carolina Torres <span className="text-pink-500">✨</span>
+            </p>
+          </div>
+
+        </div>
       </div>
-    </div>
-
-    <div className="space-y-2 w-full">
-      <h2 className="text-xs font-black bg-gradient-to-r from-purple-700 to-pink-600 bg-clip-text text-transparent uppercase tracking-widest animate-pulse">
-        Cargando Universo
-      </h2>
-      
-      <div className="w-full h-1 bg-purple-200/50 rounded-full overflow-hidden p-0.5">
-        <div className="h-full bg-gradient-to-r from-[#7C69EF] to-[#FF59B3] rounded-full animate-[shimmer_2s_infinite]"></div>
-      </div>
-
-      <p className="text-[10px] text-slate-500 font-semibold tracking-wide pt-1">
-        Carolina Torres <span className="text-pink-500">✨</span>
-      </p>
-    </div>
-
-  </div>
-</div>
     );
   }
 
@@ -402,14 +480,13 @@ const handleSaveCategory = async (e) => {
     <div className="flex flex-1 flex-row h-screen bg-[#F4F5FB] text-[#2D3142] overflow-hidden font-sans text-[10px] relative">
       
       {/* SIDEBAR ESCRITORIO */}
-    {/* SIDEBAR ESCRITORIO */}
       <aside 
         onMouseEnter={() => setIsSidebarCollapsed(false)}
         onMouseLeave={() => setIsSidebarCollapsed(true)}
         className={`hidden md:flex ${isSidebarCollapsed ? "w-20" : "w-60"} bg-white/90 backdrop-blur-md border-r border-purple-100/60 flex-col shrink-0 shadow-lg justify-between transition-all duration-300 ease-in-out relative z-10`}
       >
         <div>
-        <div className="p-4 border-b border-purple-50 flex items-center justify-between gap-2 overflow-hidden">
+          <div className="p-4 border-b border-purple-50 flex items-center justify-between gap-2 overflow-hidden">
             <div className="flex items-center gap-3 truncate w-full">
               <div className="w-10 h-10 shrink-0 rounded-2xl flex items-center justify-center overflow-hidden shadow-md shadow-purple-500/25">
                 <img 
@@ -507,7 +584,8 @@ const handleSaveCategory = async (e) => {
           </div>
         </div>
 
-        <div className="p-3.5 border-t border-purple-50">
+        <div className="p-3.5 border-t border-purple-50 space-y-1.5">
+      
           <button
             onClick={handleLock}
             title="Bloquear Panel"
@@ -586,7 +664,17 @@ const handleSaveCategory = async (e) => {
             </div>
           </div>
 
-          <div className="pt-3 border-t border-purple-100/60">
+          <div className="pt-3 border-t border-purple-100/60 space-y-1.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); handleLogout(); }}
+              title="Cerrar Sesión"
+              className={`w-full bg-purple-50 hover:bg-purple-100 text-purple-700 font-extrabold p-3 rounded-2xl text-xs transition-all flex items-center ${isMobileMenuOpen ? "justify-start gap-2" : "justify-center"}`}
+            >
+              <span className="text-sm shrink-0 w-6 text-center">🚪</span> 
+              <span className={`transition-opacity duration-300 whitespace-nowrap ${isMobileMenuOpen ? "opacity-100" : "opacity-0 hidden"}`}>
+                Cerrar Sesión
+              </span>
+            </button>
             <button
               onClick={(e) => { e.stopPropagation(); handleLock(); }}
               title="Bloquear Panel"
@@ -798,157 +886,157 @@ const handleSaveCategory = async (e) => {
 
       {/* MODAL CATEGORÍA */}
       {isCategoryModalOpen && (
-     <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
-  <div className="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3 max-h-[90vh] flex flex-col">
-    <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
-      <div className="flex items-center gap-1.5">
-        <span className="text-xs">🏷️</span>
-        <h3 className="text-xs font-black text-[#2D3142]">Gestión de Categorías</h3>
-      </div>
-      <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold hover:text-[#2D3142]">✕</button>
-    </div>
-
-    <form onSubmit={handleSaveCategory} className="bg-[#F4F5FB] p-3 rounded-xl border border-[#E4E8F0] space-y-2.5">
-      <div className="flex justify-between items-center">
-        <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#7C69EF]">
-          {editingCategory ? "✏️ Editando Categoría" : "✨ Nueva Categoría"}
-        </label>
-        {editingCategory && (
-          <button type="button" onClick={handleCancelCategoryEdit} className="text-[8px] font-bold text-rose-500 hover:underline">
-            Cancelar edición
-          </button>
-        )}
-      </div>
-
-      <div className="space-y-2">
-        {/* Input para el ID Único de la Categoría */}
-        <div>
-          <label className="block text-[8px] font-extrabold text-[#9EA2B3] mb-0.5 uppercase">ID Único / Código de la Categoría</label>
-          <input 
-            type="text" 
-            value={catCustomId} 
-            onChange={(e) => setCatCustomId(e.target.value)}
-            placeholder="Ej. nino, nina, papeleria..."
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-            required
-          />
-        </div>
-
-        {/* Input de Nombre */}
-        <div>
-          <label className="block text-[8px] font-extrabold text-[#9EA2B3] mb-0.5 uppercase">Nombre de la Categoría</label>
-          <input 
-            type="text" 
-            value={catNombre} 
-            onChange={(e) => setCatNombre(e.target.value)}
-            placeholder="Nombre de la categoría..."
-            className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-            required
-          />
-        </div>
-
-        {/* Input para Subir Foto desde el Dispositivo */}
-        <div className="flex items-center gap-2 bg-white border border-[#E4E8F0] rounded-xl p-1.5">
-          <div className="w-8 h-8 rounded-lg bg-[#F4F5FB] border border-[#E4E8F0] overflow-hidden flex items-center justify-center shrink-0">
-            {catImagePreview ? (
-              <img src={catImagePreview} alt="Preview" className="w-full h-full object-cover" />
-            ) : (
-              <span className="text-xs">📷</span>
-            )}
-          </div>
-          <div className="flex-1 overflow-hidden">
-            <label className="block text-[8px] font-bold text-[#9EA2B3] truncate">
-              {catImageFile ? catImageFile.name : "Seleccionar foto del dispositivo..."}
-            </label>
-            <input 
-              type="file" 
-              accept="image/*"
-              onChange={(e) => {
-                const file = e.target.files[0];
-                if (file) {
-                  setCatImageFile(file);
-                  setCatImagePreview(URL.createObjectURL(file));
-                }
-              }}
-              className="w-full text-[8px] text-[#2D3142] file:mr-2 file:py-0.5 file:px-2 file:rounded-md file:border-0 file:text-[8px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF] hover:file:bg-[#7C69EF]/20 cursor-pointer"
-            />
-          </div>
-        </div>
-
-        <button 
-          type="submit" 
-          className="w-full bg-[#7C69EF] hover:bg-[#6c59db] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-sm transition-all"
-        >
-          {editingCategory ? "Actualizar Categoría" : "Guardar Categoría"}
-        </button>
-      </div>
-    </form>
-
-    <div className="relative">
-      <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#9EA2B3]">🔍</span>
-      <input 
-        type="text"
-        value={catSearch}
-        onChange={(e) => setCatSearch(e.target.value)}
-        placeholder="Buscar categoría..."
-        className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl pl-7 pr-3 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
-      />
-    </div>
-
-    <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-44">
-      <p className="text-[8px] font-black uppercase tracking-wider text-[#9EA2B3] px-1">
-        Resultados ({filteredCategorias.length} de {categorias.length})
-      </p>
-      {filteredCategorias.length === 0 ? (
-        <div className="p-4 text-center text-[#9EA2B3] bg-[#F4F5FB]/50 rounded-xl text-[9px]">
-          {catSearch ? "No se encontraron categorías con ese nombre." : "No hay categorías registradas todavía."}
-        </div>
-      ) : (
-        filteredCategorias.map((cat) => (
-          <div key={cat.id} className="flex items-center justify-between bg-white border border-[#E4E8F0] p-2 rounded-xl shadow-2xs hover:border-[#7C69EF]/50 transition-all">
-            <div className="flex items-center gap-2 overflow-hidden">
-              <img 
-                src={cat.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg'} 
-                alt={cat.nombre} 
-                className="w-7 h-7 rounded-lg object-cover border border-[#E4E8F0] shrink-0" 
-              />
-              <div className="overflow-hidden">
-                <span className="block text-[9px] font-bold text-[#2D3142] truncate max-w-[140px]">{cat.nombre}</span>
-                <span className="block text-[7px] text-[#9EA2B3] font-mono">ID: {cat.id}</span>
+        <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-2xs flex items-center justify-center p-2">
+          <div className="bg-white rounded-2xl max-w-md w-full p-4 shadow-2xl border border-[#E4E8F0] space-y-3 max-h-[90vh] flex flex-col">
+            <div className="flex items-center justify-between border-b border-[#E4E8F0] pb-2">
+              <div className="flex items-center gap-1.5">
+                <span className="text-xs">🏷️</span>
+                <h3 className="text-xs font-black text-[#2D3142]">Gestión de Categorías</h3>
               </div>
+              <button onClick={() => setIsCategoryModalOpen(false)} className="text-[#9EA2B3] text-xs font-bold hover:text-[#2D3142]">✕</button>
             </div>
-            <div className="flex items-center gap-1 shrink-0">
+
+            <form onSubmit={handleSaveCategory} className="bg-[#F4F5FB] p-3 rounded-xl border border-[#E4E8F0] space-y-2.5">
+              <div className="flex justify-between items-center">
+                <label className="text-[8px] font-extrabold uppercase tracking-wider text-[#7C69EF]">
+                  {editingCategory ? "✏️ Editando Categoría" : "✨ Nueva Categoría"}
+                </label>
+                {editingCategory && (
+                  <button type="button" onClick={handleCancelCategoryEdit} className="text-[8px] font-bold text-rose-500 hover:underline">
+                    Cancelar edición
+                  </button>
+                )}
+              </div>
+
+              <div className="space-y-2">
+                {/* Input para el ID Único de la Categoría */}
+                <div>
+                  <label className="block text-[8px] font-extrabold text-[#9EA2B3] mb-0.5 uppercase">ID Único / Código de la Categoría</label>
+                  <input 
+                    type="text" 
+                    value={catCustomId} 
+                    onChange={(e) => setCatCustomId(e.target.value)}
+                    placeholder="Ej. nino, nina, papeleria..."
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                    required
+                  />
+                </div>
+
+                {/* Input de Nombre */}
+                <div>
+                  <label className="block text-[8px] font-extrabold text-[#9EA2B3] mb-0.5 uppercase">Nombre de la Categoría</label>
+                  <input 
+                    type="text" 
+                    value={catNombre} 
+                    onChange={(e) => setCatNombre(e.target.value)}
+                    placeholder="Nombre de la categoría..."
+                    className="w-full bg-white border border-[#E4E8F0] rounded-xl px-2.5 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+                    required
+                  />
+                </div>
+
+                {/* Input para Subir Foto desde el Dispositivo */}
+                <div className="flex items-center gap-2 bg-white border border-[#E4E8F0] rounded-xl p-1.5">
+                  <div className="w-8 h-8 rounded-lg bg-[#F4F5FB] border border-[#E4E8F0] overflow-hidden flex items-center justify-center shrink-0">
+                    {catImagePreview ? (
+                      <img src={catImagePreview} alt="Preview" className="w-full h-full object-cover" />
+                    ) : (
+                      <span className="text-xs">📷</span>
+                    )}
+                  </div>
+                  <div className="flex-1 overflow-hidden">
+                    <label className="block text-[8px] font-bold text-[#9EA2B3] truncate">
+                      {catImageFile ? catImageFile.name : "Seleccionar foto del dispositivo..."}
+                    </label>
+                    <input 
+                      type="file" 
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files[0];
+                        if (file) {
+                          setCatImageFile(file);
+                          setCatImagePreview(URL.createObjectURL(file));
+                        }
+                      }}
+                      className="w-full text-[8px] text-[#2D3142] file:mr-2 file:py-0.5 file:px-2 file:rounded-md file:border-0 file:text-[8px] file:font-bold file:bg-[#7C69EF]/10 file:text-[#7C69EF] hover:file:bg-[#7C69EF]/20 cursor-pointer"
+                    />
+                  </div>
+                </div>
+
+                <button 
+                  type="submit" 
+                  className="w-full bg-[#7C69EF] hover:bg-[#6c59db] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-sm transition-all"
+                >
+                  {editingCategory ? "Actualizar Categoría" : "Guardar Categoría"}
+                </button>
+              </div>
+            </form>
+
+            <div className="relative">
+              <span className="absolute left-2.5 top-1/2 -translate-y-1/2 text-[9px] text-[#9EA2B3]">🔍</span>
+              <input 
+                type="text"
+                value={catSearch}
+                onChange={(e) => setCatSearch(e.target.value)}
+                placeholder="Buscar categoría..."
+                className="w-full bg-[#F4F5FB] border border-[#E4E8F0] rounded-xl pl-7 pr-3 py-1.5 text-[9px] font-bold text-[#2D3142] focus:outline-none focus:border-[#7C69EF]"
+              />
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-1.5 pr-1 max-h-44">
+              <p className="text-[8px] font-black uppercase tracking-wider text-[#9EA2B3] px-1">
+                Resultados ({filteredCategorias.length} de {categorias.length})
+              </p>
+              {filteredCategorias.length === 0 ? (
+                <div className="p-4 text-center text-[#9EA2B3] bg-[#F4F5FB]/50 rounded-xl text-[9px]">
+                  {catSearch ? "No se encontraron categorías con ese nombre." : "No hay categorías registradas todavía."}
+                </div>
+              ) : (
+                filteredCategorias.map((cat) => (
+                  <div key={cat.id} className="flex items-center justify-between bg-white border border-[#E4E8F0] p-2 rounded-xl shadow-2xs hover:border-[#7C69EF]/50 transition-all">
+                    <div className="flex items-center gap-2 overflow-hidden">
+                      <img 
+                        src={cat.image || 'https://res.cloudinary.com/dtkirmtfq/image/upload/v1788650769/CosmosCute/bek3cv3wam7jcdo6itnj.jpg'} 
+                        alt={cat.nombre} 
+                        className="w-7 h-7 rounded-lg object-cover border border-[#E4E8F0] shrink-0" 
+                      />
+                      <div className="overflow-hidden">
+                        <span className="block text-[9px] font-bold text-[#2D3142] truncate max-w-[140px]">{cat.nombre}</span>
+                        <span className="block text-[7px] text-[#9EA2B3] font-mono">ID: {cat.id}</span>
+                      </div>
+                    </div>
+                    <div className="flex items-center gap-1 shrink-0">
+                      <button 
+                        type="button" 
+                        onClick={() => handleEditCategoryClick(cat)}
+                        className="bg-[#7C69EF]/10 hover:bg-[#7C69EF]/20 text-[#7C69EF] font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
+                      >
+                        Editar
+                      </button>
+                      <button 
+                        type="button" 
+                        onClick={() => handleDeleteCategoryRequest(cat.id)}
+                        className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
+                      >
+                        Eliminar
+                      </button>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+
+            <div className="flex justify-end pt-2 border-t border-[#E4E8F0]">
               <button 
                 type="button" 
-                onClick={() => handleEditCategoryClick(cat)}
-                className="bg-[#7C69EF]/10 hover:bg-[#7C69EF]/20 text-[#7C69EF] font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
+                onClick={() => setIsCategoryModalOpen(false)} 
+                className="w-full bg-[#7C69EF] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20"
               >
-                Editar
-              </button>
-              <button 
-                type="button" 
-                onClick={() => handleDeleteCategoryRequest(cat.id)}
-                className="bg-rose-50 hover:bg-rose-100 text-rose-600 font-bold px-2 py-1 rounded-lg text-[8px] transition-all"
-              >
-                Eliminar
+                Cerrar Ventana
               </button>
             </div>
           </div>
-        ))
-      )}
-    </div>
-
-    <div className="flex justify-end pt-2 border-t border-[#E4E8F0]">
-      <button 
-        type="button" 
-        onClick={() => setIsCategoryModalOpen(false)} 
-        className="w-full bg-[#7C69EF] text-white font-extrabold py-2 rounded-xl text-[9px] shadow-md shadow-[#7C69EF]/20"
-      >
-        Cerrar Ventana
-      </button>
-    </div>
-  </div>
-</div>
+        </div>
       )}
 
       {/* MODAL ELIMINAR */}
