@@ -5,6 +5,7 @@ import { useNavigate } from 'react-router-dom';
 
 export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
   const [pedidos, setPedidos] = useState([]);
+  const [inventario, setInventario] = useState([]);
   const [filtroEstado, setFiltroEstado] = useState("recibido");
   const [busqueda, setBusqueda] = useState("");
 
@@ -22,6 +23,27 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
   const [pedidoACancelar, setPedidoACancelar] = useState(null);
   const [motivoCancelacion, setMotivoCancelacion] = useState("");
 
+  // Estados para el Modal de Edición de Pedido
+  const [isModalEditarOpen, setIsModalEditarOpen] = useState(false);
+  const [pedidoAEditar, setPedidoAEditar] = useState(null);
+  const [formEditar, setFormEditar] = useState({
+    nombre: "",
+    apellido: "",
+    telefono: "",
+    correo: "",
+    direccion: "",
+    barrio: "",
+    ciudad: "",
+    quienrecibe: "",
+    categoria: "",
+    productos: [],
+    precio: 0
+  });
+
+  // Estado auxiliar para seleccionar y agregar un producto nuevo al pedido en edición
+  const [productoSeleccionadoInv, setProductoSeleccionadoInv] = useState("");
+  const [cantidadNuevoProducto, setCantidadNuevoProducto] = useState(1);
+
   // Cargar y escuchar pedidos desde Firestore en tiempo real con onSnapshot
   useEffect(() => {
     const unsubscribe = onSnapshot(
@@ -31,6 +53,22 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
           firebaseId: document.id,
           ...document.data()
         }));
+
+        // Función auxiliar para obtener el timestamp numérico
+        const obtenerTiempo = (item) => {
+          const f = item.fechaCreacion || item.fecha || item.createdAt;
+          if (!f) return 0;
+          if (typeof f.toMillis === 'function') return f.toMillis();
+          if (f.seconds) return f.seconds * 1000;
+          if (f instanceof Date) return f.getTime();
+          if (typeof f === 'number') return f;
+          const parsed = Date.parse(f);
+          return isNaN(parsed) ? 0 : parsed;
+        };
+
+        // Ordenar los pedidos en orden de fecha y hora (más reciente primero)
+        listaPedidos.sort((a, b) => obtenerTiempo(b) - obtenerTiempo(a));
+
         setPedidos(listaPedidos);
       },
       (error) => {
@@ -39,8 +77,20 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
       }
     );
 
-    // Limpiar el listener cuando el componente se desmonte
     return () => unsubscribe();
+  }, []);
+
+  // Cargar inventario en tiempo real para opciones de edición
+  useEffect(() => {
+    const unsubscribeInv = onSnapshot(
+      collection(db, "inventario"),
+      (snapshot) => {
+        const listaInv = snapshot.docs.map(d => ({ id: d.id, ...d.data() }));
+        setInventario(listaInv);
+      },
+      (err) => console.error("Error al cargar inventario:", err)
+    );
+    return () => unsubscribeInv();
   }, []);
 
   // Función para manejar el cambio de estado con la validación solicitada y abrir alerta central
@@ -152,6 +202,116 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
     setIsModalDetallesOpen(true);
   };
 
+  // FUNCIONALIDAD DE EDICIÓN DE PEDIDO
+  const abrirModalEditar = (pedido) => {
+    setPedidoAEditar(pedido);
+    const productosNormalizados = Array.isArray(pedido.productos)
+      ? pedido.productos.map(p => typeof p === 'object' ? { ...p } : { name: String(p), cantidad: 1, precio: 0 })
+      : [];
+
+    setFormEditar({
+      nombre: pedido.nombre || "",
+      apellido: pedido.apellido || "",
+      telefono: pedido.telefono || "",
+      correo: pedido.correo || "",
+      direccion: pedido.direccion || "",
+      barrio: pedido.barrio || "",
+      ciudad: pedido.ciudad || "",
+      quienrecibe: pedido.quienrecibe || "",
+      categoria: pedido.categoria || "",
+      productos: productosNormalizados,
+      precio: Number(pedido.precio || 0)
+    });
+
+    setProductoSeleccionadoInv("");
+    setCantidadNuevoProducto(1);
+    setIsModalEditarOpen(true);
+  };
+
+  const calcularPrecioTotalEdicion = (listaProds) => {
+    return listaProds.reduce((acc, p) => {
+      const pr = Number(p.precio || p.price || 0);
+      const cant = Number(p.cantidad || p.quantity || 1);
+      return acc + (pr * cant);
+    }, 0);
+  };
+
+  const manejarCambioCantidadProd = (idx, nuevaCant) => {
+    const c = Math.max(1, Number(nuevaCant));
+    const prodsActualizados = formEditar.productos.map((item, index) => {
+      if (index === idx) {
+        return { ...item, cantidad: c, quantity: c };
+      }
+      return item;
+    });
+    setFormEditar({
+      ...formEditar,
+      productos: prodsActualizados,
+      precio: calcularPrecioTotalEdicion(prodsActualizados)
+    });
+  };
+
+  const eliminarProductoEdicion = (idx) => {
+    const prodsActualizados = formEditar.productos.filter((_, index) => index !== idx);
+    setFormEditar({
+      ...formEditar,
+      productos: prodsActualizados,
+      precio: calcularPrecioTotalEdicion(prodsActualizados)
+    });
+  };
+
+  const agregarProductoDesdeInventario = () => {
+    if (!productoSeleccionadoInv) return;
+    const prodInv = inventario.find(i => i.id === productoSeleccionadoInv);
+    if (!prodInv) return;
+
+    const nuevoProdObj = {
+      name: prodInv.nombre || prodInv.name || 'Producto sin nombre',
+      nombre: prodInv.nombre || prodInv.name || 'Producto sin nombre',
+      precio: Number(prodInv.precio || prodInv.price || 0),
+      price: Number(prodInv.precio || prodInv.price || 0),
+      cantidad: Number(cantidadNuevoProducto),
+      quantity: Number(cantidadNuevoProducto)
+    };
+
+    const prodsActualizados = [...formEditar.productos, nuevoProdObj];
+    setFormEditar({
+      ...formEditar,
+      productos: prodsActualizados,
+      precio: calcularPrecioTotalEdicion(prodsActualizados)
+    });
+
+    setProductoSeleccionadoInv("");
+    setCantidadNuevoProducto(1);
+  };
+
+  const guardarCambiosPedido = async () => {
+    if (!pedidoAEditar) return;
+    try {
+      const pedidoRef = doc(db, "pedidos", pedidoAEditar.firebaseId);
+      await updateDoc(pedidoRef, {
+        nombre: formEditar.nombre,
+        apellido: formEditar.apellido,
+        telefono: formEditar.telefono,
+        correo: formEditar.correo,
+        direccion: formEditar.direccion,
+        barrio: formEditar.barrio,
+        ciudad: formEditar.ciudad,
+        quienrecibe: formEditar.quienrecibe,
+        categoria: formEditar.categoria,
+        productos: formEditar.productos,
+        precio: Number(formEditar.precio || 0)
+      });
+
+      triggerSuccessAlert("¡Pedido actualizado exitosamente!");
+      setIsModalEditarOpen(false);
+      setPedidoAEditar(null);
+    } catch (err) {
+      console.error("Error al editar pedido:", err);
+      triggerErrorAlert("No se pudieron guardar los cambios del pedido");
+    }
+  };
+
   const pedidosFiltrados = pedidos.filter(p => {
     const estadoDoc = (p.estado || "recibido").toLowerCase().trim();
     const coincideEstado = estadoDoc === filtroEstado.toLowerCase().trim();
@@ -169,6 +329,8 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
     { id: "enviado", label: "Enviados", icon: "🚀", siguienteEstado: null, textoBoton: null },
     { id: "cancelado", label: "Cancelados", icon: "❌", siguienteEstado: null, textoBoton: null },
   ];
+
+  const permiteEditar = filtroEstado !== "enviado" && filtroEstado !== "cancelado";
 
   return (
     <div className="flex-1 flex flex-col overflow-hidden p-3 sm:p-4 bg-gradient-to-br from-white via-[#FAF8FF] to-[#FFF5F7] text-[#2D3142]">
@@ -280,9 +442,20 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                         {esCanceladoTab ? `Motivo: ${pedido.categoria || "Sin motivo"}` : (pedido.categoria || "General")} {esTarjetaVerde && "✨"}
                       </span>
                       
-                      <span className="text-[8px] sm:text-[10px] font-mono font-bold bg-indigo-50 text-[#7C69EF] px-1.5 sm:px-2.5 py-0.5 rounded-md border border-indigo-100 shadow-2xs shrink-0" title="ID del Pedido">
-                        ID: {pedido.id || pedido.firebaseId}
-                      </span>
+                      <div className="flex items-center gap-1 shrink-0">
+                        {permiteEditar && (
+                          <button
+                            onClick={() => abrirModalEditar(pedido)}
+                            className="p-1.5 rounded-lg bg-amber-100 text-amber-700 hover:bg-amber-200 text-[10px] sm:text-xs font-bold transition-all shadow-2xs"
+                            title="Editar pedido"
+                          >
+                            ✏️
+                          </button>
+                        )}
+                        <span className="text-[8px] sm:text-[10px] font-mono font-bold bg-indigo-50 text-[#7C69EF] px-1.5 sm:px-2.5 py-0.5 rounded-md border border-indigo-100 shadow-2xs" title="ID del Pedido">
+                          ID: {pedido.id || pedido.firebaseId}
+                        </span>
+                      </div>
                     </div>
 
                     <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-1 sm:gap-2">
@@ -384,7 +557,7 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                             className="flex-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-600 font-extrabold px-2 py-1.5 sm:py-2 rounded-xl text-[9px] sm:text-xs transition-all flex items-center justify-center gap-1 shadow-xs border border-indigo-100"
                             title="Ver todos los detalles del pedido"
                           >
-                            <span>👁️️</span> <span className="hidden sm:inline">Ver más</span><span className="sm:hidden">Ver</span>
+                            <span>👁</span> <span className="hidden sm:inline">Ver más</span><span className="sm:hidden">Ver</span>
                           </button>
 
                           {pestañaActual && pestañaActual.siguienteEstado && (
@@ -494,6 +667,224 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
                 Confirmar Cancelación
               </button>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* MODAL DE EDICIÓN DE PEDIDO */}
+      {isModalEditarOpen && pedidoAEditar && (
+        <div className="fixed inset-0 z-50 bg-black/60 backdrop-blur-xs flex items-center justify-center p-4 animate-fade-in">
+          <div className="bg-white rounded-3xl max-w-xl w-full p-5 sm:p-6 shadow-2xl border-2 border-amber-200 space-y-4 max-h-[90vh] flex flex-col">
+            
+            <div className="flex items-center justify-between border-b border-amber-100 pb-3">
+              <div className="flex items-center gap-2.5">
+                <span className="text-xs sm:text-sm p-2 rounded-xl bg-amber-100 text-amber-600 shadow-xs">✏️</span>
+                <h3 className="text-xs sm:text-sm font-black text-[#2D3142]">Editar Pedido #{pedidoAEditar.id || pedidoAEditar.firebaseId}</h3>
+              </div>
+              <button 
+                onClick={() => setIsModalEditarOpen(false)} 
+                className="w-7 h-7 rounded-full bg-amber-50 text-amber-600 hover:bg-amber-100 font-bold flex items-center justify-center text-xs sm:text-sm transition-colors"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="flex-1 overflow-y-auto space-y-4 pr-1 text-[11px] sm:text-xs">
+              
+              {/* Sección Datos del Cliente */}
+              <div className="bg-amber-50/40 p-3.5 rounded-2xl border border-amber-100 space-y-2.5">
+                <p className="text-[10px] font-black uppercase text-amber-700 tracking-wider">Datos del Cliente</p>
+                
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[#9EA2B3] text-[10px]">Nombre:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.nombre} 
+                      onChange={(e) => setFormEditar({ ...formEditar, nombre: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#9EA2B3] text-[10px]">Apellido:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.apellido} 
+                      onChange={(e) => setFormEditar({ ...formEditar, apellido: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#9EA2B3] text-[10px]">Teléfono:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.telefono} 
+                      onChange={(e) => setFormEditar({ ...formEditar, telefono: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#9EA2B3] text-[10px]">Correo:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.correo} 
+                      onChange={(e) => setFormEditar({ ...formEditar, correo: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#9EA2B3] text-[10px]">Dirección:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.direccion} 
+                      onChange={(e) => setFormEditar({ ...formEditar, direccion: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#9EA2B3] text-[10px]">Barrio:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.barrio} 
+                      onChange={(e) => setFormEditar({ ...formEditar, barrio: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#9EA2B3] text-[10px]">Ciudad:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.ciudad} 
+                      onChange={(e) => setFormEditar({ ...formEditar, ciudad: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-[#9EA2B3] text-[10px]">¿Quién recibe?:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.quienrecibe} 
+                      onChange={(e) => setFormEditar({ ...formEditar, quienrecibe: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                  <div className="col-span-2">
+                    <label className="block text-[#9EA2B3] text-[10px]">Categoría / Motivo 🧸:</label>
+                    <input 
+                      type="text" 
+                      value={formEditar.categoria} 
+                      onChange={(e) => setFormEditar({ ...formEditar, categoria: e.target.value })}
+                      className="w-full bg-white border border-amber-200 rounded-lg p-1.5 font-bold text-[#2D3142]"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Sección Gestión de Productos */}
+              <div className="space-y-2.5">
+                <div className="flex items-center justify-between">
+                  <p className="text-[10px] font-black uppercase text-amber-700 tracking-wider">Productos del Pedido</p>
+                  <span className="font-black text-rose-600 bg-rose-50 px-2.5 py-0.5 rounded-lg border border-rose-100 text-xs">
+                    Total: ${Number(formEditar.precio || 0).toLocaleString()}
+                  </span>
+                </div>
+
+                {/* Agregar Nuevo Producto desde Inventario */}
+                <div className="bg-white p-2.5 rounded-2xl border border-rose-100 flex flex-col sm:flex-row items-center gap-2">
+                  <select 
+                    value={productoSeleccionadoInv}
+                    onChange={(e) => setProductoSeleccionadoInv(e.target.value)}
+                    className="w-full sm:flex-1 bg-amber-50/50 border border-amber-200 rounded-xl p-2 font-bold text-[#2D3142] text-[11px]"
+                  >
+                    <option value="">-- Seleccionar producto del inventario --</option>
+                    {inventario.map(prod => (
+                      <option key={prod.id} value={prod.id}>
+                        {prod.nombre || prod.name} (${Number(prod.precio || prod.price || 0).toLocaleString()})
+                      </option>
+                    ))}
+                  </select>
+
+                  <div className="flex items-center gap-1.5 w-full sm:w-auto">
+                    <input 
+                      type="number"
+                      min="1"
+                      value={cantidadNuevoProducto}
+                      onChange={(e) => setCantidadNuevoProducto(e.target.value)}
+                      className="w-16 bg-white border border-amber-200 rounded-xl p-2 font-bold text-[#2D3142] text-center"
+                    />
+                    <button
+                      type="button"
+                      onClick={agregarProductoDesdeInventario}
+                      className="flex-1 sm:flex-none bg-gradient-to-r from-amber-500 to-orange-500 text-white font-black px-3 py-2 rounded-xl hover:opacity-90 transition-all shadow-xs"
+                    >
+                      + Agregar
+                    </button>
+                  </div>
+                </div>
+
+                {/* Lista de productos actuales */}
+                <div className="border border-rose-100 rounded-2xl overflow-hidden divide-y divide-rose-50 bg-white">
+                  {formEditar.productos && formEditar.productos.length > 0 ? (
+                    formEditar.productos.map((prod, idx) => {
+                      const nombreProd = typeof prod === 'object' ? (prod.name || prod.nombre || 'Producto sin nombre') : prod;
+                      const precioProd = typeof prod === 'object' ? Number(prod.precio || prod.price || 0) : 0;
+                      const cantProd = typeof prod === 'object' ? Number(prod.cantidad || prod.quantity || 1) : 1;
+
+                      return (
+                        <div key={idx} className="p-2.5 flex items-center justify-between gap-2">
+                          <span className="font-bold text-[#2D3142] flex-1 truncate">{nombreProd}</span>
+
+                          <div className="flex items-center gap-2">
+                            <input 
+                              type="number"
+                              min="1"
+                              value={cantProd}
+                              onChange={(e) => manejarCambioCantidadProd(idx, e.target.value)}
+                              className="w-14 bg-amber-50 border border-amber-200 rounded-lg p-1 text-center font-bold text-[#2D3142]"
+                            />
+                            {precioProd > 0 && (
+                              <span className="font-mono font-bold text-[#7C69EF] text-[10px] sm:text-xs">
+                                ${(precioProd * cantProd).toLocaleString()}
+                              </span>
+                            )}
+                            <button
+                              type="button"
+                              onClick={() => eliminarProductoEdicion(idx)}
+                              className="text-red-500 hover:bg-red-50 p-1.5 rounded-lg transition-colors font-bold"
+                              title="Quitar producto"
+                            >
+                              🗑️
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })
+                  ) : (
+                    <p className="p-4 text-center text-[#9EA2B3]">Sin productos en el pedido.</p>
+                  )}
+                </div>
+
+              </div>
+
+            </div>
+
+            <div className="pt-2 border-t border-amber-100 flex gap-2 justify-end">
+              <button
+                type="button"
+                onClick={() => setIsModalEditarOpen(false)}
+                className="bg-gray-100 hover:bg-gray-200 text-[#6E7387] font-black px-4 py-2 rounded-xl text-[11px] sm:text-xs transition-all shadow-xs"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={guardarCambiosPedido}
+                className="bg-gradient-to-r from-amber-500 to-orange-500 hover:opacity-90 text-white font-black px-5 py-2 rounded-xl text-[11px] sm:text-xs transition-all shadow-md shadow-amber-500/20"
+              >
+                Guardar Cambios 💾
+              </button>
+            </div>
+
           </div>
         </div>
       )}
@@ -648,5 +1039,3 @@ export const PanelDePedidos = ({ triggerSuccessAlert, triggerErrorAlert }) => {
     </div>
   );
 };
-
-
